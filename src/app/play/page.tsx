@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { PageContainer } from '@/components/layout/page-container'
 import { SceneDisplay } from '@/components/game/scene-display'
@@ -31,7 +31,10 @@ export default function PlayPage() {
     error, fetchScene, fetchActions, fetchOutcome,
   } = useGameAI()
 
-  const selectedPlayers = players.filter(p => selectedPlayerIds.includes(p.id))
+  const selectedPlayers = useMemo(
+    () => players.filter(p => selectedPlayerIds.includes(p.id)),
+    [players, selectedPlayerIds]
+  )
 
   const currentPlayer = selectedPlayers[currentPlayerIndex]
   const currentCharacter = characters.find(c => c.playerId === currentPlayer?.id)
@@ -44,6 +47,7 @@ export default function PlayPage() {
   const [diceResult, setDiceResult] = useState<number | null>(null)
   const [outcomeType, setOutcomeType] = useState<OutcomeType | null>(null)
   const [outcomeNarrative, setOutcomeNarrative] = useState('')
+  const [turnCounter, setTurnCounter] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [retryFn, setRetryFn] = useState<(() => void) | null>(null)
 
@@ -51,15 +55,17 @@ export default function PlayPage() {
   const buildStoryContext = useCallback((): StoryContext => ({
     adventureStyle,
     storyHistory: storyHistory.slice(-MAX_STORY_HISTORY),
-    characters: selectedPlayers.map(p => {
-      const char = characters.find(c => c.playerId === p.id)!
-      return {
-        playerId: p.id,
-        playerName: p.name,
-        characterName: char.name,
-        class: char.class,
-      }
-    }),
+    characters: selectedPlayers
+      .filter(p => characters.find(c => c.playerId === p.id))
+      .map(p => {
+        const char = characters.find(c => c.playerId === p.id)!
+        return {
+          playerId: p.id,
+          playerName: p.name,
+          characterName: char.name,
+          class: char.class,
+        }
+      }),
     currentPlayerId: currentPlayer?.id ?? '',
   }), [adventureStyle, storyHistory, selectedPlayers, characters, currentPlayer])
 
@@ -105,8 +111,10 @@ export default function PlayPage() {
     }
   }, [_hasHydrated, selectedPlayers, characters, router])
 
+  // Clear retryFn when error clears
+  useEffect(() => { if (!error) setRetryFn(null) }, [error])
+
   // Load first scene on mount, and new scene on player rotation
-  const [turnCounter, setTurnCounter] = useState(0)
   useEffect(() => {
     if (!_hasHydrated || !currentPlayer) return
     loadScene()
