@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { PageContainer } from '@/components/layout/page-container'
 import { SceneDisplay } from '@/components/game/scene-display'
@@ -8,66 +8,109 @@ import { PlayerTurn } from '@/components/game/player-turn'
 import { ActionPicker } from '@/components/game/action-picker'
 import { DiceRoller } from '@/components/game/dice-roller'
 import { OutcomeDisplay } from '@/components/game/outcome-display'
+import { ErrorMessage } from '@/components/game/error-message'
 import { useGameStore } from '@/stores/game-store'
+import { useGameAI } from '@/hooks/use-game-ai'
 import { calculateOutcome } from '@/lib/game/mechanics'
 import { getClassStats } from '@/lib/game/classes'
 import { Button } from '@/components/ui/button'
-import type { Stat } from '@/types/game'
+import type { GeneratedAction, StoryContext } from '@/types/ai'
+import type { OutcomeType } from '@/types/game'
 
-interface ActionOption {
-  id: string
-  text: string
-  stat: Stat
-}
-
-const MOCK_SCENE = {
-  narration: "You stand at the entrance of a dark cave. The air is cool and damp. Strange sounds echo from within, and a faint glow flickers in the distance. What do you do?",
-}
-
-const MOCK_ACTIONS: ActionOption[] = [
-  { id: '1', text: "I carefully enter the cave, looking for danger", stat: 'agility' },
-  { id: '2', text: "I call out to see if anyone is there", stat: 'heart' },
-  { id: '3', text: "I cast a light spell to see better", stat: 'magic' },
-]
+const MAX_STORY_HISTORY = 10
 
 export default function PlayPage() {
   const router = useRouter()
-  const { players, selectedPlayerIds, characters, difficulty, dicePreference } = useGameStore()
+  const {
+    players, selectedPlayerIds, characters, difficulty,
+    adventureStyle, dicePreference, storyHistory, turnHistory,
+    currentPlayerIndex, updateAdventureState, _hasHydrated,
+  } = useGameStore()
+  const {
+    loadingScene, loadingActions, loadingOutcome,
+    error, fetchScene, fetchActions, fetchOutcome,
+  } = useGameAI()
 
   const selectedPlayers = players.filter(p => selectedPlayerIds.includes(p.id))
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
 
   const currentPlayer = selectedPlayers[currentPlayerIndex]
   const currentCharacter = characters.find(c => c.playerId === currentPlayer?.id)
 
-  const [isLoadingNarration, setIsLoadingNarration] = useState(true)
-  const [isLoadingImage, setIsLoadingImage] = useState(true)
   const [narration, setNarration] = useState('')
-  const [gamePhase, setGamePhase] = useState<'scene' | 'action' | 'dice' | 'outcome'>('scene')
-  const [selectedAction, setSelectedAction] = useState<ActionOption | null>(null)
+  const [currentSceneText, setCurrentSceneText] = useState('')
+  const [actions, setActions] = useState<GeneratedAction[]>([])
+  const [gamePhase, setGamePhase] = useState<'loading' | 'scene' | 'action' | 'dice' | 'outcome'>('loading')
+  const [selectedAction, setSelectedAction] = useState<GeneratedAction | null>(null)
   const [diceResult, setDiceResult] = useState<number | null>(null)
-  const [outcome, setOutcome] = useState<ReturnType<typeof calculateOutcome> | null>(null)
+  const [outcomeType, setOutcomeType] = useState<OutcomeType | null>(null)
   const [outcomeNarrative, setOutcomeNarrative] = useState('')
-  const [isLoadingOutcome, setIsLoadingOutcome] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
+  const [retryFn, setRetryFn] = useState<(() => void) | null>(null)
+
+  // Build story context for AI calls
+  const buildStoryContext = useCallback((): StoryContext => ({
+    adventureStyle,
+    storyHistory: storyHistory.slice(-MAX_STORY_HISTORY),
+    characters: selectedPlayers.map(p => {
+      const char = characters.find(c => c.playerId === p.id)!
+      return {
+        playerId: p.id,
+        playerName: p.name,
+        characterName: char.name,
+        class: char.class,
+      }
+    }),
+    currentPlayerId: currentPlayer?.id ?? '',
+  }), [adventureStyle, storyHistory, selectedPlayers, characters, currentPlayer])
+
+  // Load scene for current player
+  const loadScene = useCallback(async () => {
+    setGamePhase('loading')
+    setNarration('')
+    setActions([])
+    setSelectedAction(null)
+    setDiceResult(null)
+    setOutcomeType(null)
+    setOutcomeNarrative('')
+    setRetryFn(null)
+
+    const context = buildStoryContext()
+    const scene = await fetchScene(context)
+    if (scene) {
+      setNarration(scene.narration)
+      setCurrentSceneText(scene.narration)
+      setGamePhase('scene')
+    } else {
+      setRetryFn(() => () => { loadScene() })
+    }
+  }, [buildStoryContext, fetchScene])
+
+  // Load actions for current scene
+  const loadActions = useCallback(async () => {
+    const context = buildStoryContext()
+    const generatedActions = await fetchActions(context, currentSceneText)
+    if (generatedActions) {
+      setActions(generatedActions)
+    } else {
+      setRetryFn(() => () => { loadActions() })
+    }
+  }, [buildStoryContext, fetchActions, currentSceneText])
 
   // Validate all players have characters
   useEffect(() => {
+    if (!_hasHydrated) return
     const missingCharacter = selectedPlayers.some(p => !characters.find(c => c.playerId === p.id))
     if (missingCharacter || selectedPlayers.length === 0) {
       router.push('/characters')
     }
-  }, [selectedPlayers, characters, router])
+  }, [_hasHydrated, selectedPlayers, characters, router])
 
-  // Simulate scene loading (will be replaced by AI in Phase 4)
+  // Load first scene on mount, and new scene on player rotation
+  const [turnCounter, setTurnCounter] = useState(0)
   useEffect(() => {
-    const timer1 = setTimeout(() => {
-      setNarration(MOCK_SCENE.narration)
-      setIsLoadingNarration(false)
-    }, 1000)
-    const timer2 = setTimeout(() => setIsLoadingImage(false), 2000)
-    return () => { clearTimeout(timer1); clearTimeout(timer2) }
-  }, [])
+    if (!_hasHydrated || !currentPlayer) return
+    loadScene()
+  }, [_hasHydrated, turnCounter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!currentPlayer || !currentCharacter) {
     return (
@@ -80,43 +123,73 @@ export default function PlayPage() {
     )
   }
 
-  const handleActionSelect = (action: ActionOption) => {
+  const handleChooseAction = async () => {
+    setGamePhase('action')
+    await loadActions()
+  }
+
+  const handleActionSelect = (action: GeneratedAction) => {
     setSelectedAction(action)
     setGamePhase('dice')
   }
 
-  const handleDiceRoll = (result: number) => {
+  const handleDiceRoll = async (result: number) => {
     setDiceResult(result)
-    if (selectedAction && currentCharacter) {
-      const stats = getClassStats(currentCharacter.class)
-      const calculatedOutcome = calculateOutcome({
-        sceneFit: 'okay', // Will come from AI later
-        statValue: stats[selectedAction.stat],
-        diceRoll: result,
-        difficulty,
-      })
-      setOutcome(calculatedOutcome)
-      setIsLoadingOutcome(true)
-      setTimeout(() => {
-        const narratives = {
-          success: "Your action succeeds brilliantly! The way forward becomes clear.",
-          partial: "It works, but not quite as planned. Something unexpected happens...",
-          failure: "That didn't work, but you notice something else interesting!",
-        }
-        setOutcomeNarrative(narratives[calculatedOutcome.outcome])
-        setIsLoadingOutcome(false)
-      }, 1500)
-    }
+
+    if (!selectedAction || !currentCharacter) return
+
+    const stats = getClassStats(currentCharacter.class)
+    const calculated = calculateOutcome({
+      sceneFit: selectedAction.sceneFit,
+      statValue: stats[selectedAction.stat],
+      diceRoll: result,
+      difficulty,
+    })
+    setOutcomeType(calculated.outcome)
     setGamePhase('outcome')
+
+    // Fetch AI-generated outcome narrative
+    const context = buildStoryContext()
+    const narrative = await fetchOutcome(
+      context,
+      selectedAction.text,
+      selectedAction.stat,
+      calculated.outcome,
+      currentSceneText,
+    )
+    if (narrative) {
+      setOutcomeNarrative(narrative)
+    } else {
+      setOutcomeNarrative('The story continues...')
+    }
   }
 
   const handleContinue = () => {
-    setGamePhase('scene')
-    setSelectedAction(null)
-    setDiceResult(null)
-    setOutcome(null)
-    setOutcomeNarrative('')
-    setCurrentPlayerIndex(prev => (prev + 1) % selectedPlayers.length)
+    // Append turn summary to story history
+    const turnSummary = `${currentPlayer.name}'s character ${currentCharacter.name} chose to ${selectedAction?.text}. Using ${selectedAction?.stat}, they ${outcomeType === 'success' ? 'succeeded' : outcomeType === 'partial' ? 'partially succeeded' : 'faced a twist'}. ${outcomeNarrative}`
+
+    const newStoryHistory = [...storyHistory, turnSummary].slice(-MAX_STORY_HISTORY)
+    const newTurnHistory = [...turnHistory, {
+      playerId: currentPlayer.id,
+      actionChosen: selectedAction?.text ?? '',
+      stat: selectedAction?.stat ?? 'strength',
+      sceneFit: selectedAction?.sceneFit ?? 'okay',
+      diceRoll: diceResult ?? 0,
+      outcome: outcomeType ?? 'partial',
+      narrativeResult: outcomeNarrative,
+    }]
+
+    const nextPlayerIndex = (currentPlayerIndex + 1) % selectedPlayers.length
+
+    updateAdventureState({
+      currentScene: currentSceneText,
+      storyHistory: newStoryHistory,
+      turnHistory: newTurnHistory,
+      currentPlayerIndex: nextPlayerIndex,
+    })
+
+    // Trigger new scene load
+    setTurnCounter(prev => prev + 1)
   }
 
   return (
@@ -147,30 +220,43 @@ export default function PlayPage() {
           characterClass={currentCharacter.class}
         />
 
+        {/* Error display with retry */}
+        {error && retryFn && (
+          <ErrorMessage message={error} onRetry={retryFn} />
+        )}
+
         <SceneDisplay
           narration={narration}
-          isLoadingNarration={isLoadingNarration}
-          isLoadingImage={isLoadingImage}
+          isLoadingNarration={loadingScene}
+          isLoadingImage={false}
         />
 
-        {!isLoadingNarration && gamePhase === 'scene' && (
-          <Button className="w-full" onClick={() => setGamePhase('action')}>Choose Action</Button>
+        {!loadingScene && narration && gamePhase === 'scene' && (
+          <Button className="w-full" onClick={handleChooseAction}>
+            Choose Action
+          </Button>
         )}
 
         {gamePhase === 'action' && (
-          <ActionPicker options={MOCK_ACTIONS} onSelect={handleActionSelect} />
+          loadingActions ? (
+            <div className="text-center text-muted-foreground animate-pulse py-4">
+              Thinking of what you can do...
+            </div>
+          ) : actions.length > 0 ? (
+            <ActionPicker options={actions} onSelect={handleActionSelect} />
+          ) : null
         )}
 
         {gamePhase === 'dice' && selectedAction && (
           <DiceRoller stat={selectedAction.stat} dicePreference={dicePreference} onRoll={handleDiceRoll} />
         )}
 
-        {gamePhase === 'outcome' && outcome && diceResult && (
+        {gamePhase === 'outcome' && outcomeType && diceResult !== null && (
           <OutcomeDisplay
-            outcome={outcome.outcome}
+            outcome={outcomeType}
             diceRoll={diceResult}
             narrative={outcomeNarrative}
-            isLoading={isLoadingOutcome}
+            isLoading={loadingOutcome || !outcomeNarrative}
             onContinue={handleContinue}
           />
         )}

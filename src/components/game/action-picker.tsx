@@ -2,18 +2,13 @@
 
 import { cn } from '@/lib/utils'
 import type { Stat } from '@/types/game'
+import type { GeneratedAction } from '@/types/ai'
 
 const statEmoji: Record<Stat, string> = { strength: '💪', magic: '✨', agility: '🏃', heart: '❤️' }
 
-interface ActionOption {
-  id: string
-  text: string
-  stat: Stat
-}
-
 interface ActionPickerProps {
-  options: ActionOption[]
-  onSelect: (option: ActionOption) => void
+  options: GeneratedAction[]
+  onSelect: (option: GeneratedAction) => void
   disabled?: boolean
 }
 

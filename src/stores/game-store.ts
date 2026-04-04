@@ -17,6 +17,8 @@ interface Character {
 }
 
 interface GameStore {
+  _hasHydrated: boolean
+
   players: Player[]
   addPlayer: (player: Omit<Player, 'id'>) => void
   removePlayer: (id: string) => void
@@ -55,6 +57,8 @@ interface GameStore {
 export const useGameStore = create<GameStore>()(
   persist(
     (set) => ({
+      _hasHydrated: false,
+
       players: [],
       addPlayer: (player) => set((state) => ({
         players: [...state.players, { ...player, id: crypto.randomUUID() }]
@@ -101,6 +105,26 @@ export const useGameStore = create<GameStore>()(
         currentPlayerIndex: 0,
       }),
     }),
-    { name: 'family-quest-storage' }
+    {
+      name: 'family-quest-storage',
+      partialize: (state) => {
+        const { _hasHydrated, ...rest } = state
+        return rest
+      },
+    }
   )
 )
+
+// Mark hydration complete once persist has finished loading from localStorage
+// Guard against SSR where persist API may not be available
+if (typeof window !== 'undefined') {
+  const unsub = useGameStore.persist.onFinishHydration(() => {
+    useGameStore.setState({ _hasHydrated: true })
+    unsub()
+  })
+
+  // Handle case where hydration already completed synchronously
+  if (useGameStore.persist.hasHydrated()) {
+    useGameStore.setState({ _hasHydrated: true })
+  }
+}
