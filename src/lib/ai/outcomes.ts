@@ -24,7 +24,7 @@ export async function generateOutcome(context: OutcomeContext): Promise<string> 
 
   const prompt = `You are a D&D dungeon master narrating an outcome.
 
-${languageInstruction(context.storyContext.language)}
+${languageInstruction(context.storyContext.language, 'text')}
 
 Adventure Style: ${context.storyContext.adventureStyle}
 Current Scene: ${context.currentScene}

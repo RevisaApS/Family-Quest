@@ -11,7 +11,7 @@ vi.mock('@google/generative-ai', () => {
 })
 
 describe('gemini client', () => {
-  it('uses gemini-3.0-flash model', async () => {
+  it('uses gemini-3.5-flash model', async () => {
     const { GoogleGenerativeAI } = await import('@google/generative-ai')
     // Re-import to trigger module execution with the mock
     await import('@/lib/ai/gemini')
@@ -20,7 +20,7 @@ describe('gemini client', () => {
     const calls = instance.getGenerativeModel.mock.calls
 
     expect(calls).toHaveLength(2) // textModel and jsonModel
-    expect(calls[0][0].model).toBe('gemini-3.0-flash')
-    expect(calls[1][0].model).toBe('gemini-3.0-flash')
+    expect(calls[0][0].model).toBe('gemini-3.5-flash')
+    expect(calls[1][0].model).toBe('gemini-3.5-flash')
   })
 })

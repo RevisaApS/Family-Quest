@@ -53,6 +53,10 @@ describe('Danish language instruction in prompts', () => {
     })
     const prompt = generateText.mock.calls[0][0] as string
     expect(prompt).toContain('Danish')
+    // The outcome endpoint returns plain prose; the JSON-field-names variant
+    // of the language note makes the model wrap the narrative in a JSON object.
+    expect(prompt).not.toContain('JSON field names')
+    expect(prompt).toContain('plain prose only')
   })
 
   it('English mode does not instruct Danish', async () => {
