@@ -1,4 +1,5 @@
 import { generateJSON } from './gemini'
+import { languageInstruction } from './language'
 import type { GeneratedScene, StoryContext } from '@/types/ai'
 
 const STYLE_PROMPTS = {
@@ -14,6 +15,8 @@ export async function generateScene(context: StoryContext): Promise<GeneratedSce
 
 Adventure Style: ${context.adventureStyle}
 ${STYLE_PROMPTS[context.adventureStyle]}
+
+${languageInstruction(context.language)}
 
 Current Characters:
 ${context.characters.map(c => `- ${c.characterName} the ${c.class} (played by ${c.playerName})`).join('\n')}

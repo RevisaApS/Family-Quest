@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import type { AdventureStyle } from '@/types/game'
 
@@ -9,32 +10,28 @@ interface StyleOptionProps {
   onSelect: () => void
 }
 
-const styleData: Record<AdventureStyle, { name: string; ages: string; emoji: string; description: string; bgClass: string }> = {
-  whimsical: { name: 'Whimsical', ages: '4-7', emoji: '🌈', description: 'Bright, gentle, storybook adventures', bgClass: 'from-orange-400 to-amber-400' },
-  realistic: { name: 'Realistic', ages: '7-12', emoji: '⚔️', description: 'Exciting fantasy with action and heroes', bgClass: 'from-emerald-600 to-teal-600' },
-  dark: { name: 'Dark', ages: '13+', emoji: '🌑', description: 'Atmospheric with complex themes', bgClass: 'from-slate-700 to-slate-900' },
+const styleData: Record<AdventureStyle, { name: string; ages: string; emoji: string; bgTint: string }> = {
+  whimsical: { name: 'Whimsical', ages: '4-7', emoji: '🌈', bgTint: 'bg-orange-950/20' },
+  realistic: { name: 'Realistic', ages: '7-12', emoji: '⚔️', bgTint: 'bg-emerald-950/20' },
+  dark: { name: 'Dark', ages: '13+', emoji: '💀', bgTint: 'bg-slate-950/30' },
 }
 
 export function StyleOption({ style, selected, onSelect }: StyleOptionProps) {
   const data = styleData[style]
   return (
-    <button
+    <motion.button
       onClick={onSelect}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.96 }}
       className={cn(
-        "w-full text-left rounded-lg overflow-hidden transition-all border-2",
+        "flex-1 p-3 rounded-lg border-2 transition-all text-center",
+        data.bgTint,
         selected ? "border-primary ring-2 ring-primary/20" : "border-border"
       )}
     >
-      <div className={cn("h-16 flex items-center justify-center bg-gradient-to-r", data.bgClass)}>
-        <span className="text-3xl">{data.emoji}</span>
-      </div>
-      <div className="p-3 bg-card">
-        <div className="flex justify-between items-center mb-1">
-          <span className="font-serif text-foreground">{data.name}</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{data.ages}</span>
-        </div>
-        <p className="text-sm text-muted-foreground">{data.description}</p>
-      </div>
-    </button>
+      <span className="text-3xl block mb-1">{data.emoji}</span>
+      <span className="font-serif text-foreground block">{data.name}</span>
+      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground inline-block mt-1">{data.ages}</span>
+    </motion.button>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { PageContainer } from '@/components/layout/page-container'
 import { SceneDisplay } from '@/components/game/scene-display'
 import { PlayerTurn } from '@/components/game/player-turn'
@@ -14,6 +15,7 @@ import { useGameAI } from '@/hooks/use-game-ai'
 import { calculateOutcome } from '@/lib/game/mechanics'
 import { getClassStats } from '@/lib/game/classes'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { GeneratedAction, StoryContext } from '@/types/ai'
 import type { OutcomeType } from '@/types/game'
 
@@ -23,8 +25,9 @@ export default function PlayPage() {
   const router = useRouter()
   const {
     players, selectedPlayerIds, characters, difficulty,
-    adventureStyle, dicePreference, storyHistory, turnHistory,
+    adventureStyle, dicePreference, language, storyHistory, turnHistory,
     currentPlayerIndex, updateAdventureState, _hasHydrated,
+    saveAdventure, savedAdventures, activeAdventureId,
   } = useGameStore()
   const {
     loadingScene, loadingActions, loadingOutcome,
@@ -49,6 +52,7 @@ export default function PlayPage() {
   const [outcomeNarrative, setOutcomeNarrative] = useState('')
   const [turnCounter, setTurnCounter] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [saveName, setSaveName] = useState('')
   const [retryFn, setRetryFn] = useState<(() => void) | null>(null)
 
   // Build story context for AI calls
@@ -67,7 +71,8 @@ export default function PlayPage() {
         }
       }),
     currentPlayerId: currentPlayer?.id ?? '',
-  }), [adventureStyle, storyHistory, selectedPlayers, characters, currentPlayer])
+    language,
+  }), [adventureStyle, storyHistory, selectedPlayers, characters, currentPlayer, language])
 
   // Load scene for current player
   const loadScene = useCallback(async () => {
@@ -200,12 +205,22 @@ export default function PlayPage() {
     setTurnCounter(prev => prev + 1)
   }
 
+  const phaseTransition = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+    transition: { duration: 0.3 },
+  }
+
   return (
     <PageContainer>
       <div className="space-y-4">
         {/* Pause button */}
         <button
-          onClick={() => setIsPaused(true)}
+          onClick={() => {
+            setSaveName(savedAdventures.find(a => a.id === activeAdventureId)?.name ?? '')
+            setIsPaused(true)
+          }}
           className="fixed top-4 right-4 p-2 rounded-lg bg-card border border-border z-40"
         >
           ⏸
@@ -217,7 +232,24 @@ export default function PlayPage() {
             <div className="bg-card p-6 rounded-lg border border-border space-y-4 max-w-xs w-full">
               <h2 className="text-xl font-serif text-primary text-center">Paused</h2>
               <Button className="w-full" onClick={() => setIsPaused(false)}>Resume</Button>
-              <Button variant="outline" className="w-full" onClick={() => router.push('/')}>Save &amp; Quit</Button>
+              <div className="space-y-2">
+                <Input
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder="Name this adventure"
+                  className="text-center"
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    saveAdventure(saveName || undefined)
+                    router.push('/')
+                  }}
+                >
+                  Save &amp; Quit
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -233,41 +265,103 @@ export default function PlayPage() {
           <ErrorMessage message={error} onRetry={retryFn} />
         )}
 
-        <SceneDisplay
-          narration={narration}
-          isLoadingNarration={loadingScene}
-          isLoadingImage={false}
-        />
+        <AnimatePresence mode="wait">
+          {/* Loading state for initial scene */}
+          {gamePhase === 'loading' && !error && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="text-center py-12 space-y-4"
+            >
+              <span className="text-5xl block animate-bounce">🏰</span>
+              <p className="text-primary font-serif text-lg animate-pulse">Preparing your adventure...</p>
+            </motion.div>
+          )}
 
-        {!loadingScene && narration && gamePhase === 'scene' && (
-          <Button className="w-full" onClick={handleChooseAction}>
-            Choose Action
-          </Button>
-        )}
+          {gamePhase === 'scene' && (
+            <motion.div
+              key="scene"
+              {...phaseTransition}
+              className="space-y-4"
+            >
+              <SceneDisplay
+                narration={narration}
+                isLoadingNarration={loadingScene}
+                isLoadingImage={false}
+              />
 
-        {gamePhase === 'action' && (
-          loadingActions ? (
-            <div className="text-center text-muted-foreground animate-pulse py-4">
-              Thinking of what you can do...
-            </div>
-          ) : actions.length > 0 ? (
-            <ActionPicker options={actions} onSelect={handleActionSelect} />
-          ) : null
-        )}
+              {!loadingScene && narration && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                >
+                  <Button className="w-full" onClick={handleChooseAction}>
+                    Choose Action
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
 
-        {gamePhase === 'dice' && selectedAction && (
-          <DiceRoller stat={selectedAction.stat} dicePreference={dicePreference} onRoll={handleDiceRoll} />
-        )}
+          {gamePhase === 'action' && (
+            <motion.div
+              key="action"
+              {...phaseTransition}
+            >
+              <SceneDisplay
+                narration={narration}
+                isLoadingNarration={false}
+                isLoadingImage={false}
+              />
 
-        {gamePhase === 'outcome' && outcomeType && diceResult !== null && (
-          <OutcomeDisplay
-            outcome={outcomeType}
-            diceRoll={diceResult}
-            narrative={outcomeNarrative}
-            isLoading={loadingOutcome || !outcomeNarrative}
-            onContinue={handleContinue}
-          />
-        )}
+              <div className="mt-4">
+                {loadingActions ? (
+                  <div className="text-center text-muted-foreground animate-pulse py-4">
+                    Thinking of what you can do...
+                  </div>
+                ) : actions.length > 0 ? (
+                  <ActionPicker options={actions} onSelect={handleActionSelect} />
+                ) : null}
+              </div>
+            </motion.div>
+          )}
+
+          {gamePhase === 'dice' && selectedAction && (
+            <motion.div
+              key="dice"
+              {...phaseTransition}
+            >
+              <SceneDisplay
+                narration={narration}
+                isLoadingNarration={false}
+                isLoadingImage={false}
+              />
+
+              <div className="mt-4">
+                <DiceRoller stat={selectedAction.stat} dicePreference={dicePreference} onRoll={handleDiceRoll} />
+              </div>
+            </motion.div>
+          )}
+
+          {gamePhase === 'outcome' && outcomeType && diceResult !== null && (
+            <motion.div
+              key="outcome"
+              {...phaseTransition}
+            >
+              <OutcomeDisplay
+                outcome={outcomeType}
+                diceRoll={diceResult}
+                narrative={outcomeNarrative}
+                isLoading={loadingOutcome || !outcomeNarrative}
+                onContinue={handleContinue}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </PageContainer>
   )

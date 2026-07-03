@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import type { Stat } from '@/types/game'
 
@@ -17,8 +16,6 @@ interface DiceRollerProps {
 export function DiceRoller({ stat, dicePreference, onRoll }: DiceRollerProps) {
   const [isRolling, setIsRolling] = useState(false)
   const [result, setResult] = useState<number | null>(null)
-  const [physicalInput, setPhysicalInput] = useState('')
-  const [inputError, setInputError] = useState('')
 
   const handleDigitalRoll = () => {
     setIsRolling(true)
@@ -36,13 +33,8 @@ export function DiceRoller({ stat, dicePreference, onRoll }: DiceRollerProps) {
     }, 100)
   }
 
-  const handlePhysicalSubmit = () => {
-    const value = parseInt(physicalInput)
-    if (isNaN(value) || value < 1 || value > 6) {
-      setInputError('Please enter 1-6')
-      return
-    }
-    setInputError('')
+  const handlePhysicalPick = (value: number) => {
+    if (result !== null) return
     setResult(value)
     onRoll(value)
   }
@@ -72,12 +64,23 @@ export function DiceRoller({ stat, dicePreference, onRoll }: DiceRollerProps) {
         </Button>
       ) : (
         <div className="space-y-2">
-          <p className="text-center text-sm text-muted-foreground">Roll your physical d6 and enter the result:</p>
-          <div className="flex gap-2">
-            <Input type="number" min="1" max="6" value={physicalInput} onChange={(e) => setPhysicalInput(e.target.value)} placeholder="1-6" className="text-center text-xl" />
-            <Button onClick={handlePhysicalSubmit}>Submit</Button>
+          <p className="text-center text-sm text-muted-foreground">🎲 Roll your dice, then tap the number you rolled:</p>
+          <div className="grid grid-cols-3 gap-2">
+            {([1, 2, 3, 4, 5, 6] as const).map((value) => (
+              <Button
+                key={value}
+                variant="outline"
+                disabled={result !== null}
+                onClick={() => handlePhysicalPick(value)}
+                className={cn(
+                  "h-16 text-3xl font-bold",
+                  result === value && "border-primary ring-2 ring-primary/30 bg-primary/10"
+                )}
+              >
+                {value}
+              </Button>
+            ))}
           </div>
-          {inputError && <p className="text-sm text-destructive text-center">{inputError}</p>}
         </div>
       )}
     </div>

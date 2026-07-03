@@ -1,4 +1,5 @@
 import { generateText } from './gemini'
+import { languageInstruction } from './language'
 import type { StoryContext } from '@/types/ai'
 import type { OutcomeType, Stat } from '@/types/game'
 
@@ -22,6 +23,8 @@ export async function generateOutcome(context: OutcomeContext): Promise<string> 
   )
 
   const prompt = `You are a D&D dungeon master narrating an outcome.
+
+${languageInstruction(context.storyContext.language)}
 
 Adventure Style: ${context.storyContext.adventureStyle}
 Current Scene: ${context.currentScene}

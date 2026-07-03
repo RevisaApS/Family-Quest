@@ -1,4 +1,5 @@
 import type { Stat, SceneFit, AdventureStyle, CharacterClass } from './game'
+import type { Language } from '@/lib/ai/language'
 
 export interface GeneratedScene {
   narration: string
@@ -28,4 +29,5 @@ export interface StoryContext {
     class: CharacterClass
   }>
   currentPlayerId: string
+  language: Language
 }
