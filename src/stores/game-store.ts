@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { CharacterClass, AdventureStyle, Difficulty, TurnRecord } from '@/types/game'
+import type { CharacterClass, AdventureStyle, Difficulty, TurnRecord, HeroState, BossState } from '@/types/game'
+import { createHero } from '@/lib/game/rpg'
 import type { Language } from '@/lib/ai/language'
 
 interface Player {
@@ -30,6 +31,8 @@ export interface SavedAdventure {
     currentPlayerIndex: number
     adventureStyle: AdventureStyle
     difficulty: Difficulty
+    heroes?: HeroState[]
+    boss?: BossState | null
   }
 }
 
@@ -65,6 +68,13 @@ interface GameStore {
   storyHistory: string[]
   turnHistory: TurnRecord[]
   currentPlayerIndex: number
+  heroes: HeroState[]
+  boss: BossState | null
+  soundEnabled: boolean
+  setSoundEnabled: (enabled: boolean) => void
+  initHeroes: (playerIds: string[]) => void
+  updateHero: (hero: HeroState) => void
+  setBoss: (boss: BossState | null) => void
   updateAdventureState: (state: Partial<{
     currentScene: string
     storyHistory: string[]
@@ -90,6 +100,8 @@ const takeSnapshot = (state: GameStore): SavedAdventure['snapshot'] => ({
   currentPlayerIndex: state.currentPlayerIndex,
   adventureStyle: state.adventureStyle,
   difficulty: state.difficulty,
+  heroes: state.heroes,
+  boss: state.boss,
 })
 
 // Snapshot the in-progress story into its slot (or a new auto-named one) so
@@ -174,12 +186,23 @@ export const useGameStore = create<GameStore>()(
       storyHistory: [],
       turnHistory: [],
       currentPlayerIndex: 0,
+      heroes: [],
+      boss: null,
+      soundEnabled: true,
+      setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
+      initHeroes: (playerIds) => set({ heroes: playerIds.map(createHero), boss: null }),
+      updateHero: (hero) => set((state) => ({
+        heroes: state.heroes.map(h => h.playerId === hero.playerId ? hero : h),
+      })),
+      setBoss: (boss) => set({ boss }),
       updateAdventureState: (updates) => set((prev) => ({ ...prev, ...updates })),
       resetAdventure: () => set({
         currentScene: '',
         storyHistory: [],
         turnHistory: [],
         currentPlayerIndex: 0,
+        heroes: [],
+        boss: null,
       }),
 
       savedAdventures: [],
@@ -189,7 +212,15 @@ export const useGameStore = create<GameStore>()(
         if (!state.savedAdventures.some(a => a.id === id)) return state
         const saved = upsertCurrent(state)
         const target = saved.savedAdventures.find(a => a.id === id)!
-        return { ...saved, ...target.snapshot, activeAdventureId: id }
+        // Saves from before the RPG update have no heroes/boss — heroes are
+        // re-created at level 1 on the play page when the list is empty.
+        return {
+          ...saved,
+          ...target.snapshot,
+          heroes: target.snapshot.heroes ?? [],
+          boss: target.snapshot.boss ?? null,
+          activeAdventureId: id,
+        }
       }),
       deleteAdventure: (id) => set((state) => ({
         savedAdventures: state.savedAdventures.filter(a => a.id !== id),
@@ -201,18 +232,24 @@ export const useGameStore = create<GameStore>()(
         storyHistory: [],
         turnHistory: [],
         currentPlayerIndex: 0,
+        heroes: [],
+        boss: null,
         activeAdventureId: null,
       })),
     }),
     {
       name: 'family-quest-storage',
-      version: 1,
+      version: 2,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
+      // v1 predates the RPG update (heroes, boss, sound).
       migrate: (persisted, version) => {
-        const state = persisted as GameStore
+        let state = persisted as GameStore
         if (version < 1) {
-          return { ...state, language: 'da' as Language, dicePreference: 'physical' as const }
+          state = { ...state, language: 'da' as Language, dicePreference: 'physical' as const }
+        }
+        if (version < 2) {
+          state = { ...state, heroes: [], boss: null, soundEnabled: true }
         }
         return state
       },

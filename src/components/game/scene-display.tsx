@@ -16,10 +16,20 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
   return (
     <div className="space-y-4">
       <div className="relative aspect-video rounded-lg overflow-hidden border border-border shadow-[0_0_15px_rgba(212,168,67,0.1)]">
-        {isLoadingImage ? (
+        {imageUrl ? (
+          <motion.img
+            key={imageUrl}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
+            src={imageUrl}
+            alt="Scene"
+            className="w-full h-full object-cover"
+          />
+        ) : isLoadingImage ? (
+          // The picture is painted in the background while the scene is read
+          // aloud — shimmer until it fades in.
           <LoadingShimmer className="w-full h-full" />
-        ) : imageUrl ? (
-          <img src={imageUrl} alt="Scene" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-card flex items-center justify-center">
             <span className="text-4xl">🏰</span>

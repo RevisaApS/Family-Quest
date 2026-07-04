@@ -4,6 +4,21 @@
 **GitHub (private):** https://github.com/StevenValentin/family-quest
 **Vercel project:** family-quest (team: stevenvalentin-vismacoms-projects)
 
+## ⚠️ RPG update (July 2026): redeploy needed
+
+The RPG update (scene images, levels, skills, loot, boss fights, sounds) only
+goes live after a redeploy from a machine with the Vercel login:
+
+```bash
+git pull
+vercel deploy --prod --yes
+```
+
+Scene images use `gemini-3-pro-image-preview` (Nano Banana Pro) and fall back
+to `gemini-2.5-flash-image` — both use the same `GOOGLE_AI_API_KEY`. If images
+don't appear, the story still works; check the Vercel function logs for which
+image model failed.
+
 ## ⚠️ Before the vacation: 2 manual steps
 
 The app is deployed but **cannot generate stories yet** — both Google API keys

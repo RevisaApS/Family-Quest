@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react'
 import type { StoryContext, GeneratedScene, GeneratedAction } from '@/types/ai'
-import type { OutcomeType, Stat } from '@/types/game'
+import type { OutcomeType, Stat, EquipSlot } from '@/types/game'
+import type { Language } from '@/lib/ai/language'
 
 export function useGameAI() {
   const [loadingScene, setLoadingScene] = useState(false)
@@ -54,7 +55,9 @@ export function useGameAI() {
     actionChosen: string,
     stat: Stat,
     outcome: OutcomeType,
-    currentScene: string
+    currentScene: string,
+    damageTaken = 0,
+    bossDamage = 0,
   ): Promise<string | null> => {
     setLoadingOutcome(true)
     setError(null)
@@ -62,7 +65,7 @@ export function useGameAI() {
       const response = await fetch('/api/ai/outcome', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storyContext, actionChosen, stat, outcome, currentScene }),
+        body: JSON.stringify({ storyContext, actionChosen, stat, outcome, currentScene, damageTaken, bossDamage }),
       })
       if (!response.ok) throw new Error('Failed to generate outcome')
       const data = await response.json()
@@ -75,13 +78,17 @@ export function useGameAI() {
     }
   }, [])
 
-  const fetchImage = useCallback(async (sceneDescription: string, style: string): Promise<string | null> => {
+  const fetchImage = useCallback(async (
+    sceneDescription: string,
+    style: string,
+    heroDescriptions: string[] = []
+  ): Promise<string | null> => {
     setLoadingImage(true)
     try {
       const response = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sceneDescription, style }),
+        body: JSON.stringify({ sceneDescription, style, heroDescriptions }),
       })
       if (!response.ok) return null
       const data = await response.json()
@@ -93,9 +100,30 @@ export function useGameAI() {
     }
   }, [])
 
+  // Loot naming is decorative — failures fall back to canned names, no error state.
+  const fetchLootName = useCallback(async (
+    slot: EquipSlot,
+    stat: Stat,
+    language: Language,
+    sceneContext: string
+  ): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/ai/loot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot, stat, language, sceneContext }),
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      return data.name ?? null
+    } catch {
+      return null
+    }
+  }, [])
+
   return {
     loadingScene, loadingActions, loadingOutcome, loadingImage,
     error,
-    fetchScene, fetchActions, fetchOutcome, fetchImage,
+    fetchScene, fetchActions, fetchOutcome, fetchImage, fetchLootName,
   }
 }

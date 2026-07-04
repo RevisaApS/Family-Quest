@@ -23,6 +23,44 @@ export interface ActionOption {
   sceneFitReason: string
 }
 
+export type EquipSlot = 'weapon' | 'armor' | 'trinket'
+
+export interface LootItem {
+  id: string
+  slot: EquipSlot
+  name: string
+  emoji: string
+  stat: Stat
+  bonus: number
+}
+
+export interface Skill {
+  id: string
+  name: string
+  emoji: string
+  stat: Stat
+  bonus: number
+  description: string
+}
+
+export interface HeroState {
+  playerId: string
+  hp: number
+  maxHp: number
+  xp: number
+  level: number
+  skills: Skill[]
+  equipment: Partial<Record<EquipSlot, LootItem>>
+  knockedOut: boolean
+}
+
+export interface BossState {
+  name: string
+  hp: number
+  maxHp: number
+  defeated: boolean
+}
+
 export interface GameState {
   currentScene: string
   currentPlayerId: string

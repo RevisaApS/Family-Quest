@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { sfx } from '@/lib/sound'
 import type { Stat } from '@/types/game'
 
 const statEmoji: Record<Stat, string> = { strength: '💪', magic: '✨', agility: '🏃', heart: '❤️' }
@@ -10,15 +11,18 @@ const statEmoji: Record<Stat, string> = { strength: '💪', magic: '✨', agilit
 interface DiceRollerProps {
   stat: Stat
   dicePreference: 'physical' | 'digital'
+  // Total stat bonus (class + skills + gear) shown so kids see their power grow
+  statBonus?: number
   onRoll: (result: number) => void
 }
 
-export function DiceRoller({ stat, dicePreference, onRoll }: DiceRollerProps) {
+export function DiceRoller({ stat, dicePreference, statBonus, onRoll }: DiceRollerProps) {
   const [isRolling, setIsRolling] = useState(false)
   const [result, setResult] = useState<number | null>(null)
 
   const handleDigitalRoll = () => {
     setIsRolling(true)
+    sfx.diceRoll()
     let count = 0
     const interval = setInterval(() => {
       setResult(Math.floor(Math.random() * 6) + 1)
@@ -44,6 +48,9 @@ export function DiceRoller({ stat, dicePreference, onRoll }: DiceRollerProps) {
       <div className="text-center space-y-2">
         <p className="text-muted-foreground">
           This tests your {statEmoji[stat]} {stat.charAt(0).toUpperCase() + stat.slice(1)}
+          {statBonus !== undefined && (
+            <span className="ml-1 font-bold text-primary">+{statBonus}</span>
+          )}
         </p>
         <p className="text-lg font-medium">Roll and see what happens!</p>
       </div>
