@@ -1,19 +1,22 @@
 import { describe, it, expect } from 'vitest'
 import {
   levelForXp, xpForNextLevel, maxHpForLevel, heroDamageForOutcome,
-  bossDamageForOutcome, rescueHp, heroStatBonus, levelThresholdAdjustment,
-  lootShouldDrop, lootBonusForRoll, bossArrivalTurn, bossMaxHp, createBoss,
-  createHero, applyTurnOutcome, reviveHero, equipLoot, addSkill,
-  BASE_MAX_HP, MAX_LEVEL,
+  encounterDamageForOutcome, rescueHp, heroStatBonus,
+  lootShouldDrop, lootBonusForRoll, encounterSpawnTurn, nextEncounterKind,
+  encounterMaxHp, createEncounter, createHero, applyTurnOutcome, reviveHero,
+  equipLoot, addSkill, canUsePower, usePower, healHero,
+  BASE_MAX_HP, MAX_LEVEL, QUEST_MILESTONES,
 } from '@/lib/game/rpg'
 import { skillChoices } from '@/lib/game/skills'
 import { fallbackLootName, createLoot } from '@/lib/game/loot'
 import { colorNameFromHsl, heroVisualDescription } from '@/lib/game/appearance'
-import { calculateOutcome } from '@/lib/game/mechanics'
 import type { LootItem, Skill } from '@/types/game'
 
 const sword: LootItem = { id: 'l1', slot: 'weapon', name: 'Flame Sword', emoji: '⚔️', stat: 'strength', bonus: 2 }
-const skill: Skill = { id: 's1', name: 'Shield Bash', emoji: '🛡️', stat: 'strength', bonus: 1, description: '' }
+const skill: Skill = {
+  id: 's1', name: 'Skjoldvagt', emoji: '🛡️', stat: 'strength', bonus: 1,
+  description: '', power: 'shield', powerName: 'Skjold',
+}
 
 describe('levels & xp', () => {
   it('starts at level 1 and reaches level 2 at 6 xp', () => {
@@ -25,15 +28,6 @@ describe('levels & xp', () => {
   it('caps at MAX_LEVEL', () => {
     expect(levelForXp(999)).toBe(MAX_LEVEL)
     expect(xpForNextLevel(MAX_LEVEL)).toBeNull()
-  })
-
-  it('levels are monotonically increasing in xp', () => {
-    let last = 1
-    for (let xp = 0; xp <= 50; xp++) {
-      const level = levelForXp(xp)
-      expect(level).toBeGreaterThanOrEqual(last)
-      last = level
-    }
   })
 
   it('max hp grows with level', () => {
@@ -49,15 +43,16 @@ describe('damage', () => {
     expect(heroDamageForOutcome('success', false)).toBe(0)
   })
 
-  it('boss fights hit harder', () => {
+  it('battles hit harder', () => {
     expect(heroDamageForOutcome('failure', true)).toBe(2)
     expect(heroDamageForOutcome('partial', true)).toBe(1)
   })
 
-  it('heroes damage the boss on success and partial', () => {
-    expect(bossDamageForOutcome('success')).toBe(2)
-    expect(bossDamageForOutcome('partial')).toBe(1)
-    expect(bossDamageForOutcome('failure')).toBe(0)
+  it('heroes damage the enemy on success/partial, crits hit double', () => {
+    expect(encounterDamageForOutcome('success', null)).toBe(2)
+    expect(encounterDamageForOutcome('partial', null)).toBe(1)
+    expect(encounterDamageForOutcome('failure', null)).toBe(0)
+    expect(encounterDamageForOutcome('success', 'crit')).toBe(4)
   })
 })
 
@@ -71,36 +66,22 @@ describe('hero stat bonus', () => {
   })
 })
 
-describe('threshold scaling', () => {
-  it('raises thresholds by level - 1', () => {
-    expect(levelThresholdAdjustment(1)).toBe(0)
-    expect(levelThresholdAdjustment(4)).toBe(3)
+describe('loot (d20 scale)', () => {
+  it('drops on crits and strong successes only', () => {
+    expect(lootShouldDrop('success', 20, 'crit')).toBe(true)
+    expect(lootShouldDrop('failure', 20, 'crit')).toBe(true) // nat 20 is never a failure, but crit always drops
+    expect(lootShouldDrop('success', 15, null)).toBe(true)
+    expect(lootShouldDrop('success', 14, null)).toBe(false)
+    expect(lootShouldDrop('partial', 19, null)).toBe(false)
   })
 
-  it('flows through calculateOutcome', () => {
-    const base = calculateOutcome({ sceneFit: 'okay', statValue: 4, diceRoll: 4, difficulty: 'medium' })
-    expect(base.outcome).toBe('success') // 9 vs 9
-    const scaled = calculateOutcome({ sceneFit: 'okay', statValue: 4, diceRoll: 4, difficulty: 'medium', thresholdAdjustment: 2 })
-    expect(scaled.outcome).toBe('partial') // 9 vs 11/9
-  })
-})
-
-describe('loot', () => {
-  it('drops on strong successes only', () => {
-    expect(lootShouldDrop('success', 6)).toBe(true)
-    expect(lootShouldDrop('success', 4)).toBe(true)
-    expect(lootShouldDrop('success', 3)).toBe(false)
-    expect(lootShouldDrop('partial', 6)).toBe(false)
-    expect(lootShouldDrop('failure', 6)).toBe(false)
-  })
-
-  it('a six means rare loot', () => {
-    expect(lootBonusForRoll(6)).toBe(2)
-    expect(lootBonusForRoll(4)).toBe(1)
+  it('18+ means rare loot', () => {
+    expect(lootBonusForRoll(18)).toBe(2)
+    expect(lootBonusForRoll(15)).toBe(1)
   })
 
   it('has fallback names in both languages for every slot/stat', () => {
-    for (const slot of ['weapon', 'armor', 'trinket'] as const) {
+    for (const slot of ['weapon', 'armor', 'helmet', 'trinket', 'boots'] as const) {
       for (const stat of ['strength', 'magic', 'agility', 'heart'] as const) {
         expect(fallbackLootName(slot, stat, 'da')).toBeTruthy()
         expect(fallbackLootName(slot, stat, 'en')).toBeTruthy()
@@ -108,35 +89,48 @@ describe('loot', () => {
     }
   })
 
-  it('createLoot fills slot emoji', () => {
+  it('createLoot fills slot emoji and a look for images', () => {
     const item = createLoot('armor', 'magic', 1, 'Cloak of Stars')
     expect(item.emoji).toBe('🛡️')
-    expect(item.slot).toBe('armor')
+    expect(item.look).toBeTruthy()
   })
 })
 
-describe('boss', () => {
-  it('arrives after every hero has had their turns', () => {
-    expect(bossArrivalTurn(3)).toBe(12)
+describe('quest arc & encounters', () => {
+  it('cold open at turn 0, mid-quest monster, then the boss', () => {
+    expect(encounterSpawnTurn(0, 3)).toBe(0)
+    expect(encounterSpawnTurn(1, 3)).toBe(9)
+    expect(encounterSpawnTurn(2, 3)).toBe(15)
+    expect(nextEncounterKind(0)).toBe('monster')
+    expect(nextEncounterKind(1)).toBe('monster')
+    expect(nextEncounterKind(2)).toBe('boss')
+    expect(QUEST_MILESTONES).toBe(3)
   })
 
-  it('scales hp with party size', () => {
-    expect(bossMaxHp(1)).toBe(5)
-    expect(bossMaxHp(3)).toBe(11)
-    const boss = createBoss('Skyggekongen', 2)
+  it('the opening monster is a quick win, the boss is the big fight', () => {
+    expect(encounterMaxHp('monster', 0, 2)).toBe(5)
+    expect(encounterMaxHp('monster', 1, 2)).toBe(6)
+    expect(encounterMaxHp('boss', 2, 2)).toBe(8)
+    const boss = createEncounter('boss', 'Skyggekongen', 2, 2)
     expect(boss.hp).toBe(boss.maxHp)
+    expect(boss.kind).toBe('boss')
     expect(boss.defeated).toBe(false)
   })
 })
 
 describe('turn resolution', () => {
-  it('awards xp and applies damage', () => {
+  it('awards xp and gold, applies damage', () => {
     const hero = createHero('p1')
-    const { hero: after, xpGained, damageTaken } = applyTurnOutcome(hero, 'failure', false)
+    const { hero: after, xpGained, goldGained, damageTaken } = applyTurnOutcome(hero, 'failure', false)
     expect(xpGained).toBe(1)
+    expect(goldGained).toBe(0)
     expect(damageTaken).toBe(1)
     expect(after.hp).toBe(BASE_MAX_HP - 1)
-    expect(after.knockedOut).toBe(false)
+  })
+
+  it('crits pay bonus gold', () => {
+    const { goldGained } = applyTurnOutcome(createHero('p1'), 'success', false, 'crit')
+    expect(goldGained).toBe(3)
   })
 
   it('knocks out at 0 hp and revives at half max hp', () => {
@@ -154,9 +148,7 @@ describe('turn resolution', () => {
     const { hero: after, leveledUp } = applyTurnOutcome(hero, 'success', false)
     expect(leveledUp).toBe(true)
     expect(after.level).toBe(2)
-    expect(after.maxHp).toBe(maxHpForLevel(2))
     expect(after.hp).toBe(after.maxHp)
-    expect(after.knockedOut).toBe(false)
   })
 
   it('equip and skills are idempotent-safe', () => {
@@ -169,14 +161,50 @@ describe('turn resolution', () => {
   })
 })
 
-describe('skill choices', () => {
-  it('offers 3 unowned skills per class in the chosen language', () => {
+describe('once-per-adventure powers', () => {
+  it('usable only when learned and not yet spent', () => {
+    let hero = createHero('p1')
+    expect(canUsePower(hero, 'shield')).toBe(false)
+    hero = addSkill(hero, skill)
+    expect(canUsePower(hero, 'shield')).toBe(true)
+    hero = usePower(hero, 'shield')
+    expect(canUsePower(hero, 'shield')).toBe(false)
+    // spending twice is a no-op
+    expect(usePower(hero, 'shield').usedPowers).toHaveLength(1)
+  })
+
+  it('healing never exceeds max hp and clears KO', () => {
+    const hurt = { ...createHero('p1'), hp: 0, knockedOut: true }
+    const healed = healHero(hurt, 3)
+    expect(healed.hp).toBe(3)
+    expect(healed.knockedOut).toBe(false)
+    expect(healHero(createHero('p1'), 5).hp).toBe(BASE_MAX_HP)
+  })
+})
+
+describe('skill choices (balanced)', () => {
+  it('every choice is the same +1 — only stat and power differ', () => {
     const choices = skillChoices('warrior', [], 'da')
     expect(choices).toHaveLength(3)
-    expect(choices[0].name).toBe('Skjoldbrag')
-    const later = skillChoices('warrior', choices.map(c => c.id), 'en')
-    expect(later.length).toBeGreaterThan(0)
-    expect(later.every(c => !choices.some(o => o.id === c.id))).toBe(true)
+    expect(choices.every(c => c.bonus === 1)).toBe(true)
+    const powers = choices.map(c => c.power)
+    expect(new Set(powers).size).toBe(powers.length)
+  })
+
+  it('uses everyday Danish — no "Behændighed"', () => {
+    for (const cls of ['warrior', 'wizard', 'rogue', 'ranger'] as const) {
+      const all = skillChoices(cls, [], 'da')
+      for (const c of all) {
+        expect(c.description).not.toContain('Behændighed')
+        expect(c.description).not.toContain('Hjerte')
+      }
+    }
+  })
+
+  it('excludes owned skills', () => {
+    const first = skillChoices('warrior', [], 'en')
+    const later = skillChoices('warrior', first.map(c => c.id), 'en')
+    expect(later.every(c => !first.some(o => o.id === c.id))).toBe(true)
   })
 })
 

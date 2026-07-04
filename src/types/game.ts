@@ -4,6 +4,13 @@ export type AdventureStyle = 'whimsical' | 'realistic' | 'dark'
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type SceneFit = 'good' | 'okay' | 'risky'
 export type OutcomeType = 'success' | 'partial' | 'failure'
+export type CritType = 'crit' | 'fumble' | null
+
+export type DiceType = 'd4' | 'd6' | 'd8' | 'd10' | 'd12' | 'd20'
+export type DiceInventory = Record<DiceType, number>
+
+// Once-per-adventure special powers attached to level-up skills
+export type PowerId = 'reroll' | 'shield' | 'heal' | 'rally' | 'lucky'
 
 export interface ClassDefinition {
   name: CharacterClass
@@ -44,6 +51,9 @@ export interface Skill {
   stat: Stat
   bonus: number
   description: string
+  // The once-per-adventure special power this skill grants
+  power: PowerId
+  powerName: string
 }
 
 export interface HeroState {
@@ -54,15 +64,26 @@ export interface HeroState {
   level: number
   gold: number
   skills: Skill[]
+  usedPowers: PowerId[]
   equipment: Partial<Record<EquipSlot, LootItem>>
   knockedOut: boolean
 }
 
-export interface BossState {
+// Shared enemy the party takes down together — small monsters along the
+// quest, the big boss at the end.
+export interface EncounterState {
+  kind: 'monster' | 'boss'
   name: string
   hp: number
   maxHp: number
   defeated: boolean
+}
+
+export interface Quest {
+  title: string
+  goal: string
+  // Encounters beaten (0-3); 3 = boss down, quest complete
+  milestonesDone: number
 }
 
 export interface GameState {

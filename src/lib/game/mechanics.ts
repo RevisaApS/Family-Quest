@@ -1,52 +1,77 @@
-import type { SceneFit, Difficulty, OutcomeType } from '@/types/game'
+import type { SceneFit, Difficulty, OutcomeType, CritType } from '@/types/game'
 
-const SCENE_FIT_BONUS: Record<SceneFit, number> = { good: 2, okay: 1, risky: 0 }
+// --- d20 resolution, D&D style ---
+// Roll a d20, add your stat bonus, beat the Difficulty Class (DC).
+// Within PARTIAL_BAND below the DC = partial success.
+// Natural 20 always crits, natural 1 always fumbles.
 
-const DIFFICULTY_THRESHOLDS: Record<Difficulty, { success: number; partial: number }> = {
-  easy: { success: 8, partial: 6 },
-  medium: { success: 9, partial: 7 },
-  hard: { success: 10, partial: 8 },
+const DC_BASE: Record<Difficulty, number> = {
+  easy: 10,
+  medium: 12,
+  hard: 14,
 }
 
-export interface SuccessCalculation {
-  sceneFit: SceneFit
-  statValue: number
-  diceRoll: number
+// Smart choices lower the bar, risky ones raise it
+const SCENE_FIT_DC: Record<SceneFit, number> = {
+  good: -2,
+  okay: 0,
+  risky: 2,
+}
+
+export const PARTIAL_BAND = 4
+
+export interface DCInput {
   difficulty: Difficulty
-  // Raises both thresholds as heroes level up (and during boss fights) so
-  // growing stat bonuses keep the same odds instead of trivializing rolls.
-  thresholdAdjustment?: number
+  sceneFit: SceneFit
+  // Heroes get stronger every level, so the DC climbs with them — numbers
+  // grow (which feels great) while the odds stay balanced.
+  level: number
+  encounterActive: boolean
 }
 
-export interface OutcomeResult {
+export function calculateDC(input: DCInput): number {
+  return (
+    DC_BASE[input.difficulty] +
+    SCENE_FIT_DC[input.sceneFit] +
+    (input.level - 1) +
+    (input.encounterActive ? 1 : 0)
+  )
+}
+
+export interface RollResolution {
   outcome: OutcomeType
-  combinedScore: number
-  threshold: { success: number; partial: number }
+  crit: CritType
+  total: number
+  dc: number
 }
 
-export function calculateSceneFitBonus(sceneFit: SceneFit): number {
-  return SCENE_FIT_BONUS[sceneFit]
-}
+export function resolveD20(roll: number, statValue: number, dc: number): RollResolution {
+  if (roll === 20) return { outcome: 'success', crit: 'crit', total: roll + statValue, dc }
+  if (roll === 1) return { outcome: 'failure', crit: 'fumble', total: roll + statValue, dc }
 
-export function calculateThreshold(difficulty: Difficulty): { success: number; partial: number } {
-  return DIFFICULTY_THRESHOLDS[difficulty]
-}
-
-export function calculateOutcome(calc: SuccessCalculation): OutcomeResult {
-  const sceneFitBonus = calculateSceneFitBonus(calc.sceneFit)
-  const combinedScore = sceneFitBonus + calc.statValue + calc.diceRoll
-  const base = calculateThreshold(calc.difficulty)
-  const adjustment = calc.thresholdAdjustment ?? 0
-  const threshold = { success: base.success + adjustment, partial: base.partial + adjustment }
-
+  const total = roll + statValue
   let outcome: OutcomeType
-  if (combinedScore >= threshold.success) outcome = 'success'
-  else if (combinedScore >= threshold.partial) outcome = 'partial'
+  if (total >= dc) outcome = 'success'
+  else if (total >= dc - PARTIAL_BAND) outcome = 'partial'
   else outcome = 'failure'
-
-  return { outcome, combinedScore, threshold }
+  return { outcome, crit: null, total, dc }
 }
 
-export function rollDice(): number {
-  return Math.floor(Math.random() * 6) + 1
+// What the kid needs to roll — shown BEFORE the dice hit the table.
+// Clamped to 2..20 because a natural 1 always fumbles and 20 always crits.
+export interface RequiredRolls {
+  success: number
+  partial: number
+}
+
+export function requiredRolls(dc: number, statValue: number): RequiredRolls {
+  const clamp = (n: number) => Math.max(2, Math.min(20, n))
+  return {
+    success: clamp(dc - statValue),
+    partial: clamp(dc - PARTIAL_BAND - statValue),
+  }
+}
+
+export function rollD20(): number {
+  return Math.floor(Math.random() * 20) + 1
 }

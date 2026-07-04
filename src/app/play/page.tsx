@@ -9,24 +9,28 @@ import { PlayerTurn } from '@/components/game/player-turn'
 import { PartyBar, type PartyMember } from '@/components/game/party-bar'
 import { ActionPicker } from '@/components/game/action-picker'
 import { DiceRoller } from '@/components/game/dice-roller'
-import { OutcomeDisplay } from '@/components/game/outcome-display'
+import { OutcomeDisplay, type PowerAction } from '@/components/game/outcome-display'
 import { ErrorMessage } from '@/components/game/error-message'
-import { BossBanner } from '@/components/game/boss-banner'
+import { EncounterBanner } from '@/components/game/encounter-banner'
+import { QuestBar } from '@/components/game/quest-bar'
 import { LevelUpModal } from '@/components/game/level-up-modal'
 import { LootChestModal, type ChestContent } from '@/components/game/loot-chest-modal'
+import { MonsterVictoryModal } from '@/components/game/monster-victory-modal'
 import { VictoryOverlay } from '@/components/game/victory-overlay'
 import { ShopModal } from '@/components/game/shop-modal'
 import { InventoryModal } from '@/components/game/inventory-modal'
 import { useGameStore } from '@/stores/game-store'
 import { useGameAI } from '@/hooks/use-game-ai'
-import { calculateOutcome } from '@/lib/game/mechanics'
+import { calculateDC, resolveD20, requiredRolls, rollD20 } from '@/lib/game/mechanics'
 import {
-  heroStatBonus, levelThresholdAdjustment, applyTurnOutcome, reviveHero,
-  heroDamageForOutcome, bossDamageForOutcome, lootShouldDrop, lootBonusForRoll,
-  bossArrivalTurn, createBoss, equipLoot, addSkill, addGold, buyItem,
-  chestIsGold, chestGoldAmount, BOSS_GOLD_REWARD,
+  heroStatBonus, applyTurnOutcome, reviveHero, heroDamageForOutcome,
+  encounterDamageForOutcome, lootShouldDrop, lootBonusForRoll,
+  encounterSpawnTurn, nextEncounterKind, createEncounter, QUEST_MILESTONES,
+  equipLoot, addSkill, addGold, buyItem, chestIsGold, chestGoldAmount,
+  MONSTER_GOLD_REWARD, BOSS_GOLD_REWARD,
+  canUsePower, usePower, healHero,
 } from '@/lib/game/rpg'
-import { skillChoices } from '@/lib/game/skills'
+import { skillChoices, POWER_META } from '@/lib/game/skills'
 import { rollLootSlot, rollLootStat, createLoot, fallbackLootName } from '@/lib/game/loot'
 import { toLootItem, type ShopItem } from '@/lib/game/shop'
 import { heroVisualDescription } from '@/lib/game/appearance'
@@ -35,8 +39,8 @@ import { sfx, setSoundEnabled } from '@/lib/sound'
 import { t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { GeneratedAction, StoryContext, BossPhase } from '@/types/ai'
-import type { OutcomeType, Skill } from '@/types/game'
+import type { GeneratedAction, StoryContext, EncounterPhase } from '@/types/ai'
+import type { OutcomeType, Skill, CritType, HeroState, EncounterState } from '@/types/game'
 
 const MAX_STORY_HISTORY = 10
 
@@ -54,6 +58,11 @@ interface PendingChest {
   playerId: string
 }
 
+interface PendingMonsterVictory {
+  monsterName: string
+  finisherName: string
+}
+
 export default function PlayPage() {
   const router = useRouter()
   const {
@@ -61,8 +70,8 @@ export default function PlayPage() {
     adventureStyle, dicePreference, language, storyHistory, turnHistory,
     currentPlayerIndex, updateAdventureState, _hasHydrated,
     saveAdventure, savedAdventures, activeAdventureId,
-    heroes, boss, initHeroes, updateHero, setBoss,
-    soundEnabled, setSoundEnabled: setSoundPref, startNewAdventure,
+    heroes, encounter, quest, initHeroes, updateHero, setEncounter, setQuest,
+    diceInventory, soundEnabled, setSoundEnabled: setSoundPref, startNewAdventure,
   } = useGameStore()
   const {
     loadingScene, loadingActions, loadingOutcome, loadingImage,
@@ -96,37 +105,35 @@ export default function PlayPage() {
   const [turnXp, setTurnXp] = useState(0)
   const [turnGold, setTurnGold] = useState(0)
   const [turnDamage, setTurnDamage] = useState(0)
-  const [turnBossDamage, setTurnBossDamage] = useState(0)
+  const [turnEncounterDamage, setTurnEncounterDamage] = useState(0)
+  const [turnCrit, setTurnCrit] = useState<CritType>(null)
   const [pendingLoot, setPendingLoot] = useState<PendingChest | null>(null)
-  const [shopOpen, setShopOpen] = useState(false)
-  const [inventoryPlayerId, setInventoryPlayerId] = useState<string | null>(null)
   const [pendingLevelUp, setPendingLevelUp] = useState<PendingLevelUp | null>(null)
+  const [monsterVictory, setMonsterVictory] = useState<PendingMonsterVictory | null>(null)
   const [showVictory, setShowVictory] = useState(false)
   const [rescueMessage, setRescueMessage] = useState<string | null>(null)
-  // Hero portraits (IndexedDB) ride along on scene-image requests as visual
-  // anchors. Awaited inside loadScene (and cached) so even the very first
-  // scene image gets the references — no state race on mount.
-  const portraitsRef = useRef<string[] | null>(null)
-  const getHeroPortraits = useCallback(async (): Promise<string[]> => {
-    if (portraitsRef.current) return portraitsRef.current
-    const map = await loadPortraits(selectedPlayers.map(p => p.id))
-    const portraits = selectedPlayers.map(p => map.get(p.id)).filter((u): u is string => !!u)
-    if (portraits.length > 0 || selectedPlayers.length > 0) portraitsRef.current = portraits
-    return portraits
-  }, [selectedPlayers])
+  const [shopOpen, setShopOpen] = useState(false)
+  const [inventoryPlayerId, setInventoryPlayerId] = useState<string | null>(null)
+  // Lucky Hand power: armed until a good roll lands, then guarantees a chest
+  const [luckyArmedFor, setLuckyArmedFor] = useState<string | null>(null)
+  // Pre-roll snapshot so Second Chance / Rally can re-resolve the turn cleanly
+  const preRollRef = useRef<{ hero: HeroState; encounter: EncounterState | null } | null>(null)
 
   // Sound engine follows the persisted preference
   useEffect(() => { setSoundEnabled(soundEnabled) }, [soundEnabled])
 
-  const bossActive = !!boss && !boss.defeated && boss.hp > 0
+  const encounterActive = !!encounter && !encounter.defeated
+  const isFirstScene = storyHistory.length === 0 && !quest
 
-  const currentBossPhase = useCallback((): BossPhase => {
-    if (boss) return boss.defeated ? 'defeated' : 'active'
-    if (selectedPlayers.length > 0 && turnHistory.length >= bossArrivalTurn(selectedPlayers.length)) {
-      return 'arriving'
+  const currentEncounterPhase = useCallback((): EncounterPhase => {
+    if (encounter) return encounter.defeated ? 'just-defeated' : 'active'
+    const milestones = quest?.milestonesDone ?? 0
+    if (quest && milestones < QUEST_MILESTONES
+      && turnHistory.length >= encounterSpawnTurn(milestones, selectedPlayers.length)) {
+      return nextEncounterKind(milestones) === 'boss' ? 'arriving-boss' : 'arriving-monster'
     }
     return 'none'
-  }, [boss, selectedPlayers.length, turnHistory.length])
+  }, [encounter, quest, turnHistory.length, selectedPlayers.length])
 
   // Build story context for AI calls
   const buildStoryContext = useCallback((): StoryContext => ({
@@ -154,9 +161,13 @@ export default function PlayPage() {
       }),
     currentPlayerId: currentPlayer?.id ?? '',
     language,
-    bossPhase: currentBossPhase(),
-    boss: boss ? { name: boss.name, hp: boss.hp, maxHp: boss.maxHp } : null,
-  }), [adventureStyle, storyHistory, selectedPlayers, characters, heroes, currentPlayer, language, boss, currentBossPhase])
+    encounterPhase: currentEncounterPhase(),
+    encounter: encounter
+      ? { kind: encounter.kind, name: encounter.name, hp: encounter.hp, maxHp: encounter.maxHp }
+      : null,
+    quest: quest ?? null,
+    isFirstScene,
+  }), [adventureStyle, storyHistory, selectedPlayers, characters, heroes, currentPlayer, language, encounter, quest, currentEncounterPhase, isFirstScene])
 
   const heroImageDescriptions = useCallback((): string[] =>
     selectedPlayers
@@ -175,6 +186,18 @@ export default function PlayPage() {
       .filter((d): d is string => !!d),
   [selectedPlayers, characters, heroes])
 
+  // Hero portraits (IndexedDB) ride along on scene-image requests as visual
+  // anchors. Awaited inside loadScene (and cached) so even the very first
+  // scene image gets the references — no state race on mount.
+  const portraitsRef = useRef<string[] | null>(null)
+  const getHeroPortraits = useCallback(async (): Promise<string[]> => {
+    if (portraitsRef.current) return portraitsRef.current
+    const map = await loadPortraits(selectedPlayers.map(p => p.id))
+    const portraits = selectedPlayers.map(p => map.get(p.id)).filter((u): u is string => !!u)
+    if (portraits.length > 0 || selectedPlayers.length > 0) portraitsRef.current = portraits
+    return portraits
+  }, [selectedPlayers])
+
   // Load scene for current player
   const loadScene = useCallback(async () => {
     setGamePhase('loading')
@@ -189,8 +212,10 @@ export default function PlayPage() {
     setTurnXp(0)
     setTurnGold(0)
     setTurnDamage(0)
-    setTurnBossDamage(0)
+    setTurnEncounterDamage(0)
+    setTurnCrit(null)
     setRescueMessage(null)
+    preRollRef.current = null
 
     // Teammates help knocked-out heroes back up at the start of the next turn
     const state = useGameStore.getState()
@@ -215,11 +240,28 @@ export default function PlayPage() {
       setCurrentSceneText(scene.narration)
       setGamePhase('scene')
 
-      // Boss makes its entrance
-      if (context.bossPhase === 'arriving') {
-        const fallbackName = language === 'da' ? 'Skyggekongen' : 'The Shadow King'
-        setBoss(createBoss(scene.bossName?.trim() || fallbackName, selectedPlayers.length))
+      const partySize = selectedPlayers.length
+      const fallbackMonster = language === 'da' ? 'Skyggeuhyret' : 'The Shadow Beast'
+      const fallbackBoss = language === 'da' ? 'Skyggekongen' : 'The Shadow King'
+
+      if (context.isFirstScene) {
+        // The adventure gets its quest and its cold-open battle in one stroke
+        setQuest({
+          title: scene.questTitle?.trim() || (language === 'da' ? 'Det Store Eventyr' : 'The Great Quest'),
+          goal: scene.questGoal?.trim() || '',
+          milestonesDone: 0,
+        })
+        setEncounter(createEncounter('monster', scene.encounterName?.trim() || fallbackMonster, 0, partySize))
         sfx.bossAppear()
+      } else if (context.encounterPhase === 'arriving-monster') {
+        setEncounter(createEncounter('monster', scene.encounterName?.trim() || fallbackMonster, quest?.milestonesDone ?? 1, partySize))
+        sfx.bossAppear()
+      } else if (context.encounterPhase === 'arriving-boss') {
+        setEncounter(createEncounter('boss', scene.encounterName?.trim() || fallbackBoss, 2, partySize))
+        sfx.bossAppear()
+      } else if (context.encounterPhase === 'just-defeated') {
+        // Aftermath scene told — the battlefield is clear again
+        setEncounter(null)
       }
 
       // Paint the scene in the background — the text is readable immediately
@@ -230,7 +272,7 @@ export default function PlayPage() {
     } else {
       setRetryFn(() => () => { loadScene() })
     }
-  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, characters, currentCharacter, currentPlayer, updateHero, setBoss])
+  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, characters, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest])
 
   // Load actions for current scene
   const loadActions = useCallback(async () => {
@@ -282,6 +324,13 @@ export default function PlayPage() {
     )
   }
 
+  const dcForAction = (action: GeneratedAction, hero: HeroState) => calculateDC({
+    difficulty,
+    sceneFit: action.sceneFit,
+    level: hero.level,
+    encounterActive,
+  })
+
   const handleChooseAction = async () => {
     setGamePhase('action')
     await loadActions()
@@ -292,27 +341,34 @@ export default function PlayPage() {
     setGamePhase('dice')
   }
 
-  const handleDiceRoll = async (result: number) => {
-    setDiceResult(result)
+  // Resolve (or re-resolve, for Second Chance / Rally) the current turn from
+  // the pre-roll snapshot. `bonus` is Rally's +3.
+  const resolveTurn = async (roll: number, bonus: number, action: GeneratedAction) => {
+    const base = preRollRef.current
+    if (!base || !currentCharacter) return
 
-    if (!selectedAction || !currentCharacter || !currentHero) return
+    const baseHero = base.hero
+    const baseEncounter = base.encounter
+    const encActive = !!baseEncounter && !baseEncounter.defeated
 
-    const statValue = heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat)
-    const calculated = calculateOutcome({
-      sceneFit: selectedAction.sceneFit,
-      statValue,
-      diceRoll: result,
-      difficulty,
-      thresholdAdjustment: levelThresholdAdjustment(currentHero.level) + (bossActive ? 1 : 0),
-    })
-    setOutcomeType(calculated.outcome)
+    const statValue = heroStatBonus(currentCharacter.class, baseHero, action.stat)
+    const dc = calculateDC({ difficulty, sceneFit: action.sceneFit, level: baseHero.level, encounterActive: encActive })
+    const resolved = resolveD20(roll, statValue + bonus, dc)
+
+    setOutcomeType(resolved.outcome)
+    setTurnCrit(resolved.crit)
     setGamePhase('outcome')
+    setPendingLoot(null)
+    setPendingLevelUp(null)
+    setMonsterVictory(null)
+    setShowVictory(false)
 
-    if (calculated.outcome === 'success') sfx.success()
-    else if (calculated.outcome === 'failure') sfx.failure()
+    if (resolved.crit === 'crit') sfx.fanfare()
+    else if (resolved.outcome === 'success') sfx.success()
+    else if (resolved.outcome === 'failure') sfx.failure()
 
-    // Apply RPG consequences to the acting hero
-    const resolution = applyTurnOutcome(currentHero, calculated.outcome, bossActive)
+    // Apply RPG consequences to the acting hero (from the snapshot baseline)
+    const resolution = applyTurnOutcome(baseHero, resolved.outcome, encActive, resolved.crit)
     updateHero(resolution.hero)
     setTurnXp(resolution.xpGained)
     setTurnGold(resolution.goldGained)
@@ -322,41 +378,48 @@ export default function PlayPage() {
     // Level up → queue the "pick your power" cards
     if (resolution.leveledUp) {
       setPendingLevelUp({
-        playerId: currentHero.playerId,
+        playerId: baseHero.playerId,
         characterName: currentCharacter.name,
         newLevel: resolution.hero.level,
         choices: skillChoices(currentCharacter.class, resolution.hero.skills.map(s => s.id), language),
       })
     }
 
-    // Boss takes damage on success/partial
-    let bossDamage = 0
-    if (bossActive && boss) {
-      bossDamage = bossDamageForOutcome(calculated.outcome)
-      if (bossDamage > 0) {
-        const newHp = Math.max(0, boss.hp - bossDamage)
-        const defeated = newHp === 0
-        setBoss({ ...boss, hp: newHp, defeated })
-        if (defeated) {
+    // Damage the shared enemy; defeat queues the celebration (rewards applied
+    // on the celebration's continue, so a reroll can cleanly undo all of it)
+    let encDamage = 0
+    let monsterDown = false
+    if (encActive && baseEncounter) {
+      encDamage = encounterDamageForOutcome(resolved.outcome, resolved.crit)
+      const newHp = Math.max(0, baseEncounter.hp - encDamage)
+      const defeated = newHp === 0
+      setEncounter({ ...baseEncounter, hp: newHp, defeated })
+      if (defeated) {
+        if (baseEncounter.kind === 'boss') {
           setShowVictory(true)
-          // The quest reward: every hero gets a big payday
-          useGameStore.getState().heroes.forEach(h => updateHero(addGold(h, BOSS_GOLD_REWARD)))
+        } else {
+          monsterDown = true
+          setMonsterVictory({ monsterName: baseEncounter.name, finisherName: currentCharacter.name })
         }
       }
-      setTurnBossDamage(bossDamage)
+    } else if (baseEncounter) {
+      setEncounter(baseEncounter)
     }
+    setTurnEncounterDamage(encDamage)
 
-    // Strong success → treasure, owned by the hero who rolled it.
-    // Named by the AI while the outcome is read.
-    if (lootShouldDrop(calculated.outcome, result)) {
+    // Treasure: crits and strong successes drop chests; a slain monster
+    // always leaves one for the finisher; Lucky Hand forces one too.
+    const luckyTriggers = luckyArmedFor === currentPlayer.id && resolved.outcome !== 'failure'
+    if (lootShouldDrop(resolved.outcome, roll, resolved.crit) || monsterDown || luckyTriggers) {
+      if (luckyTriggers) setLuckyArmedFor(null)
       const ownerPlayerId = currentPlayer.id
-      if (chestIsGold()) {
-        setPendingLoot({ content: { kind: 'gold', amount: chestGoldAmount(result) }, playerId: ownerPlayerId })
+      if (!monsterDown && !luckyTriggers && chestIsGold()) {
+        setPendingLoot({ content: { kind: 'gold', amount: chestGoldAmount(roll) }, playerId: ownerPlayerId })
       } else {
         const slot = rollLootSlot()
         const stat = rollLootStat()
-        const bonus = lootBonusForRoll(result)
-        const item = createLoot(slot, stat, bonus, fallbackLootName(slot, stat, language))
+        const itemBonus = luckyTriggers ? 2 : lootBonusForRoll(roll)
+        const item = createLoot(slot, stat, itemBonus, fallbackLootName(slot, stat, language))
         setPendingLoot({ content: { kind: 'item', item }, playerId: ownerPlayerId })
         fetchLootName(slot, stat, language, currentSceneText).then(name => {
           if (name) {
@@ -374,18 +437,88 @@ export default function PlayPage() {
     const context = buildStoryContext()
     const narrative = await fetchOutcome(
       context,
-      selectedAction.text,
-      selectedAction.stat,
-      calculated.outcome,
+      action.text,
+      action.stat,
+      resolved.outcome,
       currentSceneText,
-      heroDamageForOutcome(calculated.outcome, bossActive),
-      bossDamage,
+      heroDamageForOutcome(resolved.outcome, encActive),
+      encDamage,
+      resolved.crit,
     )
-    if (narrative) {
-      setOutcomeNarrative(narrative)
-    } else {
-      setOutcomeNarrative('The story continues...')
+    setOutcomeNarrative(narrative || 'The story continues...')
+  }
+
+  const handleDiceRoll = async (result: number) => {
+    if (!selectedAction || !currentCharacter || !currentHero) return
+    setDiceResult(result)
+    preRollRef.current = { hero: currentHero, encounter }
+    await resolveTurn(result, 0, selectedAction)
+  }
+
+  // --- Once-per-adventure powers ---
+
+  const consumePowerOnBaseline = (power: 'reroll' | 'rally') => {
+    if (!preRollRef.current) return
+    preRollRef.current = { ...preRollRef.current, hero: usePower(preRollRef.current.hero, power) }
+  }
+
+  const handleReroll = async () => {
+    if (!selectedAction) return
+    consumePowerOnBaseline('reroll')
+    sfx.diceRoll()
+    const newRoll = rollD20()
+    setDiceResult(newRoll)
+    await resolveTurn(newRoll, 0, selectedAction)
+  }
+
+  const handleRally = async () => {
+    if (!selectedAction || diceResult === null) return
+    consumePowerOnBaseline('rally')
+    await resolveTurn(diceResult, 3, selectedAction)
+  }
+
+  const handleShield = () => {
+    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero || turnDamage === 0) return
+    updateHero(healHero(usePower(hero, 'shield'), turnDamage))
+    setTurnDamage(0)
+    sfx.chestOpen()
+  }
+
+  const handleHeal = () => {
+    const state = useGameStore.getState()
+    const self = state.heroes.find(h => h.playerId === currentPlayer.id)
+    if (!self || !canUsePower(self, 'heal')) return
+    const mostHurt = [...state.heroes].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0]
+    if (!mostHurt || mostHurt.hp >= mostHurt.maxHp) return
+    updateHero(usePower(self, 'heal'))
+    const healed = state.heroes.find(h => h.playerId === mostHurt.playerId)!
+    updateHero(healHero(healed.playerId === self.playerId ? usePower(self, 'heal') : healed, 3))
+    sfx.success()
+  }
+
+  const handleArmLucky = () => {
+    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero || !canUsePower(hero, 'lucky')) return
+    updateHero(usePower(hero, 'lucky'))
+    setLuckyArmedFor(currentPlayer.id)
+    sfx.chestOpen()
+  }
+
+  const outcomePowerActions = (): PowerAction[] => {
+    const hero = heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero) return []
+    const list: PowerAction[] = []
+    if (canUsePower(hero, 'reroll')) {
+      list.push({ id: 'reroll', label: `${POWER_META.reroll.emoji} ${POWER_META.reroll.name[language]}`, onUse: handleReroll })
     }
+    if (canUsePower(hero, 'rally') && outcomeType !== 'success' && turnCrit !== 'fumble') {
+      list.push({ id: 'rally', label: `${POWER_META.rally.emoji} ${POWER_META.rally.name[language]} (+3)`, onUse: handleRally })
+    }
+    if (canUsePower(hero, 'shield') && turnDamage > 0) {
+      list.push({ id: 'shield', label: `${POWER_META.shield.emoji} ${POWER_META.shield.name[language]}`, onUse: handleShield })
+    }
+    return list
   }
 
   const handleContinue = () => {
@@ -412,11 +545,19 @@ export default function PlayPage() {
       currentPlayerIndex: nextPlayerIndex,
     })
 
-    // Loot chest → level-up cards → (boss victory) → next scene
+    // Celebration → loot chest → level-up cards → (boss victory) → next scene
     setGamePhase('rewards')
-    if (!pendingLoot && !pendingLevelUp && !showVictory) {
+    if (!monsterVictory && !pendingLoot && !pendingLevelUp && !showVictory) {
       setTurnCounter(prev => prev + 1)
     }
+  }
+
+  const handleMonsterVictoryContinue = () => {
+    // The party payday + quest progress land here so a reroll can't double-pay
+    useGameStore.getState().heroes.forEach(h => updateHero(addGold(h, MONSTER_GOLD_REWARD)))
+    if (quest) setQuest({ ...quest, milestonesDone: Math.min(QUEST_MILESTONES, quest.milestonesDone + 1) })
+    setMonsterVictory(null)
+    if (!pendingLoot && !pendingLevelUp && !showVictory) setTurnCounter(prev => prev + 1)
   }
 
   const handleLootResolve = (equip: boolean) => {
@@ -435,13 +576,6 @@ export default function PlayPage() {
     if (!pendingLevelUp && !showVictory) setTurnCounter(prev => prev + 1)
   }
 
-  const handleBuy = (item: ShopItem) => {
-    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
-    if (!hero) return
-    const bought = buyItem(hero, toLootItem(item, language), item.price)
-    if (bought) updateHero(bought)
-  }
-
   const handleSkillPick = (skill: Skill | null) => {
     if (skill && pendingLevelUp) {
       const hero = useGameStore.getState().heroes.find(h => h.playerId === pendingLevelUp.playerId)
@@ -449,6 +583,20 @@ export default function PlayPage() {
     }
     setPendingLevelUp(null)
     if (!showVictory) setTurnCounter(prev => prev + 1)
+  }
+
+  const handleVictoryContinue = () => {
+    useGameStore.getState().heroes.forEach(h => updateHero(addGold(h, BOSS_GOLD_REWARD)))
+    if (quest) setQuest({ ...quest, milestonesDone: QUEST_MILESTONES })
+    setShowVictory(false)
+    setTurnCounter(prev => prev + 1)
+  }
+
+  const handleBuy = (item: ShopItem) => {
+    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero) return
+    const bought = buyItem(hero, toLootItem(item, language), item.price)
+    if (bought) updateHero(bought)
   }
 
   const partyMembers: PartyMember[] = selectedPlayers
@@ -463,6 +611,10 @@ export default function PlayPage() {
       } : null
     })
     .filter((m): m is PartyMember => !!m)
+
+  const anyoneHurt = heroes.some(h => h.hp < h.maxHp)
+  const canHeal = currentHero && canUsePower(currentHero, 'heal') && anyoneHurt
+  const canArmLucky = currentHero && canUsePower(currentHero, 'lucky') && luckyArmedFor !== currentPlayer.id
 
   const phaseTransition = {
     initial: { opacity: 0, y: 20 },
@@ -553,8 +705,16 @@ export default function PlayPage() {
           ) : null
         })()}
 
-        {/* Reward overlays: loot first, then level-up, then victory */}
-        {gamePhase === 'rewards' && pendingLoot && (
+        {/* Reward overlays: monster celebration → loot → level-up → boss victory */}
+        {gamePhase === 'rewards' && monsterVictory && (
+          <MonsterVictoryModal
+            monsterName={monsterVictory.monsterName}
+            finisherName={monsterVictory.finisherName}
+            language={language}
+            onContinue={handleMonsterVictoryContinue}
+          />
+        )}
+        {gamePhase === 'rewards' && !monsterVictory && pendingLoot && (
           <LootChestModal
             content={pendingLoot.content}
             currentItem={pendingLoot.content.kind === 'item'
@@ -564,7 +724,7 @@ export default function PlayPage() {
             onResolve={handleLootResolve}
           />
         )}
-        {gamePhase === 'rewards' && !pendingLoot && pendingLevelUp && (
+        {gamePhase === 'rewards' && !monsterVictory && !pendingLoot && pendingLevelUp && (
           <LevelUpModal
             characterName={pendingLevelUp.characterName}
             newLevel={pendingLevelUp.newLevel}
@@ -573,21 +733,20 @@ export default function PlayPage() {
             onPick={handleSkillPick}
           />
         )}
-        {gamePhase === 'rewards' && !pendingLoot && !pendingLevelUp && showVictory && boss && (
+        {gamePhase === 'rewards' && !monsterVictory && !pendingLoot && !pendingLevelUp && showVictory && encounter && (
           <VictoryOverlay
-            bossName={boss.name}
+            bossName={encounter.name}
             language={language}
             goldReward={BOSS_GOLD_REWARD}
-            onKeepPlaying={() => {
-              setShowVictory(false)
-              setTurnCounter(prev => prev + 1)
-            }}
+            onKeepPlaying={handleVictoryContinue}
             onNewAdventure={() => {
               startNewAdventure()
               router.push('/')
             }}
           />
         )}
+
+        {quest && <QuestBar quest={quest} language={language} />}
 
         {partyMembers.length > 0 && (
           <PartyBar
@@ -598,7 +757,7 @@ export default function PlayPage() {
           />
         )}
 
-        {boss && !boss.defeated && <BossBanner boss={boss} />}
+        {encounter && !encounter.defeated && <EncounterBanner encounter={encounter} />}
 
         {rescueMessage && (
           <motion.div
@@ -655,7 +814,13 @@ export default function PlayPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.2 }}
+                  className="space-y-2"
                 >
+                  {canHeal && (
+                    <Button variant="outline" className="w-full border-success/40" onClick={handleHeal}>
+                      {POWER_META.heal.emoji} {POWER_META.heal.name[language]} (+3 ❤️)
+                    </Button>
+                  )}
                   <Button className="w-full" onClick={handleChooseAction}>
                     Choose Action
                   </Button>
@@ -682,13 +847,19 @@ export default function PlayPage() {
                     Thinking of what you can do...
                   </div>
                 ) : actions.length > 0 ? (
-                  <ActionPicker options={actions} onSelect={handleActionSelect} />
+                  <ActionPicker
+                    options={actions}
+                    requiredRollFor={currentHero
+                      ? (a) => requiredRolls(dcForAction(a, currentHero), heroStatBonus(currentCharacter.class, currentHero, a.stat)).success
+                      : undefined}
+                    onSelect={handleActionSelect}
+                  />
                 ) : null}
               </div>
             </motion.div>
           )}
 
-          {gamePhase === 'dice' && selectedAction && (
+          {gamePhase === 'dice' && selectedAction && currentHero && (
             <motion.div
               key="dice"
               {...phaseTransition}
@@ -700,13 +871,25 @@ export default function PlayPage() {
                 isLoadingImage={loadingImage}
               />
 
-              <div className="mt-4">
+              <div className="mt-4 space-y-2">
+                {canArmLucky && (
+                  <Button variant="outline" className="w-full border-primary/40" onClick={handleArmLucky}>
+                    {POWER_META.lucky.emoji} {POWER_META.lucky.name[language]}
+                  </Button>
+                )}
+                {luckyArmedFor === currentPlayer.id && (
+                  <p className="text-center text-xs text-primary">🍀 ✓</p>
+                )}
                 <DiceRoller
                   stat={selectedAction.stat}
+                  statBonus={heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat)}
+                  required={requiredRolls(
+                    dcForAction(selectedAction, currentHero),
+                    heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat)
+                  )}
                   dicePreference={dicePreference}
-                  statBonus={currentCharacter && currentHero
-                    ? heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat)
-                    : undefined}
+                  hasD20={(diceInventory.d20 ?? 0) > 0}
+                  language={language}
                   onRoll={handleDiceRoll}
                 />
               </div>
@@ -721,14 +904,16 @@ export default function PlayPage() {
               <OutcomeDisplay
                 outcome={outcomeType}
                 diceRoll={diceResult}
+                crit={turnCrit}
                 narrative={outcomeNarrative}
                 isLoading={loadingOutcome || !outcomeNarrative}
                 xpGained={turnXp}
                 goldGained={turnGold}
                 damageTaken={turnDamage}
-                bossDamage={turnBossDamage}
-                bossName={boss?.name}
+                bossDamage={turnEncounterDamage}
+                bossName={encounter?.name}
                 language={language}
+                powerActions={outcomePowerActions()}
                 onContinue={handleContinue}
               />
             </motion.div>

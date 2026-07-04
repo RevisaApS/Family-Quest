@@ -1,4 +1,6 @@
-import type { HeroState, OutcomeType, Stat, Skill, LootItem, BossState } from '@/types/game'
+import type {
+  HeroState, OutcomeType, Stat, Skill, LootItem, EncounterState, CritType, PowerId,
+} from '@/types/game'
 import { getClassStats } from './classes'
 import type { CharacterClass } from '@/types/game'
 
@@ -10,34 +12,10 @@ export const XP_PER_OUTCOME: Record<OutcomeType, number> = {
   failure: 1,
 }
 
-// --- Gold economy ---
-// Heroes start nearly broke (1 gold buys the hilariously bad starter gear).
-// Session math for one kid: ~6 turns before the boss earns ~8-12 gold
-// (turns + chest pouches), the boss pays out big — tier-3 gear is a
-// post-boss trophy purchase.
-export const STARTING_GOLD = 1
-
-export const GOLD_PER_OUTCOME: Record<OutcomeType, number> = {
-  success: 2,
-  partial: 1,
-  failure: 0,
-}
-
-export const BOSS_GOLD_REWARD = 20
-
-// A chest is either an item or a pouch of coins — the dice roll sets the size.
-export function chestIsGold(): boolean {
-  return Math.random() < 0.4
-}
-
-export function chestGoldAmount(diceRoll: number): number {
-  return diceRoll + 2
-}
-
 export const MAX_LEVEL = 5
 
 // Cumulative XP needed to REACH each level. Level 2 comes fast (early win),
-// later levels stretch out across a 30-45 minute session.
+// later levels stretch out across a 45-minute session.
 const LEVEL_XP: number[] = [0, 0, 6, 14, 24, 36]
 
 export function levelForXp(xp: number): number {
@@ -52,6 +30,31 @@ export function xpForNextLevel(level: number): number | null {
   return level >= MAX_LEVEL ? null : LEVEL_XP[level + 1]
 }
 
+// --- Gold economy ---
+// Heroes start nearly broke (1 gold buys the hilariously bad starter gear).
+// Gold flows from BEATING things: turns pay a little, monsters pay the party,
+// the boss pays out big. Tier-3 gear is a post-boss trophy purchase.
+export const STARTING_GOLD = 1
+
+export const GOLD_PER_OUTCOME: Record<OutcomeType, number> = {
+  success: 2,
+  partial: 1,
+  failure: 0,
+}
+
+export const CRIT_BONUS_GOLD = 1
+export const MONSTER_GOLD_REWARD = 3
+export const BOSS_GOLD_REWARD = 20
+
+// A chest is either an item or a pouch of coins — the d20 sets the size.
+export function chestIsGold(): boolean {
+  return Math.random() < 0.4
+}
+
+export function chestGoldAmount(d20Roll: number): number {
+  return 4 + Math.ceil(d20Roll / 4) // 5-9
+}
+
 // --- HP & damage ---
 
 export const BASE_MAX_HP = 6
@@ -61,13 +64,15 @@ export function maxHpForLevel(level: number): number {
   return BASE_MAX_HP + (level - 1) * HP_PER_LEVEL
 }
 
-export function heroDamageForOutcome(outcome: OutcomeType, bossActive: boolean): number {
-  if (outcome === 'failure') return bossActive ? 2 : 1
-  if (outcome === 'partial') return bossActive ? 1 : 0
+export function heroDamageForOutcome(outcome: OutcomeType, encounterActive: boolean): number {
+  if (outcome === 'failure') return encounterActive ? 2 : 1
+  if (outcome === 'partial') return encounterActive ? 1 : 0
   return 0
 }
 
-export function bossDamageForOutcome(outcome: OutcomeType): number {
+// Damage the party deals to a shared monster/boss. Crits hit twice as hard.
+export function encounterDamageForOutcome(outcome: OutcomeType, crit: CritType): number {
+  if (crit === 'crit') return 4
   if (outcome === 'success') return 2
   if (outcome === 'partial') return 1
   return 0
@@ -92,39 +97,48 @@ export function heroStatBonus(
   return base + fromSkills + fromGear
 }
 
-// Heroes get stronger every level, so thresholds climb with them — the numbers
-// grow (which feels great) while the odds stay balanced.
-export function levelThresholdAdjustment(level: number): number {
-  return level - 1
+// --- Loot drops (d20 scale) ---
+
+// Loot on a crit or a strong success — the dice themselves decide.
+export function lootShouldDrop(outcome: OutcomeType, d20Roll: number, crit: CritType): boolean {
+  if (crit === 'crit') return true
+  return outcome === 'success' && d20Roll >= 15
 }
 
-// --- Loot drops ---
-
-// Loot on a strong success: the dice themselves decide, so kids can see it coming.
-export function lootShouldDrop(outcome: OutcomeType, diceRoll: number): boolean {
-  return outcome === 'success' && diceRoll >= 4
+export function lootBonusForRoll(d20Roll: number): number {
+  return d20Roll >= 18 ? 2 : 1
 }
 
-export function lootBonusForRoll(diceRoll: number): number {
-  return diceRoll === 6 ? 2 : 1
+// --- Quest arc & encounters ---
+// The 45-minute arc: cold-open monster at turn 0, a mid-quest monster once
+// every hero has had ~3 turns, the boss after ~5 turns each. Three
+// milestones = quest complete.
+export const QUEST_MILESTONES = 3
+
+export function encounterSpawnTurn(milestonesDone: number, partySize: number): number {
+  if (milestonesDone === 0) return 0
+  if (milestonesDone === 1) return partySize * 3
+  return partySize * 5
 }
 
-// --- Boss encounter ---
-
-// The boss shows up once every hero has had a handful of turns.
-export const TURNS_PER_HERO_BEFORE_BOSS = 4
-
-export function bossArrivalTurn(partySize: number): number {
-  return partySize * TURNS_PER_HERO_BEFORE_BOSS
+export function nextEncounterKind(milestonesDone: number): 'monster' | 'boss' {
+  return milestonesDone >= 2 ? 'boss' : 'monster'
 }
 
-export function bossMaxHp(partySize: number): number {
-  return partySize * 3 + 2
+export function encounterMaxHp(kind: 'monster' | 'boss', milestonesDone: number, partySize: number): number {
+  if (kind === 'boss') return partySize * 3 + 2
+  // the cold-open monster is a quick, confidence-building win
+  return milestonesDone === 0 ? partySize * 2 + 1 : partySize * 3
 }
 
-export function createBoss(name: string, partySize: number): BossState {
-  const maxHp = bossMaxHp(partySize)
-  return { name, hp: maxHp, maxHp, defeated: false }
+export function createEncounter(
+  kind: 'monster' | 'boss',
+  name: string,
+  milestonesDone: number,
+  partySize: number
+): EncounterState {
+  const maxHp = encounterMaxHp(kind, milestonesDone, partySize)
+  return { kind, name, hp: maxHp, maxHp, defeated: false }
 }
 
 // --- Hero lifecycle ---
@@ -138,6 +152,7 @@ export function createHero(playerId: string): HeroState {
     level: 1,
     gold: STARTING_GOLD,
     skills: [],
+    usedPowers: [],
     equipment: {},
     knockedOut: false,
   }
@@ -151,16 +166,18 @@ export interface TurnResolution {
   goldGained: number
 }
 
-// Apply one turn's outcome to the acting hero: XP, damage, KO, level-up
-// (level-up raises max HP and fully heals — the skill pick happens in the UI).
+// Apply one turn's outcome to the acting hero: XP, gold, damage, KO,
+// level-up (level-up raises max HP and fully heals — the skill pick happens
+// in the UI).
 export function applyTurnOutcome(
   hero: HeroState,
   outcome: OutcomeType,
-  bossActive: boolean
+  encounterActive: boolean,
+  crit: CritType = null
 ): TurnResolution {
   const xpGained = XP_PER_OUTCOME[outcome]
-  const goldGained = GOLD_PER_OUTCOME[outcome]
-  const damageTaken = heroDamageForOutcome(outcome, bossActive)
+  const goldGained = GOLD_PER_OUTCOME[outcome] + (crit === 'crit' ? CRIT_BONUS_GOLD : 0)
+  const damageTaken = heroDamageForOutcome(outcome, encounterActive)
 
   const xp = hero.xp + xpGained
   const newLevel = Math.min(levelForXp(xp), MAX_LEVEL)
@@ -211,4 +228,23 @@ export function buyItem(hero: HeroState, item: LootItem, price: number): HeroSta
 export function addSkill(hero: HeroState, skill: Skill): HeroState {
   if (hero.skills.some(s => s.id === skill.id)) return hero
   return { ...hero, skills: [...hero.skills, skill] }
+}
+
+// --- Once-per-adventure powers ---
+
+export function heroPower(hero: HeroState, power: PowerId): Skill | undefined {
+  return hero.skills.find(s => s.power === power)
+}
+
+export function canUsePower(hero: HeroState, power: PowerId): boolean {
+  return !!heroPower(hero, power) && !hero.usedPowers.includes(power)
+}
+
+export function usePower(hero: HeroState, power: PowerId): HeroState {
+  if (hero.usedPowers.includes(power)) return hero
+  return { ...hero, usedPowers: [...hero.usedPowers, power] }
+}
+
+export function healHero(hero: HeroState, amount: number): HeroState {
+  return { ...hero, hp: Math.min(hero.maxHp, hero.hp + amount), knockedOut: false }
 }

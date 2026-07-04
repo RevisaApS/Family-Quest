@@ -10,8 +10,11 @@ import { Header } from '@/components/layout/header'
 import { StyleOption } from '@/components/onboarding/style-option'
 import { DifficultyOption } from '@/components/onboarding/difficulty-option'
 import { useGameStore } from '@/stores/game-store'
-import type { AdventureStyle, Difficulty } from '@/types/game'
+import { t } from '@/lib/i18n'
+import type { AdventureStyle, Difficulty, DiceType } from '@/types/game'
 import { cn } from '@/lib/utils'
+
+const DICE_TYPES: DiceType[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20']
 
 const steps = [
   { label: 'Players', href: '/players' },
@@ -52,8 +55,15 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => (
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { adventureStyle, difficulty, dicePreference, language, setSettings } = useGameStore()
+  const { adventureStyle, difficulty, dicePreference, language, setSettings, diceInventory, setDiceInventory } = useGameStore()
   const [showInfo, setShowInfo] = useState(false)
+
+  const adjustDice = (die: DiceType, delta: number) => {
+    setDiceInventory({
+      ...diceInventory,
+      [die]: Math.max(0, Math.min(9, (diceInventory[die] ?? 0) + delta)),
+    })
+  }
 
   return (
     <>
@@ -125,6 +135,45 @@ export default function SettingsPage() {
                 <span className="font-medium">Physical</span>
               </button>
             </div>
+
+            {/* Which real dice are on the table? Rolls for dice you own use
+                the tap-grid; anything missing rolls digitally. */}
+            {dicePreference === 'physical' && (
+              <div className="space-y-2 pt-1">
+                <p className="text-sm font-medium">{t('yourDice', language)}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {DICE_TYPES.map(die => (
+                    <div
+                      key={die}
+                      className={cn(
+                        'rounded-lg border p-2 text-center space-y-1',
+                        (diceInventory[die] ?? 0) > 0 ? 'border-primary bg-primary/10' : 'border-border bg-card'
+                      )}
+                    >
+                      <p className="text-sm font-bold">{die}</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => adjustDice(die, -1)}
+                          className="w-7 h-7 rounded-md border border-border text-lg leading-none"
+                          aria-label={`fewer ${die}`}
+                        >
+                          −
+                        </button>
+                        <span className="w-4 font-bold">{diceInventory[die] ?? 0}</span>
+                        <button
+                          onClick={() => adjustDice(die, 1)}
+                          className="w-7 h-7 rounded-md border border-border text-lg leading-none"
+                          aria-label={`more ${die}`}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{t('diceNote', language)}</p>
+              </div>
+            )}
           </div>
 
           <div className="bg-card/30 rounded-xl p-4 border border-border/50 space-y-3">

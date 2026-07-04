@@ -5,8 +5,11 @@ export interface GeneratedScene {
   narration: string
   imagePrompt: string
   suggestedNextPlayer: string
-  // Only set when the scene introduces the boss (bossPhase 'arriving')
-  bossName?: string
+  // Only set when the scene introduces a monster or the boss
+  encounterName?: string
+  // Only set on the very first scene of an adventure
+  questTitle?: string
+  questGoal?: string
 }
 
 export interface HeroRpgContext {
@@ -18,7 +21,12 @@ export interface HeroRpgContext {
   gearNames: string[]
 }
 
-export type BossPhase = 'none' | 'arriving' | 'active' | 'defeated'
+export type EncounterPhase =
+  | 'none'
+  | 'arriving-monster'
+  | 'arriving-boss'
+  | 'active'
+  | 'just-defeated'
 
 export interface GeneratedAction {
   id: string
@@ -44,6 +52,8 @@ export interface StoryContext {
   }>
   currentPlayerId: string
   language: Language
-  bossPhase?: BossPhase
-  boss?: { name: string; hp: number; maxHp: number } | null
+  encounterPhase?: EncounterPhase
+  encounter?: { kind: 'monster' | 'boss'; name: string; hp: number; maxHp: number } | null
+  quest?: { title: string; goal: string; milestonesDone: number } | null
+  isFirstScene?: boolean
 }

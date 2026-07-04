@@ -21,14 +21,28 @@ function describeHero(c: StoryContext['characters'][number]): string {
   return `${base} — ${details}`
 }
 
-function bossInstruction(context: StoryContext): string {
-  switch (context.bossPhase) {
-    case 'arriving':
-      return `IMPORTANT: In THIS scene, the adventure's big villain finally appears! Introduce a dramatic (but not too scary) boss the heroes must face together. Also return a "bossName" field in the JSON with the villain's name in the story language.`
+function questInstruction(context: StoryContext): string {
+  if (context.isFirstScene) {
+    return `THIS IS THE OPENING SCENE. Two extra jobs:
+1. Invent a clear, exciting QUEST the family pursues this whole adventure (find something, rescue someone, break a curse). Return "questTitle" (2-5 words) and "questGoal" (one kid-friendly sentence) in the story language.
+2. START WITH ACTION: a small monster attacks or blocks the way in this very first scene — the kids must fight from minute one, no slow build-up. Return "encounterName" with the monster's name in the story language. The monster is exciting but beatable and not too scary.`
+  }
+  if (context.quest) {
+    return `The family's quest: "${context.quest.title}" — ${context.quest.goal} (${context.quest.milestonesDone}/3 milestones done). Every scene should feel like progress toward or a twist on this goal.`
+  }
+  return ''
+}
+
+function encounterInstruction(context: StoryContext): string {
+  switch (context.encounterPhase) {
+    case 'arriving-monster':
+      return `IMPORTANT: In THIS scene a new monster appears and blocks the heroes' path — a dramatic mid-quest twist tied to the quest. Return "encounterName" with the monster's name in the story language. Exciting but not too scary.`
+    case 'arriving-boss':
+      return `IMPORTANT: In THIS scene, the quest's big villain finally appears for the final showdown! Introduce a dramatic (but not too scary) boss. Return "encounterName" with the villain's name in the story language.`
     case 'active':
-      return `The heroes are mid-battle with the boss: ${context.boss?.name} (${context.boss?.hp}/${context.boss?.maxHp} HP left). The scene must continue this confrontation — describe the boss reacting and the fight evolving.`
-    case 'defeated':
-      return `The boss ${context.boss?.name} has been defeated! The story continues in celebration/aftermath — new smaller adventures can begin.`
+      return `The heroes are mid-battle with ${context.encounter?.name} (${context.encounter?.hp}/${context.encounter?.maxHp} HP left). The scene must continue this fight — describe the enemy reacting and the battle evolving.`
+    case 'just-defeated':
+      return `The heroes just defeated ${context.encounter?.name}! Open with the victory's aftermath, then push the quest forward.`
     default:
       return ''
   }
@@ -54,13 +68,15 @@ ${context.storyHistory.slice(-5).join('\n') || 'The adventure is just beginning.
 
 Current Player: ${currentCharacter?.playerName} as ${currentCharacter?.characterName}
 
-${bossInstruction(context)}
+${questInstruction(context)}
+
+${encounterInstruction(context)}
 
 Generate the next scene. Return JSON:
 {
   "narration": "2-3 sentences describing the scene, what the characters see and hear",
   "imagePrompt": "A detailed prompt for generating an image of this scene",
-  "suggestedNextPlayer": "the player ID of whichever character would most naturally act next based on the story context"${context.bossPhase === 'arriving' ? ',\n  "bossName": "the villain\'s name"' : ''}
+  "suggestedNextPlayer": "the player ID of whichever character would most naturally act next based on the story context"${context.isFirstScene ? ',\n  "questTitle": "the quest\'s short title",\n  "questGoal": "one sentence describing the goal",\n  "encounterName": "the opening monster\'s name"' : ''}${context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss' ? ',\n  "encounterName": "the enemy\'s name"' : ''}
 }
 
 The imagePrompt must ALWAYS be written in English (it goes to an image model), regardless of the story language. Describe the location, mood and any creatures — do NOT describe the heroes' appearance, that is added separately.

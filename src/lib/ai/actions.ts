@@ -17,7 +17,7 @@ Current Scene: ${currentScene}
 Current Character: ${currentCharacter?.characterName} the ${currentCharacter?.class}
 ${currentCharacter?.rpg?.skillNames.length ? `Their powers: ${currentCharacter.rpg.skillNames.join(', ')}` : ''}
 ${currentCharacter?.rpg?.gearNames.length ? `Their equipment: ${currentCharacter.rpg.gearNames.join(', ')}` : ''}
-${context.bossPhase === 'active' && context.boss ? `BOSS FIGHT: they are battling ${context.boss.name}! At least one action should engage the boss.` : ''}
+${context.encounterPhase === 'active' && context.encounter ? `BATTLE: they are fighting ${context.encounter.name}! At least one action should engage the enemy.` : ''}
 ${currentCharacter?.rpg?.skillNames.length || currentCharacter?.rpg?.gearNames.length ? 'When it fits the scene, let one action use a named power or piece of equipment — kids love using their own gear.' : ''}
 
 Generate exactly 3 action options the player could take. Each should:

@@ -11,6 +11,7 @@ interface OutcomeContext {
   currentScene: string
   damageTaken?: number
   bossDamage?: number
+  crit?: 'crit' | 'fumble' | null
 }
 
 const OUTCOME_INSTRUCTIONS = {
@@ -36,9 +37,11 @@ Stat Used: ${context.stat}
 Result: ${context.outcome.toUpperCase()}
 
 ${OUTCOME_INSTRUCTIONS[context.outcome]}
-${context.storyContext.bossPhase === 'active' && context.storyContext.boss ? `This happens during the battle with ${context.storyContext.boss.name}.` : ''}
-${context.bossDamage ? `The hero's action lands a real blow on the boss — describe the hit!` : ''}
+${context.storyContext.encounterPhase === 'active' && context.storyContext.encounter ? `This happens during the battle with ${context.storyContext.encounter.name}.` : ''}
+${context.bossDamage ? `The hero's action lands a real blow on the enemy — describe the hit!` : ''}
 ${context.damageTaken ? `The hero also gets hurt in the process (a bump, a scrape, a tumble — never gory). Weave that in.` : ''}
+${context.crit === 'crit' ? 'THE ROLL WAS A NATURAL 20 — describe a SPECTACULAR, legendary success that will be retold at the dinner table.' : ''}
+${context.crit === 'fumble' ? 'THE ROLL WAS A NATURAL 1 — describe a COMICAL fumble (slipping, tangled cape, startled chicken). Funny, never humiliating.' : ''}
 
 Write 2-3 sentences describing what happens. Be vivid and engaging. Don't include dice numbers or game mechanics - just tell the story.`
 

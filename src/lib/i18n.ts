@@ -35,6 +35,20 @@ const STRINGS = {
   skills: { da: 'Kræfter', en: 'Powers' },
   empty: { da: 'Tom', en: 'Empty' },
   close: { da: 'Luk', en: 'Close' },
+  rollToSucceed: { da: 'Slå', en: 'Roll' },
+  orMore: { da: 'eller mere', en: 'or more' },
+  partialFrom: { da: 'delvist fra', en: 'partial from' },
+  critHit: { da: 'KRITISK HIT!', en: 'CRITICAL HIT!' },
+  fumble: { da: 'Sikke et fumleri!', en: 'What a fumble!' },
+  monsterAppears: { da: 'ET UHYRE!', en: 'A MONSTER!' },
+  monsterDefeated: { da: 'Uhyret er besejret!', en: 'Monster defeated!' },
+  finishingBlow: { da: 'gav dødsstødet!', en: 'landed the finishing blow!' },
+  goldForAll: { da: 'guld til alle', en: 'gold for everyone' },
+  questLabel: { da: 'Eventyret', en: 'The Quest' },
+  usePowerLabel: { da: 'Brug kraft', en: 'Use power' },
+  yourDice: { da: 'Hvilke terninger har I?', en: 'Which dice do you have?' },
+  diceNote: { da: 'Handlinger bruger en d20. Mangler I den, ruller appen digitalt.', en: 'Actions use a d20. If you don\'t have one, the app rolls digitally.' },
+  tapYourRoll: { da: 'Kast din terning, og tryk på dit resultat:', en: 'Roll your die, then tap your result:' },
 } as const
 
 export type StringKey = keyof typeof STRINGS
@@ -43,11 +57,12 @@ export function t(key: StringKey, language: Language): string {
   return STRINGS[key][language]
 }
 
+// Everyday words only — an 8-year-old must know every one of these.
 const STAT_LABELS: Record<Stat, Record<Language, string>> = {
   strength: { da: 'Styrke', en: 'Strength' },
   magic: { da: 'Magi', en: 'Magic' },
-  agility: { da: 'Behændighed', en: 'Agility' },
-  heart: { da: 'Hjerte', en: 'Heart' },
+  agility: { da: 'Hurtighed', en: 'Speed' },
+  heart: { da: 'Mod', en: 'Courage' },
 }
 
 export function statLabel(stat: Stat, language: Language): string {

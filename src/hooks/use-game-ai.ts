@@ -58,6 +58,7 @@ export function useGameAI() {
     currentScene: string,
     damageTaken = 0,
     bossDamage = 0,
+    crit: 'crit' | 'fumble' | null = null,
   ): Promise<string | null> => {
     setLoadingOutcome(true)
     setError(null)
@@ -65,7 +66,7 @@ export function useGameAI() {
       const response = await fetch('/api/ai/outcome', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storyContext, actionChosen, stat, outcome, currentScene, damageTaken, bossDamage }),
+        body: JSON.stringify({ storyContext, actionChosen, stat, outcome, currentScene, damageTaken, bossDamage, crit }),
       })
       if (!response.ok) throw new Error('Failed to generate outcome')
       const data = await response.json()

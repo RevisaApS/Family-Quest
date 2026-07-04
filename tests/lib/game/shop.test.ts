@@ -84,9 +84,9 @@ describe('gold economy', () => {
     expect(hero.gold).toBe(STARTING_GOLD + 2)
   })
 
-  it('chest pouches scale with the dice, boss pays the big reward', () => {
-    expect(chestGoldAmount(6)).toBe(8)
-    expect(chestGoldAmount(4)).toBe(6)
+  it('chest pouches scale with the d20, boss pays the big reward', () => {
+    expect(chestGoldAmount(20)).toBe(9)
+    expect(chestGoldAmount(15)).toBe(8)
     expect(BOSS_GOLD_REWARD).toBe(20)
   })
 

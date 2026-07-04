@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { CharacterClass, AdventureStyle, Difficulty, TurnRecord, HeroState, BossState } from '@/types/game'
+import type {
+  CharacterClass, AdventureStyle, Difficulty, TurnRecord, HeroState,
+  EncounterState, Quest, DiceInventory,
+} from '@/types/game'
 import { createHero } from '@/lib/game/rpg'
 import type { Language } from '@/lib/ai/language'
 
@@ -32,7 +35,10 @@ export interface SavedAdventure {
     adventureStyle: AdventureStyle
     difficulty: Difficulty
     heroes?: HeroState[]
-    boss?: BossState | null
+    encounter?: EncounterState | null
+    quest?: Quest | null
+    // pre-v4 saves stored the boss here
+    boss?: (EncounterState & { kind?: 'monster' | 'boss' }) | null
   }
 }
 
@@ -69,12 +75,16 @@ interface GameStore {
   turnHistory: TurnRecord[]
   currentPlayerIndex: number
   heroes: HeroState[]
-  boss: BossState | null
+  encounter: EncounterState | null
+  quest: Quest | null
+  diceInventory: DiceInventory
   soundEnabled: boolean
   setSoundEnabled: (enabled: boolean) => void
+  setDiceInventory: (inventory: DiceInventory) => void
   initHeroes: (playerIds: string[]) => void
   updateHero: (hero: HeroState) => void
-  setBoss: (boss: BossState | null) => void
+  setEncounter: (encounter: EncounterState | null) => void
+  setQuest: (quest: Quest | null) => void
   updateAdventureState: (state: Partial<{
     currentScene: string
     storyHistory: string[]
@@ -101,8 +111,11 @@ const takeSnapshot = (state: GameStore): SavedAdventure['snapshot'] => ({
   adventureStyle: state.adventureStyle,
   difficulty: state.difficulty,
   heroes: state.heroes,
-  boss: state.boss,
+  encounter: state.encounter,
+  quest: state.quest,
 })
+
+const DEFAULT_DICE: DiceInventory = { d4: 0, d6: 2, d8: 0, d10: 0, d12: 0, d20: 0 }
 
 // Snapshot the in-progress story into its slot (or a new auto-named one) so
 // switching adventures can never lose a story. No-op when nothing is in progress.
@@ -187,14 +200,18 @@ export const useGameStore = create<GameStore>()(
       turnHistory: [],
       currentPlayerIndex: 0,
       heroes: [],
-      boss: null,
+      encounter: null,
+      quest: null,
+      diceInventory: DEFAULT_DICE,
       soundEnabled: true,
       setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
-      initHeroes: (playerIds) => set({ heroes: playerIds.map(createHero), boss: null }),
+      setDiceInventory: (inventory) => set({ diceInventory: inventory }),
+      initHeroes: (playerIds) => set({ heroes: playerIds.map(createHero), encounter: null, quest: null }),
       updateHero: (hero) => set((state) => ({
         heroes: state.heroes.map(h => h.playerId === hero.playerId ? hero : h),
       })),
-      setBoss: (boss) => set({ boss }),
+      setEncounter: (encounter) => set({ encounter }),
+      setQuest: (quest) => set({ quest }),
       updateAdventureState: (updates) => set((prev) => ({ ...prev, ...updates })),
       resetAdventure: () => set({
         currentScene: '',
@@ -202,7 +219,8 @@ export const useGameStore = create<GameStore>()(
         turnHistory: [],
         currentPlayerIndex: 0,
         heroes: [],
-        boss: null,
+        encounter: null,
+        quest: null,
       }),
 
       savedAdventures: [],
@@ -212,14 +230,20 @@ export const useGameStore = create<GameStore>()(
         if (!state.savedAdventures.some(a => a.id === id)) return state
         const saved = upsertCurrent(state)
         const target = saved.savedAdventures.find(a => a.id === id)!
-        // Saves from before the RPG update have no heroes/boss — heroes are
-        // re-created at level 1 on the play page when the list is empty.
+        // Saves from older versions get normalized: gold/powers defaults,
+        // pre-v4 boss field becomes an encounter.
+        const oldBoss = target.snapshot.boss
         return {
           ...saved,
           ...target.snapshot,
-          // pre-gold saves get their heroes topped up to the starting purse
-          heroes: (target.snapshot.heroes ?? []).map(h => ({ ...h, gold: h.gold ?? 1 })),
-          boss: target.snapshot.boss ?? null,
+          heroes: (target.snapshot.heroes ?? []).map(h => ({
+            ...h,
+            gold: h.gold ?? 1,
+            usedPowers: h.usedPowers ?? [],
+          })),
+          encounter: target.snapshot.encounter
+            ?? (oldBoss ? { ...oldBoss, kind: oldBoss.kind ?? 'boss' as const } : null),
+          quest: target.snapshot.quest ?? null,
           activeAdventureId: id,
         }
       }),
@@ -234,27 +258,38 @@ export const useGameStore = create<GameStore>()(
         turnHistory: [],
         currentPlayerIndex: 0,
         heroes: [],
-        boss: null,
+        encounter: null,
+        quest: null,
         activeAdventureId: null,
       })),
     }),
     {
       name: 'family-quest-storage',
-      version: 3,
+      version: 4,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
       // v1 predates the RPG update (heroes, boss, sound).
       // v2 predates the gold economy.
+      // v3 predates d20/quest arc (encounter replaces boss, powers, dice inventory).
       migrate: (persisted, version) => {
-        let state = persisted as GameStore
+        let state = persisted as GameStore & { boss?: EncounterState | null }
         if (version < 1) {
           state = { ...state, language: 'da' as Language, dicePreference: 'physical' as const }
         }
         if (version < 2) {
-          state = { ...state, heroes: [], boss: null, soundEnabled: true }
+          state = { ...state, heroes: [], soundEnabled: true }
         }
         if (version < 3) {
           state = { ...state, heroes: (state.heroes ?? []).map(h => ({ ...h, gold: h.gold ?? 1 })) }
+        }
+        if (version < 4) {
+          state = {
+            ...state,
+            heroes: (state.heroes ?? []).map(h => ({ ...h, usedPowers: h.usedPowers ?? [] })),
+            encounter: state.boss ? { ...state.boss, kind: 'boss' as const } : null,
+            quest: null,
+            diceInventory: DEFAULT_DICE,
+          }
         }
         return state
       },

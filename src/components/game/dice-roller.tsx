@@ -4,32 +4,41 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { sfx } from '@/lib/sound'
+import { t, statLabel } from '@/lib/i18n'
+import { rollD20, type RequiredRolls } from '@/lib/game/mechanics'
 import type { Stat } from '@/types/game'
+import type { Language } from '@/lib/ai/language'
 
 const statEmoji: Record<Stat, string> = { strength: '💪', magic: '✨', agility: '🏃', heart: '❤️' }
 
 interface DiceRollerProps {
   stat: Stat
+  statBonus: number
+  // What to beat — shown BEFORE rolling so kids know exactly what they need
+  required: RequiredRolls
   dicePreference: 'physical' | 'digital'
-  // Total stat bonus (class + skills + gear) shown so kids see their power grow
-  statBonus?: number
+  // Physical mode needs a real d20 on the table; otherwise we roll digitally
+  hasD20: boolean
+  language: Language
   onRoll: (result: number) => void
 }
 
-export function DiceRoller({ stat, dicePreference, statBonus, onRoll }: DiceRollerProps) {
+export function DiceRoller({ stat, statBonus, required, dicePreference, hasD20, language, onRoll }: DiceRollerProps) {
   const [isRolling, setIsRolling] = useState(false)
   const [result, setResult] = useState<number | null>(null)
+
+  const usePhysical = dicePreference === 'physical' && hasD20
 
   const handleDigitalRoll = () => {
     setIsRolling(true)
     sfx.diceRoll()
     let count = 0
     const interval = setInterval(() => {
-      setResult(Math.floor(Math.random() * 6) + 1)
+      setResult(rollD20())
       count++
       if (count > 10) {
         clearInterval(interval)
-        const finalResult = Math.floor(Math.random() * 6) + 1
+        const finalResult = rollD20()
         setResult(finalResult)
         setIsRolling(false)
         setTimeout(() => onRoll(finalResult), 500)
@@ -43,44 +52,59 @@ export function DiceRoller({ stat, dicePreference, statBonus, onRoll }: DiceRoll
     onRoll(value)
   }
 
+  // Color hint per face: what would this roll mean?
+  const faceTone = (value: number) =>
+    value >= required.success ? 'text-success' : value >= required.partial ? 'text-primary' : 'text-muted-foreground'
+
   return (
     <div className="bg-card rounded-lg p-6 border border-border space-y-4">
       <div className="text-center space-y-2">
-        <p className="text-muted-foreground">
-          This tests your {statEmoji[stat]} {stat.charAt(0).toUpperCase() + stat.slice(1)}
-          {statBonus !== undefined && (
-            <span className="ml-1 font-bold text-primary">+{statBonus}</span>
-          )}
+        <p className="text-muted-foreground text-sm">
+          {statEmoji[stat]} {statLabel(stat, language)}
+          <span className="ml-1 font-bold text-primary">+{statBonus}</span>
         </p>
-        <p className="text-lg font-medium">Roll and see what happens!</p>
+        {/* The target, up front: no more guessing what the roll means */}
+        <div className="flex justify-center gap-2 text-sm font-medium">
+          <span className="rounded-full bg-success/15 text-success px-3 py-1">
+            🎯 {t('rollToSucceed', language)} {required.success}+
+          </span>
+          {required.partial < required.success && (
+            <span className="rounded-full bg-primary/10 text-primary px-3 py-1">
+              ⚡ {required.partial}+
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-center">
         <div className={cn(
-          "w-24 h-24 rounded-xl bg-muted flex items-center justify-center",
-          "text-5xl font-bold text-foreground",
+          "w-24 h-24 rounded-xl bg-muted flex items-center justify-center relative",
+          "text-4xl font-bold text-foreground",
           isRolling && "animate-bounce"
         )}>
           {result ?? '?'}
+          <span className="absolute bottom-1 right-2 text-[10px] text-muted-foreground font-normal">d20</span>
         </div>
       </div>
 
-      {dicePreference === 'digital' ? (
+      {!usePhysical ? (
         <Button className="w-full" size="lg" onClick={handleDigitalRoll} disabled={isRolling || result !== null}>
-          {isRolling ? 'Rolling...' : result ? 'Rolled!' : '🎲 Tap to Roll'}
+          {isRolling ? '...' : result ? '✓' : '🎲 d20'}
         </Button>
       ) : (
         <div className="space-y-2">
-          <p className="text-center text-sm text-muted-foreground">🎲 Roll your dice, then tap the number you rolled:</p>
-          <div className="grid grid-cols-3 gap-2">
-            {([1, 2, 3, 4, 5, 6] as const).map((value) => (
+          <p className="text-center text-sm text-muted-foreground">🎲 {t('tapYourRoll', language)}</p>
+          <div className="grid grid-cols-5 gap-1.5">
+            {Array.from({ length: 20 }, (_, i) => i + 1).map((value) => (
               <Button
                 key={value}
                 variant="outline"
+                size="sm"
                 disabled={result !== null}
                 onClick={() => handlePhysicalPick(value)}
                 className={cn(
-                  "h-16 text-3xl font-bold",
+                  "h-11 text-base font-bold",
+                  faceTone(value),
                   result === value && "border-primary ring-2 ring-primary/30 bg-primary/10"
                 )}
               >
