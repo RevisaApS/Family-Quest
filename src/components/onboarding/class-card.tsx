@@ -30,7 +30,7 @@ const classGlowColor: Record<string, string> = {
 
 const classImage: Record<CharacterClass, string> = {
   warrior: '/characters/Warrior.png',
-  wizard: '/characters/Mage.png',
+  wizard: '/characters/Wizard.png',
   rogue: '/characters/Rogue.png',
   ranger: '/characters/Ranger.png',
 }
@@ -53,13 +53,13 @@ export function ClassCard({ characterClass, selected, onSelect }: ClassCardProps
       )}
     >
       <div className="flex items-center gap-3">
-        <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
+        <div className="relative w-28 h-28 flex-shrink-0 rounded-md overflow-hidden">
           <Image
             src={classImage[characterClass]}
             alt={classDef.displayName}
             fill
             className="object-cover"
-            sizes="64px"
+            sizes="112px"
           />
         </div>
         <div className="flex-1 min-w-0">

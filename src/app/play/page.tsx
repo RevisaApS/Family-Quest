@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PageContainer } from '@/components/layout/page-container'
@@ -26,6 +26,7 @@ import {
 import { skillChoices } from '@/lib/game/skills'
 import { rollLootSlot, rollLootStat, createLoot, fallbackLootName } from '@/lib/game/loot'
 import { heroVisualDescription } from '@/lib/game/appearance'
+import { loadPortraits } from '@/lib/portraits'
 import { sfx, setSoundEnabled } from '@/lib/sound'
 import { t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
@@ -88,6 +89,17 @@ export default function PlayPage() {
   const [pendingLevelUp, setPendingLevelUp] = useState<PendingLevelUp | null>(null)
   const [showVictory, setShowVictory] = useState(false)
   const [rescueMessage, setRescueMessage] = useState<string | null>(null)
+  // Hero portraits (IndexedDB) ride along on scene-image requests as visual
+  // anchors. Awaited inside loadScene (and cached) so even the very first
+  // scene image gets the references — no state race on mount.
+  const portraitsRef = useRef<string[] | null>(null)
+  const getHeroPortraits = useCallback(async (): Promise<string[]> => {
+    if (portraitsRef.current) return portraitsRef.current
+    const map = await loadPortraits(selectedPlayers.map(p => p.id))
+    const portraits = selectedPlayers.map(p => map.get(p.id)).filter((u): u is string => !!u)
+    if (portraits.length > 0 || selectedPlayers.length > 0) portraitsRef.current = portraits
+    return portraits
+  }, [selectedPlayers])
 
   // Sound engine follows the persisted preference
   useEffect(() => { setSoundEnabled(soundEnabled) }, [soundEnabled])
@@ -136,7 +148,7 @@ export default function PlayPage() {
     selectedPlayers
       .map(p => {
         const char = characters.find(c => c.playerId === p.id)
-        return char ? heroVisualDescription(char.name, char.class, char.gender, p.color) : null
+        return char ? heroVisualDescription(char.name, char.class, char.gender, p.color, p.age) : null
       })
       .filter((d): d is string => !!d),
   [selectedPlayers, characters])
@@ -189,12 +201,13 @@ export default function PlayPage() {
 
       // Paint the scene in the background — the text is readable immediately
       // and the image fades in whenever it's ready.
-      fetchImage(scene.imagePrompt, adventureStyle, heroImageDescriptions())
+      getHeroPortraits()
+        .then(portraits => fetchImage(scene.imagePrompt, adventureStyle, heroImageDescriptions(), portraits))
         .then(url => { if (url) setSceneImageUrl(url) })
     } else {
       setRetryFn(() => () => { loadScene() })
     }
-  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, language, selectedPlayers.length, characters, currentCharacter, currentPlayer, updateHero, setBoss])
+  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, characters, currentCharacter, currentPlayer, updateHero, setBoss])
 
   // Load actions for current scene
   const loadActions = useCallback(async () => {

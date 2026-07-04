@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, type GenerationConfig } from '@google/generative-ai'
+import { GoogleGenerativeAI, type GenerationConfig, type Part } from '@google/generative-ai'
 import type { AdventureStyle } from '@/types/game'
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
@@ -8,12 +8,10 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
 const IMAGE_MODEL_CANDIDATES = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image']
 let workingModelIndex = 0
 
-// The image API needs response modalities + aspect ratio, which the older
-// SDK's GenerationConfig type doesn't know about — the API accepts them.
-const imageGenerationConfig = {
-  responseModalities: ['TEXT', 'IMAGE'],
-  imageConfig: { aspectRatio: '16:9' },
-} as GenerationConfig
+export interface ReferenceImage {
+  mimeType: string
+  data: string // base64, no data: prefix
+}
 
 // One shared base look so the whole adventure feels like one illustrated book,
 // with the adventure style shifting tone rather than technique.
@@ -29,43 +27,34 @@ const STYLE_TONES: Record<AdventureStyle, string> = {
 
 const imageCache = new Map<string, string>()
 
-export function buildImagePrompt(
-  sceneDescription: string,
-  style: AdventureStyle,
-  heroDescriptions: string[] = []
-): string {
-  const heroes = heroDescriptions.length
-    ? ` The heroes in this scene: ${heroDescriptions.join('; ')}. Keep each hero's appearance exactly as described.`
-    : ''
-  return `${BASE_STYLE} ${STYLE_TONES[style]} Scene: ${sceneDescription}.${heroes} No text, letters, or UI elements in the image.`
+// The image API needs response modalities + aspect ratio, which the older
+// SDK's GenerationConfig type doesn't know about — the API accepts them.
+function imageGenerationConfig(aspectRatio: '16:9' | '1:1'): GenerationConfig {
+  return {
+    responseModalities: ['TEXT', 'IMAGE'],
+    imageConfig: { aspectRatio },
+  } as GenerationConfig
 }
 
-export async function generateSceneImage(
-  sceneDescription: string,
-  style: AdventureStyle,
-  heroDescriptions: string[] = []
+async function generateImage(
+  parts: Part[],
+  aspectRatio: '16:9' | '1:1'
 ): Promise<string | null> {
-  const prompt = buildImagePrompt(sceneDescription, style, heroDescriptions)
-  const cacheKey = prompt.slice(0, 300)
-  if (imageCache.has(cacheKey)) return imageCache.get(cacheKey)!
-
   for (let i = workingModelIndex; i < IMAGE_MODEL_CANDIDATES.length; i++) {
     try {
       const model = genAI.getGenerativeModel({
         model: IMAGE_MODEL_CANDIDATES[i],
-        generationConfig: imageGenerationConfig,
+        generationConfig: imageGenerationConfig(aspectRatio),
       })
-      const result = await model.generateContent(prompt)
+      const result = await model.generateContent(parts)
 
       const imagePart = result.response.candidates?.[0]?.content?.parts?.find(
         (p) => 'inlineData' in p && p.inlineData
       )
 
       if (imagePart && 'inlineData' in imagePart && imagePart.inlineData) {
-        const dataUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`
-        imageCache.set(cacheKey, dataUrl)
         workingModelIndex = i
-        return dataUrl
+        return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`
       }
       console.error(`Image model ${IMAGE_MODEL_CANDIDATES[i]} returned no image part`)
     } catch (error) {
@@ -73,4 +62,47 @@ export async function generateSceneImage(
     }
   }
   return null
+}
+
+export function buildImagePrompt(
+  sceneDescription: string,
+  style: AdventureStyle,
+  heroDescriptions: string[] = [],
+  hasReferencePortraits = false
+): string {
+  const heroes = heroDescriptions.length
+    ? hasReferencePortraits
+      ? ` The heroes in this scene are the characters shown in the attached reference portraits: ${heroDescriptions.join('; ')}. Keep each hero's face, hair, outfit and colors EXACTLY as in their reference portrait.`
+      : ` The heroes in this scene: ${heroDescriptions.join('; ')}. Keep each hero's appearance exactly as described.`
+    : ''
+  return `${BASE_STYLE} ${STYLE_TONES[style]} Scene: ${sceneDescription}.${heroes} No text, letters, or UI elements in the image.`
+}
+
+export async function generateSceneImage(
+  sceneDescription: string,
+  style: AdventureStyle,
+  heroDescriptions: string[] = [],
+  heroPortraits: ReferenceImage[] = []
+): Promise<string | null> {
+  const prompt = buildImagePrompt(sceneDescription, style, heroDescriptions, heroPortraits.length > 0)
+  const cacheKey = prompt.slice(0, 300)
+  if (imageCache.has(cacheKey)) return imageCache.get(cacheKey)!
+
+  const parts: Part[] = [
+    ...heroPortraits.map(p => ({ inlineData: { mimeType: p.mimeType, data: p.data } })),
+    { text: prompt },
+  ]
+  const dataUrl = await generateImage(parts, '16:9')
+  if (dataUrl) imageCache.set(cacheKey, dataUrl)
+  return dataUrl
+}
+
+// One-off hero portrait made at character creation — becomes the visual
+// anchor for that hero in every later scene image.
+export async function generateHeroPortrait(heroDescription: string): Promise<string | null> {
+  const prompt =
+    `${BASE_STYLE} Character portrait, waist-up, centered, looking at the viewer with a confident smile. ` +
+    `Subject: ${heroDescription}. Simple softly-lit fantasy background. ` +
+    'Friendly and heroic, suitable for children. No text or letters in the image.'
+  return generateImage([{ text: prompt }], '1:1')
 }

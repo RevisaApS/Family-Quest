@@ -11,10 +11,16 @@ const CLASS_LOOK: Record<CharacterClass, string> = {
   ranger: 'ranger with a wooden bow, quiver of arrows and a leaf-green tunic',
 }
 
-const GENDER_WORD: Record<Gender, string> = {
-  male: 'boy',
-  female: 'girl',
-  neutral: 'child',
+// The player's real age shapes their hero: kids get kid heroes,
+// grown-ups get grown-up heroes.
+function personWord(gender: Gender, age: number): string {
+  if (age < 13) {
+    return { male: 'young boy', female: 'young girl', neutral: 'young child' }[gender]
+  }
+  if (age < 18) {
+    return { male: 'teenage boy', female: 'teenage girl', neutral: 'teenager' }[gender]
+  }
+  return { male: 'adult man', female: 'adult woman', neutral: 'adult' }[gender]
 }
 
 // Map the player's random HSL accent color to a paintable color word so each
@@ -39,8 +45,10 @@ export function heroVisualDescription(
   characterName: string,
   characterClass: CharacterClass,
   gender: Gender,
-  playerColorHsl: string
+  playerColorHsl: string,
+  age: number
 ): string {
   const color = colorNameFromHsl(playerColorHsl)
-  return `${characterName}, a brave young ${GENDER_WORD[gender]} ${CLASS_LOOK[characterClass]}, wearing a ${color} cape`
+  const article = /^[aeiou]/.test(color) ? 'an' : 'a'
+  return `${characterName}, a brave ${personWord(gender, age)} ${CLASS_LOOK[characterClass]}, wearing ${article} ${color} cape`
 }

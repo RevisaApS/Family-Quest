@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageContainer } from '@/components/layout/page-container'
 import { Header } from '@/components/layout/header'
 import { ClassCard } from '@/components/onboarding/class-card'
+import { LoadingShimmer } from '@/components/layout/loading-shimmer'
 import { useGameStore } from '@/stores/game-store'
+import { useGameAI } from '@/hooks/use-game-ai'
+import { heroVisualDescription } from '@/lib/game/appearance'
+import { savePortrait, loadPortrait, downscalePortrait } from '@/lib/portraits'
 import type { CharacterClass } from '@/types/game'
 import { cn } from '@/lib/utils'
 
@@ -67,6 +71,10 @@ export default function CharactersPage() {
   const [gender, setGender] = useState<'male' | 'female' | 'neutral'>(
     characters.find(c => c.playerId === currentPlayer?.id)?.gender || 'neutral'
   )
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null)
+  const [portraitLoading, setPortraitLoading] = useState(false)
+  const [portraitFailed, setPortraitFailed] = useState(false)
+  const { fetchPortrait } = useGameAI()
 
   // Sync local state from store after hydration completes
   useEffect(() => {
@@ -80,6 +88,33 @@ export default function CharactersPage() {
       setCharacterName(currentPlayer.name)
     }
   }, [_hasHydrated]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show a previously generated portrait when revisiting a player
+  useEffect(() => {
+    if (!currentPlayer) return
+    setPortraitUrl(null)
+    setPortraitFailed(false)
+    loadPortrait(currentPlayer.id).then(saved => { if (saved) setPortraitUrl(saved) })
+  }, [currentPlayer?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleGeneratePortrait = async () => {
+    if (!selectedClass || !characterName || !currentPlayer || portraitLoading) return
+    setPortraitLoading(true)
+    setPortraitFailed(false)
+    const description = heroVisualDescription(
+      characterName, selectedClass, gender, currentPlayer.color, currentPlayer.age
+    )
+    const url = await fetchPortrait(description)
+    if (url) {
+      // Downscale once here so scene requests stay small later
+      const small = await downscalePortrait(url)
+      setPortraitUrl(small)
+      await savePortrait(currentPlayer.id, small)
+    } else {
+      setPortraitFailed(true)
+    }
+    setPortraitLoading(false)
+  }
 
   const handleContinue = () => {
     if (!selectedClass || !characterName || !currentPlayer) return
@@ -159,7 +194,53 @@ export default function CharactersPage() {
             </div>
           </div>
 
-          <Button size="lg" className="w-full" disabled={!selectedClass || !characterName} onClick={handleContinue}>
+          {/* Hero portrait: painted once here, then reused as the visual
+              anchor for this hero in every scene image */}
+          {selectedClass && characterName && (
+            <div className="space-y-3">
+              <Label>Hero Portrait</Label>
+              <AnimatePresence mode="wait">
+                {portraitLoading ? (
+                  <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <LoadingShimmer className="w-full aspect-square rounded-lg" />
+                    <p className="text-center text-sm text-muted-foreground animate-pulse mt-2">
+                      Painting {characterName}...
+                    </p>
+                  </motion.div>
+                ) : portraitUrl ? (
+                  <motion.div
+                    key={portraitUrl}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="space-y-2"
+                  >
+                    <img
+                      src={portraitUrl}
+                      alt={`${characterName} portrait`}
+                      className="w-full aspect-square object-cover rounded-lg border-2 border-primary/40 shadow-lg shadow-primary/10"
+                    />
+                    <Button variant="outline" className="w-full" onClick={handleGeneratePortrait}>
+                      🎨 Paint Again
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                    <Button variant="outline" size="lg" className="w-full" onClick={handleGeneratePortrait}>
+                      ✨ Paint Hero Portrait
+                    </Button>
+                    {portraitFailed && (
+                      <p className="text-center text-sm text-muted-foreground">
+                        The painter is busy — you can continue without a portrait and try again later.
+                      </p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          <Button size="lg" className="w-full" disabled={!selectedClass || !characterName || portraitLoading} onClick={handleContinue}>
             {isLastPlayer ? 'Start Adventure!' : 'Next Player →'}
           </Button>
         </motion.div>

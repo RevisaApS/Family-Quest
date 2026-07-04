@@ -188,10 +188,16 @@ describe('appearance', () => {
   })
 
   it('builds a stable hero description', () => {
-    const desc = heroVisualDescription('Freja', 'warrior', 'female', 'hsl(210, 70%, 50%)')
+    const desc = heroVisualDescription('Freja', 'warrior', 'female', 'hsl(210, 70%, 50%)', 9)
     expect(desc).toContain('Freja')
-    expect(desc).toContain('girl')
+    expect(desc).toContain('young girl')
     expect(desc).toContain('knight')
     expect(desc).toContain('blue cape')
+  })
+
+  it('keeps grown-ups grown up', () => {
+    expect(heroVisualDescription('Steven', 'ranger', 'male', 'hsl(30, 70%, 50%)', 35)).toContain('adult man')
+    expect(heroVisualDescription('Ida', 'rogue', 'female', 'hsl(30, 70%, 50%)', 15)).toContain('teenage girl')
+    expect(heroVisualDescription('Bo', 'wizard', 'neutral', 'hsl(30, 70%, 50%)', 7)).toContain('young child')
   })
 })

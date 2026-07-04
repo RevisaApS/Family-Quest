@@ -81,14 +81,15 @@ export function useGameAI() {
   const fetchImage = useCallback(async (
     sceneDescription: string,
     style: string,
-    heroDescriptions: string[] = []
+    heroDescriptions: string[] = [],
+    heroPortraits: string[] = []
   ): Promise<string | null> => {
     setLoadingImage(true)
     try {
       const response = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sceneDescription, style, heroDescriptions }),
+        body: JSON.stringify({ sceneDescription, style, heroDescriptions, heroPortraits }),
       })
       if (!response.ok) return null
       const data = await response.json()
@@ -97,6 +98,21 @@ export function useGameAI() {
       return null
     } finally {
       setLoadingImage(false)
+    }
+  }, [])
+
+  const fetchPortrait = useCallback(async (heroDescription: string): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/ai/portrait', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ heroDescription }),
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      return data.imageUrl ?? null
+    } catch {
+      return null
     }
   }, [])
 
@@ -124,6 +140,6 @@ export function useGameAI() {
   return {
     loadingScene, loadingActions, loadingOutcome, loadingImage,
     error,
-    fetchScene, fetchActions, fetchOutcome, fetchImage, fetchLootName,
+    fetchScene, fetchActions, fetchOutcome, fetchImage, fetchLootName, fetchPortrait,
   }
 }
