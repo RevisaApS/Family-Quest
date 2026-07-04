@@ -9,15 +9,20 @@ import { sfx } from '@/lib/sound'
 import type { LootItem } from '@/types/game'
 import type { Language } from '@/lib/ai/language'
 
+export type ChestContent =
+  | { kind: 'item'; item: LootItem }
+  | { kind: 'gold'; amount: number }
+
 interface LootChestModalProps {
-  item: LootItem
+  content: ChestContent
   currentItem: LootItem | null
   language: Language
-  // equip=true replaces whatever is in the slot; false discards the find
+  // For items: equip=true replaces whatever is in the slot; false discards
+  // the find. For gold the coins are always taken.
   onResolve: (equip: boolean) => void
 }
 
-export function LootChestModal({ item, currentItem, language, onResolve }: LootChestModalProps) {
+export function LootChestModal({ content, currentItem, language, onResolve }: LootChestModalProps) {
   const [opened, setOpened] = useState(false)
 
   const handleOpen = () => {
@@ -29,7 +34,9 @@ export function LootChestModal({ item, currentItem, language, onResolve }: LootC
   return (
     <div className="fixed inset-0 z-50 bg-background/90 flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-5 text-center">
-        <h2 className="text-2xl font-serif text-primary">{t('treasureFound', language)}</h2>
+        <h2 className="text-2xl font-serif text-primary">
+          {opened && content.kind === 'gold' ? t('goldFound', language) : t('treasureFound', language)}
+        </h2>
 
         <AnimatePresence mode="wait">
           {!opened ? (
@@ -45,6 +52,26 @@ export function LootChestModal({ item, currentItem, language, onResolve }: LootC
               </motion.button>
               <p className="text-muted-foreground animate-pulse">{t('tapToOpen', language)}</p>
             </motion.div>
+          ) : content.kind === 'gold' ? (
+            <motion.div
+              key="gold"
+              initial={{ scale: 0.3, opacity: 0, y: 40 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ type: 'spring', duration: 0.7 }}
+              className="space-y-4"
+            >
+              <motion.span
+                className="text-7xl block"
+                animate={{ rotate: [0, -8, 8, 0] }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              >
+                💰
+              </motion.span>
+              <p className="text-3xl font-serif text-primary">+{content.amount}</p>
+              <Button className="w-full" size="lg" onClick={() => onResolve(true)}>
+                {t('takeGold', language)} ✨
+              </Button>
+            </motion.div>
           ) : (
             <motion.div
               key="item"
@@ -59,17 +86,19 @@ export function LootChestModal({ item, currentItem, language, onResolve }: LootC
                   transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
                   className="absolute -inset-6 rounded-full border-2 border-dashed border-primary/30"
                 />
-                <span className="text-7xl block">{item.emoji}</span>
+                <span className="text-7xl block">{content.item.emoji}</span>
               </div>
-              {item.bonus >= 2 && (
+              {content.item.bonus >= 2 && (
                 <span className="inline-block rounded-full bg-primary/20 text-primary text-xs font-bold px-3 py-1">
                   ✨ {t('rare', language)}
                 </span>
               )}
               <div className="space-y-1">
-                <h3 className="text-xl font-serif text-primary">{item.name}</h3>
-                <p className="text-sm text-muted-foreground">{SLOT_LABEL[item.slot][language]}</p>
-                <p className="font-bold text-success">+{item.bonus} {statLabel(item.stat, language)}</p>
+                <h3 className="text-xl font-serif text-primary">{content.item.name}</h3>
+                <p className="text-sm text-muted-foreground">{SLOT_LABEL[content.item.slot][language]}</p>
+                <p className="font-bold text-success">
+                  +{content.item.bonus} {statLabel(content.item.stat, language)}
+                </p>
               </div>
 
               {currentItem ? (

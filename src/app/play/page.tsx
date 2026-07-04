@@ -13,18 +13,22 @@ import { OutcomeDisplay } from '@/components/game/outcome-display'
 import { ErrorMessage } from '@/components/game/error-message'
 import { BossBanner } from '@/components/game/boss-banner'
 import { LevelUpModal } from '@/components/game/level-up-modal'
-import { LootChestModal } from '@/components/game/loot-chest-modal'
+import { LootChestModal, type ChestContent } from '@/components/game/loot-chest-modal'
 import { VictoryOverlay } from '@/components/game/victory-overlay'
+import { ShopModal } from '@/components/game/shop-modal'
+import { InventoryModal } from '@/components/game/inventory-modal'
 import { useGameStore } from '@/stores/game-store'
 import { useGameAI } from '@/hooks/use-game-ai'
 import { calculateOutcome } from '@/lib/game/mechanics'
 import {
   heroStatBonus, levelThresholdAdjustment, applyTurnOutcome, reviveHero,
   heroDamageForOutcome, bossDamageForOutcome, lootShouldDrop, lootBonusForRoll,
-  bossArrivalTurn, createBoss, equipLoot, addSkill,
+  bossArrivalTurn, createBoss, equipLoot, addSkill, addGold, buyItem,
+  chestIsGold, chestGoldAmount, BOSS_GOLD_REWARD,
 } from '@/lib/game/rpg'
 import { skillChoices } from '@/lib/game/skills'
 import { rollLootSlot, rollLootStat, createLoot, fallbackLootName } from '@/lib/game/loot'
+import { toLootItem, type ShopItem } from '@/lib/game/shop'
 import { heroVisualDescription } from '@/lib/game/appearance'
 import { loadPortraits } from '@/lib/portraits'
 import { sfx, setSoundEnabled } from '@/lib/sound'
@@ -32,7 +36,7 @@ import { t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { GeneratedAction, StoryContext, BossPhase } from '@/types/ai'
-import type { OutcomeType, LootItem, Skill } from '@/types/game'
+import type { OutcomeType, Skill } from '@/types/game'
 
 const MAX_STORY_HISTORY = 10
 
@@ -41,6 +45,13 @@ interface PendingLevelUp {
   characterName: string
   newLevel: number
   choices: Skill[]
+}
+
+// Chest contents are bound to the hero who rolled them — the turn pointer
+// advances before the chest opens, so ownership must be captured at roll time.
+interface PendingChest {
+  content: ChestContent
+  playerId: string
 }
 
 export default function PlayPage() {
@@ -83,9 +94,12 @@ export default function PlayPage() {
 
   // RPG per-turn results
   const [turnXp, setTurnXp] = useState(0)
+  const [turnGold, setTurnGold] = useState(0)
   const [turnDamage, setTurnDamage] = useState(0)
   const [turnBossDamage, setTurnBossDamage] = useState(0)
-  const [pendingLoot, setPendingLoot] = useState<LootItem | null>(null)
+  const [pendingLoot, setPendingLoot] = useState<PendingChest | null>(null)
+  const [shopOpen, setShopOpen] = useState(false)
+  const [inventoryPlayerId, setInventoryPlayerId] = useState<string | null>(null)
   const [pendingLevelUp, setPendingLevelUp] = useState<PendingLevelUp | null>(null)
   const [showVictory, setShowVictory] = useState(false)
   const [rescueMessage, setRescueMessage] = useState<string | null>(null)
@@ -148,10 +162,18 @@ export default function PlayPage() {
     selectedPlayers
       .map(p => {
         const char = characters.find(c => c.playerId === p.id)
-        return char ? heroVisualDescription(char.name, char.class, char.gender, p.color, p.age) : null
+        if (!char) return null
+        const base = heroVisualDescription(char.name, char.class, char.gender, p.color, p.age)
+        // Equipped gear shows up on the hero in every scene: buy the Golden
+        // Helm and the pictures wear it
+        const gearLooks = Object.values(heroes.find(h => h.playerId === p.id)?.equipment ?? {})
+          .filter((i): i is NonNullable<typeof i> => !!i)
+          .map(i => i.look)
+          .filter((l): l is string => !!l)
+        return gearLooks.length ? `${base}, equipped with ${gearLooks.join(', ')}` : base
       })
       .filter((d): d is string => !!d),
-  [selectedPlayers, characters])
+  [selectedPlayers, characters, heroes])
 
   // Load scene for current player
   const loadScene = useCallback(async () => {
@@ -165,6 +187,7 @@ export default function PlayPage() {
     setOutcomeNarrative('')
     setRetryFn(null)
     setTurnXp(0)
+    setTurnGold(0)
     setTurnDamage(0)
     setTurnBossDamage(0)
     setRescueMessage(null)
@@ -292,6 +315,7 @@ export default function PlayPage() {
     const resolution = applyTurnOutcome(currentHero, calculated.outcome, bossActive)
     updateHero(resolution.hero)
     setTurnXp(resolution.xpGained)
+    setTurnGold(resolution.goldGained)
     setTurnDamage(resolution.damageTaken)
     if (resolution.damageTaken > 0) sfx.hit()
 
@@ -313,23 +337,37 @@ export default function PlayPage() {
         const newHp = Math.max(0, boss.hp - bossDamage)
         const defeated = newHp === 0
         setBoss({ ...boss, hp: newHp, defeated })
-        if (defeated) setShowVictory(true)
+        if (defeated) {
+          setShowVictory(true)
+          // The quest reward: every hero gets a big payday
+          useGameStore.getState().heroes.forEach(h => updateHero(addGold(h, BOSS_GOLD_REWARD)))
+        }
       }
       setTurnBossDamage(bossDamage)
     }
 
-    // Strong success → treasure. Named by the AI while the outcome is read.
+    // Strong success → treasure, owned by the hero who rolled it.
+    // Named by the AI while the outcome is read.
     if (lootShouldDrop(calculated.outcome, result)) {
-      const slot = rollLootSlot()
-      const stat = rollLootStat()
-      const bonus = lootBonusForRoll(result)
-      const item = createLoot(slot, stat, bonus, fallbackLootName(slot, stat, language))
-      setPendingLoot(item)
-      fetchLootName(slot, stat, language, currentSceneText).then(name => {
-        if (name) {
-          setPendingLoot(prev => prev && prev.id === item.id ? { ...prev, name } : prev)
-        }
-      })
+      const ownerPlayerId = currentPlayer.id
+      if (chestIsGold()) {
+        setPendingLoot({ content: { kind: 'gold', amount: chestGoldAmount(result) }, playerId: ownerPlayerId })
+      } else {
+        const slot = rollLootSlot()
+        const stat = rollLootStat()
+        const bonus = lootBonusForRoll(result)
+        const item = createLoot(slot, stat, bonus, fallbackLootName(slot, stat, language))
+        setPendingLoot({ content: { kind: 'item', item }, playerId: ownerPlayerId })
+        fetchLootName(slot, stat, language, currentSceneText).then(name => {
+          if (name) {
+            setPendingLoot(prev =>
+              prev && prev.content.kind === 'item' && prev.content.item.id === item.id
+                ? { ...prev, content: { kind: 'item', item: { ...prev.content.item, name } } }
+                : prev
+            )
+          }
+        })
+      }
     }
 
     // Fetch AI-generated outcome narrative
@@ -382,12 +420,26 @@ export default function PlayPage() {
   }
 
   const handleLootResolve = (equip: boolean) => {
-    if (equip && pendingLoot) {
-      const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
-      if (hero) updateHero(equipLoot(hero, pendingLoot))
+    if (pendingLoot) {
+      // Equip/credit the hero who opened the chest — not whoever's turn it is now
+      const hero = useGameStore.getState().heroes.find(h => h.playerId === pendingLoot.playerId)
+      if (hero) {
+        if (pendingLoot.content.kind === 'gold') {
+          updateHero(addGold(hero, pendingLoot.content.amount))
+        } else if (equip) {
+          updateHero(equipLoot(hero, pendingLoot.content.item))
+        }
+      }
     }
     setPendingLoot(null)
     if (!pendingLevelUp && !showVictory) setTurnCounter(prev => prev + 1)
+  }
+
+  const handleBuy = (item: ShopItem) => {
+    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero) return
+    const bought = buyItem(hero, toLootItem(item, language), item.price)
+    if (bought) updateHero(bought)
   }
 
   const handleSkillPick = (skill: Skill | null) => {
@@ -422,7 +474,14 @@ export default function PlayPage() {
   return (
     <PageContainer>
       <div className="space-y-4">
-        {/* Sound + pause buttons */}
+        {/* Shop + sound + pause buttons */}
+        <button
+          onClick={() => setShopOpen(true)}
+          className="fixed top-4 right-24 p-2 rounded-lg bg-card border border-border z-40"
+          aria-label="Open shop"
+        >
+          🏪
+        </button>
         <button
           onClick={() => setSoundPref(!soundEnabled)}
           className="fixed top-4 right-14 p-2 rounded-lg bg-card border border-border z-40"
@@ -468,11 +527,39 @@ export default function PlayPage() {
           </div>
         )}
 
+        {/* Shop for the current player's hero */}
+        {shopOpen && currentHero && (
+          <ShopModal
+            hero={currentHero}
+            characterName={currentCharacter.name}
+            language={language}
+            onBuy={handleBuy}
+            onClose={() => setShopOpen(false)}
+          />
+        )}
+
+        {/* Inventory for whichever hero chip was tapped */}
+        {inventoryPlayerId && (() => {
+          const invHero = heroes.find(h => h.playerId === inventoryPlayerId)
+          const invChar = characters.find(c => c.playerId === inventoryPlayerId)
+          return invHero && invChar ? (
+            <InventoryModal
+              hero={invHero}
+              characterName={invChar.name}
+              characterClass={invChar.class}
+              language={language}
+              onClose={() => setInventoryPlayerId(null)}
+            />
+          ) : null
+        })()}
+
         {/* Reward overlays: loot first, then level-up, then victory */}
         {gamePhase === 'rewards' && pendingLoot && (
           <LootChestModal
-            item={pendingLoot}
-            currentItem={heroes.find(h => h.playerId === currentPlayer.id)?.equipment[pendingLoot.slot] ?? null}
+            content={pendingLoot.content}
+            currentItem={pendingLoot.content.kind === 'item'
+              ? heroes.find(h => h.playerId === pendingLoot.playerId)?.equipment[pendingLoot.content.item.slot] ?? null
+              : null}
             language={language}
             onResolve={handleLootResolve}
           />
@@ -490,6 +577,7 @@ export default function PlayPage() {
           <VictoryOverlay
             bossName={boss.name}
             language={language}
+            goldReward={BOSS_GOLD_REWARD}
             onKeepPlaying={() => {
               setShowVictory(false)
               setTurnCounter(prev => prev + 1)
@@ -502,7 +590,12 @@ export default function PlayPage() {
         )}
 
         {partyMembers.length > 0 && (
-          <PartyBar members={partyMembers} currentPlayerId={currentPlayer.id} language={language} />
+          <PartyBar
+            members={partyMembers}
+            currentPlayerId={currentPlayer.id}
+            language={language}
+            onSelectHero={setInventoryPlayerId}
+          />
         )}
 
         {boss && !boss.defeated && <BossBanner boss={boss} />}
@@ -631,6 +724,7 @@ export default function PlayPage() {
                 narrative={outcomeNarrative}
                 isLoading={loadingOutcome || !outcomeNarrative}
                 xpGained={turnXp}
+                goldGained={turnGold}
                 damageTaken={turnDamage}
                 bossDamage={turnBossDamage}
                 bossName={boss?.name}

@@ -49,6 +49,13 @@ notes above (~150 lines).
 
 ## Gotchas
 
+- To force chest contents deterministically, pin `Math.random` via
+  `page.evaluate` ONLY around the dice tap and restore right after —
+  pinning it page-wide (addInitScript) freezes framer-motion's phase
+  transitions and the action picker never renders.
+- `getByRole('button', {name: 'Luk'})` substring-matches hero names like
+  "Lukas" — use `exact: true` for the close buttons.
+
 - `tests/` has unit coverage for all pure game logic (`npx vitest run`) — but
   that's CI's job, not verification.
 - Real image generation needs `GOOGLE_AI_API_KEY` with access to

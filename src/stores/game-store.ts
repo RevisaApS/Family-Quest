@@ -217,7 +217,8 @@ export const useGameStore = create<GameStore>()(
         return {
           ...saved,
           ...target.snapshot,
-          heroes: target.snapshot.heroes ?? [],
+          // pre-gold saves get their heroes topped up to the starting purse
+          heroes: (target.snapshot.heroes ?? []).map(h => ({ ...h, gold: h.gold ?? 1 })),
           boss: target.snapshot.boss ?? null,
           activeAdventureId: id,
         }
@@ -239,10 +240,11 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'family-quest-storage',
-      version: 2,
+      version: 3,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
       // v1 predates the RPG update (heroes, boss, sound).
+      // v2 predates the gold economy.
       migrate: (persisted, version) => {
         let state = persisted as GameStore
         if (version < 1) {
@@ -250,6 +252,9 @@ export const useGameStore = create<GameStore>()(
         }
         if (version < 2) {
           state = { ...state, heroes: [], boss: null, soundEnabled: true }
+        }
+        if (version < 3) {
+          state = { ...state, heroes: (state.heroes ?? []).map(h => ({ ...h, gold: h.gold ?? 1 })) }
         }
         return state
       },

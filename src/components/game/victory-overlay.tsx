@@ -10,11 +10,12 @@ import type { Language } from '@/lib/ai/language'
 interface VictoryOverlayProps {
   bossName: string
   language: Language
+  goldReward?: number
   onKeepPlaying: () => void
   onNewAdventure: () => void
 }
 
-export function VictoryOverlay({ bossName, language, onKeepPlaying, onNewAdventure }: VictoryOverlayProps) {
+export function VictoryOverlay({ bossName, language, goldReward, onKeepPlaying, onNewAdventure }: VictoryOverlayProps) {
   useEffect(() => { sfx.victory() }, [])
 
   return (
@@ -46,6 +47,16 @@ export function VictoryOverlay({ bossName, language, onKeepPlaying, onNewAdventu
             {t('bossDefeated', language)} ({bossName})
           </p>
           <p className="text-lg">{t('victorySub', language)}</p>
+          {goldReward && (
+            <motion.p
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.5, type: 'spring' }}
+              className="text-xl font-bold text-primary"
+            >
+              💰 +{goldReward} {t('bossGoldReward', language)}
+            </motion.p>
+          )}
         </div>
         <div className="space-y-2">
           <Button className="w-full" size="lg" onClick={onKeepPlaying}>

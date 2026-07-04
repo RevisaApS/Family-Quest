@@ -23,7 +23,7 @@ export interface ActionOption {
   sceneFitReason: string
 }
 
-export type EquipSlot = 'weapon' | 'armor' | 'trinket'
+export type EquipSlot = 'weapon' | 'armor' | 'helmet' | 'trinket' | 'boots'
 
 export interface LootItem {
   id: string
@@ -32,6 +32,9 @@ export interface LootItem {
   emoji: string
   stat: Stat
   bonus: number
+  // English visual description used in image prompts so equipped gear
+  // actually appears on the hero in generated scenes
+  look?: string
 }
 
 export interface Skill {
@@ -49,6 +52,7 @@ export interface HeroState {
   maxHp: number
   xp: number
   level: number
+  gold: number
   skills: Skill[]
   equipment: Partial<Record<EquipSlot, LootItem>>
   knockedOut: boolean

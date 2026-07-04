@@ -24,6 +24,17 @@ const STRINGS = {
   damageTaken: { da: 'liv mistet', en: 'damage taken' },
   level: { da: 'Niv.', en: 'Lv.' },
   rare: { da: 'Sjælden!', en: 'Rare!' },
+  shop: { da: 'Butikken', en: 'The Shop' },
+  buy: { da: 'Køb', en: 'Buy' },
+  equipped: { da: 'I brug', en: 'Equipped' },
+  yourGold: { da: 'Dit guld', en: 'Your gold' },
+  goldFound: { da: 'Du fandt guld!', en: 'You found gold!' },
+  takeGold: { da: 'Tag guldet', en: 'Take the gold' },
+  bossGoldReward: { da: 'guld til alle helte!', en: 'gold for every hero!' },
+  inventory: { da: 'Udstyr', en: 'Inventory' },
+  skills: { da: 'Kræfter', en: 'Powers' },
+  empty: { da: 'Tom', en: 'Empty' },
+  close: { da: 'Luk', en: 'Close' },
 } as const
 
 export type StringKey = keyof typeof STRINGS

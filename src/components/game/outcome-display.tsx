@@ -13,6 +13,7 @@ interface OutcomeDisplayProps {
   narrative: string
   isLoading: boolean
   xpGained?: number
+  goldGained?: number
   damageTaken?: number
   bossDamage?: number
   bossName?: string
@@ -28,7 +29,7 @@ const outcomeStyles: Record<OutcomeType, { title: string; emoji: string; bgClass
 
 export function OutcomeDisplay({
   outcome, diceRoll, narrative, isLoading,
-  xpGained = 0, damageTaken = 0, bossDamage = 0, bossName, language = 'en',
+  xpGained = 0, goldGained = 0, damageTaken = 0, bossDamage = 0, bossName, language = 'en',
   onContinue,
 }: OutcomeDisplayProps) {
   const style = outcomeStyles[outcome]
@@ -51,6 +52,16 @@ export function OutcomeDisplay({
             className="rounded-full bg-primary/15 text-primary px-3 py-1"
           >
             +{xpGained} XP
+          </motion.span>
+        )}
+        {goldGained > 0 && (
+          <motion.span
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="rounded-full bg-primary/15 text-primary px-3 py-1"
+          >
+            💰 +{goldGained}
           </motion.span>
         )}
         {bossDamage > 0 && bossName && (

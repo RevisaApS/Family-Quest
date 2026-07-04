@@ -18,6 +18,8 @@ interface PartyBarProps {
   members: PartyMember[]
   currentPlayerId: string
   language: Language
+  // Tap a hero chip to open their inventory
+  onSelectHero?: (playerId: string) => void
 }
 
 function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
@@ -36,17 +38,18 @@ function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
   )
 }
 
-export function PartyBar({ members, currentPlayerId, language }: PartyBarProps) {
+export function PartyBar({ members, currentPlayerId, language, onSelectHero }: PartyBarProps) {
   return (
     <div className="flex gap-2">
       {members.map(({ playerId, characterName, characterClass, hero }) => {
         const isCurrent = playerId === currentPlayerId
         const gear = Object.values(hero.equipment).filter(Boolean)
         return (
-          <div
+          <button
             key={playerId}
+            onClick={() => onSelectHero?.(playerId)}
             className={cn(
-              'flex-1 min-w-0 rounded-lg border px-2 py-1.5 space-y-1 transition-all',
+              'flex-1 min-w-0 rounded-lg border px-2 py-1.5 space-y-1 transition-all text-left active:scale-[0.98]',
               isCurrent ? 'border-primary bg-primary/10 shadow-md shadow-primary/10' : 'border-border bg-card',
               hero.knockedOut && 'opacity-60 grayscale'
             )}
@@ -63,11 +66,12 @@ export function PartyBar({ members, currentPlayerId, language }: PartyBarProps) 
             <HpBar hp={hero.hp} maxHp={hero.maxHp} />
             <div className="flex items-center gap-0.5 h-4 text-[10px]">
               <span className="text-muted-foreground">❤️ {hero.hp}/{hero.maxHp}</span>
+              <span className="text-muted-foreground ml-1.5">💰 {hero.gold}</span>
               {gear.length > 0 && (
-                <span className="ml-auto">{gear.map(item => item!.emoji).join('')}</span>
+                <span className="ml-auto truncate">{gear.map(item => item!.emoji).join('')}</span>
               )}
             </div>
-          </div>
+          </button>
         )
       })}
     </div>

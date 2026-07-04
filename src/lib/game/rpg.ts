@@ -10,6 +10,30 @@ export const XP_PER_OUTCOME: Record<OutcomeType, number> = {
   failure: 1,
 }
 
+// --- Gold economy ---
+// Heroes start nearly broke (1 gold buys the hilariously bad starter gear).
+// Session math for one kid: ~6 turns before the boss earns ~8-12 gold
+// (turns + chest pouches), the boss pays out big — tier-3 gear is a
+// post-boss trophy purchase.
+export const STARTING_GOLD = 1
+
+export const GOLD_PER_OUTCOME: Record<OutcomeType, number> = {
+  success: 2,
+  partial: 1,
+  failure: 0,
+}
+
+export const BOSS_GOLD_REWARD = 20
+
+// A chest is either an item or a pouch of coins — the dice roll sets the size.
+export function chestIsGold(): boolean {
+  return Math.random() < 0.4
+}
+
+export function chestGoldAmount(diceRoll: number): number {
+  return diceRoll + 2
+}
+
 export const MAX_LEVEL = 5
 
 // Cumulative XP needed to REACH each level. Level 2 comes fast (early win),
@@ -112,6 +136,7 @@ export function createHero(playerId: string): HeroState {
     maxHp: BASE_MAX_HP,
     xp: 0,
     level: 1,
+    gold: STARTING_GOLD,
     skills: [],
     equipment: {},
     knockedOut: false,
@@ -123,6 +148,7 @@ export interface TurnResolution {
   leveledUp: boolean
   damageTaken: number
   xpGained: number
+  goldGained: number
 }
 
 // Apply one turn's outcome to the acting hero: XP, damage, KO, level-up
@@ -133,6 +159,7 @@ export function applyTurnOutcome(
   bossActive: boolean
 ): TurnResolution {
   const xpGained = XP_PER_OUTCOME[outcome]
+  const goldGained = GOLD_PER_OUTCOME[outcome]
   const damageTaken = heroDamageForOutcome(outcome, bossActive)
 
   const xp = hero.xp + xpGained
@@ -151,6 +178,7 @@ export function applyTurnOutcome(
       ...hero,
       xp,
       level: newLevel,
+      gold: hero.gold + goldGained,
       maxHp,
       hp,
       knockedOut: hp === 0,
@@ -158,6 +186,7 @@ export function applyTurnOutcome(
     leveledUp,
     damageTaken,
     xpGained,
+    goldGained,
   }
 }
 
@@ -167,6 +196,16 @@ export function reviveHero(hero: HeroState): HeroState {
 
 export function equipLoot(hero: HeroState, item: LootItem): HeroState {
   return { ...hero, equipment: { ...hero.equipment, [item.slot]: item } }
+}
+
+export function addGold(hero: HeroState, amount: number): HeroState {
+  return { ...hero, gold: hero.gold + amount }
+}
+
+// Buying auto-equips into the item's slot; null when the hero can't afford it.
+export function buyItem(hero: HeroState, item: LootItem, price: number): HeroState | null {
+  if (hero.gold < price) return null
+  return { ...equipLoot(hero, item), gold: hero.gold - price }
 }
 
 export function addSkill(hero: HeroState, skill: Skill): HeroState {
