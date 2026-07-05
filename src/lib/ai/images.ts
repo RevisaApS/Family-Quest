@@ -86,8 +86,11 @@ export async function generateSceneImage(
   heroDescriptions: string[] = [],
   heroPortraits: ReferenceImage[] = []
 ): Promise<string | null> {
+  // Key on the FULL prompt: the fixed style prefix alone is longer than any
+  // truncated key, and a truncated key made every scene "identical" — the
+  // whole adventure got stuck on the first cached image.
   const prompt = buildImagePrompt(sceneDescription, style, heroDescriptions, heroPortraits.length > 0)
-  const cacheKey = prompt.slice(0, 300)
+  const cacheKey = prompt
   if (imageCache.has(cacheKey)) return imageCache.get(cacheKey)!
 
   const parts: Part[] = [
