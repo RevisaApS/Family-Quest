@@ -122,17 +122,18 @@ export function useGameAI() {
     slot: EquipSlot,
     stat: Stat,
     language: Language,
-    sceneContext: string
-  ): Promise<string | null> => {
+    sceneContext: string,
+    style?: string
+  ): Promise<{ name: string; look: string | null } | null> => {
     try {
       const response = await fetch('/api/ai/loot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slot, stat, language, sceneContext }),
+        body: JSON.stringify({ slot, stat, language, sceneContext, style }),
       })
       if (!response.ok) return null
       const data = await response.json()
-      return data.name ?? null
+      return data.name ? { name: data.name, look: data.look ?? null } : null
     } catch {
       return null
     }

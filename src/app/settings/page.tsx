@@ -83,7 +83,7 @@ export default function SettingsPage() {
             </button>
             {showInfo && (
               <div className="text-xs text-muted-foreground space-y-2 bg-card/20 rounded-lg p-3 text-left">
-                <p><strong>Adventure Style:</strong> Sets the tone - Whimsical for younger kids (4-7), Realistic for action (7-12), Dark for teens (13+)</p>
+                <p><strong>Adventure Style:</strong> Sets the tone - Whimsical for younger kids (4-7), Epic for cool monster-filled adventure (7-12), Dark for teens (13+)</p>
                 <p><strong>Difficulty:</strong> Easy = gentle, Medium = balanced, Hard = real consequences</p>
                 <p><strong>Dice:</strong> Digital = tap to roll in-app, Physical = use your own dice</p>
                 <p><strong>Story Language:</strong> The language the adventure is told in</p>

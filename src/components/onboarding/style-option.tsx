@@ -12,7 +12,7 @@ interface StyleOptionProps {
 
 const styleData: Record<AdventureStyle, { name: string; ages: string; emoji: string; bgTint: string }> = {
   whimsical: { name: 'Whimsical', ages: '4-7', emoji: '🌈', bgTint: 'bg-orange-950/20' },
-  realistic: { name: 'Realistic', ages: '7-12', emoji: '⚔️', bgTint: 'bg-emerald-950/20' },
+  realistic: { name: 'Epic', ages: '7-12', emoji: '🐉', bgTint: 'bg-emerald-950/20' },
   dark: { name: 'Dark', ages: '13+', emoji: '💀', bgTint: 'bg-slate-950/30' },
 }
 

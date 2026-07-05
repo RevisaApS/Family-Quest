@@ -7,6 +7,7 @@ export async function generateActions(
   currentScene: string
 ): Promise<GeneratedAction[]> {
   const currentCharacter = context.characters.find(c => c.playerId === context.currentPlayerId)
+  const inBattle = context.encounterPhase === 'active' && !!context.encounter
 
   const prompt = `You are a D&D dungeon master creating action options.
 
@@ -17,12 +18,12 @@ Current Scene: ${currentScene}
 Current Character: ${currentCharacter?.characterName} the ${currentCharacter?.class}
 ${currentCharacter?.rpg?.skillNames.length ? `Their powers: ${currentCharacter.rpg.skillNames.join(', ')}` : ''}
 ${currentCharacter?.rpg?.gearNames.length ? `Their equipment: ${currentCharacter.rpg.gearNames.join(', ')}` : ''}
-${context.encounterPhase === 'active' && context.encounter ? `BATTLE: they are fighting ${context.encounter.name}! At least one action should engage the enemy.` : ''}
+${inBattle ? `BATTLE: they are locked in combat with ${context.encounter!.name}! ALL 3 actions must be ways to ATTACK and inflict damage on the enemy — e.g. a mighty strike, a clever spell, a daring acrobatic maneuver, a fearless charge. NEVER offer friendly or passive options: no giving food or gifts, no befriending, no comforting, no talking it out, no running away.` : ''}
 ${currentCharacter?.rpg?.skillNames.length || currentCharacter?.rpg?.gearNames.length ? 'When it fits the scene, let one action use a named power or piece of equipment — kids love using their own gear.' : ''}
 
 Generate exactly 3 action options the player could take. Each should:
 - Use a different stat when possible (strength, magic, agility, heart)
-- Include at least one non-combat option
+${inBattle ? '- Be an attack that hurts or weakens the enemy' : '- Include at least one non-combat option'}
 - Be clear enough for a child to understand
 - Be SHORT: max 10 words, so a child can read it quickly
 - Have a "sceneFit" rating based on how smart the choice is for THIS situation (independent of character stats)

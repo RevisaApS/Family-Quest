@@ -21,7 +21,9 @@ const BASE_STYLE =
 
 const STYLE_TONES: Record<AdventureStyle, string> = {
   whimsical: 'Bright, warm and friendly mood. Rounded, cheerful details. Nothing scary.',
-  realistic: 'Adventurous and exciting mood, suitable for children — thrilling but never frightening.',
+  realistic:
+    'Epic and adventurous with a dark, cool edge — dramatic shadows, stormlight, mist, ' +
+    'fierce monsters with glowing eyes. Thrilling and a little spooky, but heroic. No gore.',
   dark: 'Moody, mysterious atmosphere with rich shadows, but still heroic and hopeful.',
 }
 
@@ -94,6 +96,43 @@ export async function generateSceneImage(
   ]
   const dataUrl = await generateImage(parts, '16:9')
   if (dataUrl) imageCache.set(cacheKey, dataUrl)
+  return dataUrl
+}
+
+// Rarity must be legible at a glance: +0 junk looks like junk, +3 legendary
+// gear looks like a museum piece. The bonus drives the visual quality cue.
+const ITEM_QUALITY = [
+  'Shabby, bent and worn out, comically poor quality — obviously the worst gear imaginable.',
+  'Simple and sturdy with plain, honest craftsmanship. Nothing fancy.',
+  'Finely crafted and impressive, with subtle magical details and a faint glow.',
+  'Legendary and awe-inspiring, radiating magical power, dramatic glow and sparks.',
+] as const
+
+export function buildItemImagePrompt(
+  name: string,
+  look: string,
+  bonus: number,
+  style: AdventureStyle
+): string {
+  const quality = ITEM_QUALITY[Math.max(0, Math.min(3, Math.round(bonus)))]
+  return (
+    `${BASE_STYLE} ${STYLE_TONES[style]} ` +
+    `A single fantasy RPG item on display: "${name}" — ${look}. ${quality} ` +
+    'Centered still-life of the item alone, filling the frame, on a simple atmospheric background. ' +
+    'No people, no creatures, no text, letters or UI elements in the image.'
+  )
+}
+
+export async function generateItemImage(
+  name: string,
+  look: string,
+  bonus: number,
+  style: AdventureStyle
+): Promise<string | null> {
+  const prompt = buildItemImagePrompt(name, look, bonus, style)
+  if (imageCache.has(prompt)) return imageCache.get(prompt)!
+  const dataUrl = await generateImage([{ text: prompt }], '1:1')
+  if (dataUrl) imageCache.set(prompt, dataUrl)
   return dataUrl
 }
 

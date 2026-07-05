@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
 import { SLOT_EMOJI, SLOT_LABEL, ALL_SLOTS } from '@/lib/game/loot'
+import { ItemImage } from '@/components/game/item-image'
 import { xpForNextLevel } from '@/lib/game/rpg'
 import { loadPortrait } from '@/lib/portraits'
 import { t, statLabel } from '@/lib/i18n'
@@ -79,7 +80,15 @@ export function InventoryModal({ hero, characterName, characterClass, language, 
             const item = hero.equipment[slot]
             return (
               <div key={slot} className="rounded-lg border border-border bg-card p-3 flex items-center gap-3">
-                <span className="text-2xl">{item?.emoji ?? SLOT_EMOJI[slot]}</span>
+                {item ? (
+                  <ItemImage
+                    item={item}
+                    className="w-12 h-12 shrink-0 rounded-md border border-border"
+                    emojiClassName="text-2xl"
+                  />
+                ) : (
+                  <span className="text-2xl w-12 text-center opacity-50">{SLOT_EMOJI[slot]}</span>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">{SLOT_LABEL[slot][language]}</p>
                   {item ? (

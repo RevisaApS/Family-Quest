@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { t, statLabel } from '@/lib/i18n'
 import { SLOT_LABEL } from '@/lib/game/loot'
+import { ItemImage } from '@/components/game/item-image'
 import { sfx } from '@/lib/sound'
 import type { LootItem } from '@/types/game'
 import type { Language } from '@/lib/ai/language'
@@ -16,13 +17,15 @@ export type ChestContent =
 interface LootChestModalProps {
   content: ChestContent
   currentItem: LootItem | null
+  // True while the AI is still naming the item — the image waits for it
+  namePending?: boolean
   language: Language
   // For items: equip=true replaces whatever is in the slot; false discards
   // the find. For gold the coins are always taken.
   onResolve: (equip: boolean) => void
 }
 
-export function LootChestModal({ content, currentItem, language, onResolve }: LootChestModalProps) {
+export function LootChestModal({ content, currentItem, namePending, language, onResolve }: LootChestModalProps) {
   const [opened, setOpened] = useState(false)
 
   const handleOpen = () => {
@@ -84,9 +87,14 @@ export function LootChestModal({ content, currentItem, language, onResolve }: Lo
                 <motion.span
                   animate={{ rotate: [0, 360] }}
                   transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                  className="absolute -inset-6 rounded-full border-2 border-dashed border-primary/30"
+                  className="absolute -inset-4 rounded-full border-2 border-dashed border-primary/30"
                 />
-                <span className="text-7xl block">{content.item.emoji}</span>
+                <ItemImage
+                  item={content.item}
+                  defer={namePending}
+                  className="w-36 h-36 rounded-xl border-2 border-primary/40 mx-auto"
+                  emojiClassName="text-7xl"
+                />
               </div>
               {content.item.bonus >= 2 && (
                 <span className="inline-block rounded-full bg-primary/20 text-primary text-xs font-bold px-3 py-1">

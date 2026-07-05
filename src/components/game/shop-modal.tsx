@@ -5,7 +5,8 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { t, statLabel } from '@/lib/i18n'
 import { SLOT_EMOJI, SLOT_LABEL, ALL_SLOTS } from '@/lib/game/loot'
-import { shopItemsForSlot, type ShopItem } from '@/lib/game/shop'
+import { shopItemsForSlot, toLootItem, type ShopItem } from '@/lib/game/shop'
+import { ItemImage } from '@/components/game/item-image'
 import { sfx } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import type { HeroState, EquipSlot } from '@/types/game'
@@ -72,7 +73,11 @@ export function ShopModal({ hero, characterName, language, onBuy, onClose }: Sho
                   owned && 'opacity-70'
                 )}
               >
-                <span className="text-3xl">{item.tier === 3 ? '✨' : SLOT_EMOJI[item.slot]}</span>
+                <ItemImage
+                  item={toLootItem(item, language)}
+                  className="w-14 h-14 shrink-0 rounded-md border border-border"
+                  emojiClassName="text-3xl"
+                />
                 <div className="flex-1 min-w-0">
                   <p className={cn('font-serif truncate', item.tier === 3 ? 'text-primary' : 'text-foreground')}>
                     {item.name[language]}

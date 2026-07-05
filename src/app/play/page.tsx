@@ -56,6 +56,9 @@ interface PendingLevelUp {
 interface PendingChest {
   content: ChestContent
   playerId: string
+  // True while the AI is still naming the item — the item image waits for
+  // the final name so picture and name match
+  namePending?: boolean
 }
 
 interface PendingMonsterVictory {
@@ -420,15 +423,24 @@ export default function PlayPage() {
         const stat = rollLootStat()
         const itemBonus = luckyTriggers ? 2 : lootBonusForRoll(roll)
         const item = createLoot(slot, stat, itemBonus, fallbackLootName(slot, stat, language))
-        setPendingLoot({ content: { kind: 'item', item }, playerId: ownerPlayerId })
-        fetchLootName(slot, stat, language, currentSceneText).then(name => {
-          if (name) {
-            setPendingLoot(prev =>
-              prev && prev.content.kind === 'item' && prev.content.item.id === item.id
-                ? { ...prev, content: { kind: 'item', item: { ...prev.content.item, name } } }
-                : prev
-            )
-          }
+        setPendingLoot({ content: { kind: 'item', item }, playerId: ownerPlayerId, namePending: true })
+        fetchLootName(slot, stat, language, currentSceneText, adventureStyle).then(named => {
+          setPendingLoot(prev =>
+            prev && prev.content.kind === 'item' && prev.content.item.id === item.id
+              ? {
+                  ...prev,
+                  namePending: false,
+                  content: {
+                    kind: 'item',
+                    item: {
+                      ...prev.content.item,
+                      name: named?.name ?? prev.content.item.name,
+                      look: named?.look ?? prev.content.item.look,
+                    },
+                  },
+                }
+              : prev
+          )
         })
       }
     }
@@ -720,6 +732,7 @@ export default function PlayPage() {
             currentItem={pendingLoot.content.kind === 'item'
               ? heroes.find(h => h.playerId === pendingLoot.playerId)?.equipment[pendingLoot.content.item.slot] ?? null
               : null}
+            namePending={pendingLoot.namePending}
             language={language}
             onResolve={handleLootResolve}
           />
@@ -849,9 +862,10 @@ export default function PlayPage() {
                 ) : actions.length > 0 ? (
                   <ActionPicker
                     options={actions}
-                    requiredRollFor={currentHero
-                      ? (a) => requiredRolls(dcForAction(a, currentHero), heroStatBonus(currentCharacter.class, currentHero, a.stat)).success
+                    statBonusFor={currentHero
+                      ? (a) => heroStatBonus(currentCharacter.class, currentHero, a.stat)
                       : undefined}
+                    language={language}
                     onSelect={handleActionSelect}
                   />
                 ) : null}

@@ -5,50 +5,14 @@
 // playerId. Missing portraits are always a soft failure: the game falls
 // back to text descriptions.
 
-const DB_NAME = 'family-quest'
-const STORE = 'portraits'
-
-function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1)
-    request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORE)) {
-        request.result.createObjectStore(STORE)
-      }
-    }
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
-}
+import { idbGet, idbPut, PORTRAITS_STORE } from './idb'
 
 export async function savePortrait(playerId: string, dataUrl: string): Promise<void> {
-  try {
-    const db = await openDb()
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).put(dataUrl, playerId)
-      tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
-    })
-    db.close()
-  } catch (error) {
-    console.error('Failed to save portrait:', error)
-  }
+  await idbPut(PORTRAITS_STORE, playerId, dataUrl)
 }
 
 export async function loadPortrait(playerId: string): Promise<string | null> {
-  try {
-    const db = await openDb()
-    const result = await new Promise<string | null>((resolve, reject) => {
-      const request = db.transaction(STORE, 'readonly').objectStore(STORE).get(playerId)
-      request.onsuccess = () => resolve(request.result ?? null)
-      request.onerror = () => reject(request.error)
-    })
-    db.close()
-    return result
-  } catch {
-    return null
-  }
+  return idbGet(PORTRAITS_STORE, playerId)
 }
 
 export async function loadPortraits(playerIds: string[]): Promise<Map<string, string>> {
