@@ -16,18 +16,21 @@ Install `playwright-core` in a scratch dir (browsers are pre-installed at
 Chromium). Then:
 
 1. **Mock the AI at the network layer** with `page.route('**/api/ai/...')`:
-   - `scene` → `{ narration, imagePrompt, suggestedNextPlayer, bossName }`
-   - `image` → `{ imageUrl: <1px data URL> }` (assert the request body's
-     `heroDescriptions` to verify hero-consistency plumbing)
+   - `scene` → `{ narration, imagePrompt, suggestedNextPlayer }` plus
+     `questTitle/questGoal/villainName` (first scene) or `encounterName`
+     (monster/boss arrival scenes)
+   - `image` / `item-image` → `{ imageUrl: <1px data URL> }` (assert the request
+     body's `heroDescriptions` / `name+look+bonus+style` to verify plumbing)
    - `actions` → 3 actions with controlled `stat` + `sceneFit` so outcomes are
      deterministic: warrior `strength good` + dice 6 = success; `strength risky`
      + dice 1 = failure (wizard has strength 1)
    - `outcome` → echo `outcome/damageTaken/bossDamage` into the narrative to
      assert what the server was told
-   - `loot` → `{ name: '...' }`
+   - `loot` → `{ name: '...', look: '...' }`
 2. **Skip onboarding** by seeding localStorage key `family-quest-storage`
-   (zustand persist format `{ state: {...}, version: 2 }`) with players,
-   characters, `selectedPlayerIds`, settings — then `goto /play`.
+   (zustand persist format `{ state: {...}, version: 4 }`) with players,
+   characters, `selectedPlayerIds`, settings — then `goto /play`. Seed
+   `shopHintSeen: true` unless you're testing the first-run shop tooltip.
 3. **Play turns**: `Choose Action` → click a mocked action → physical dice grid
    (`button:text-is("6")`) → `Continue Adventure →` → drain reward modals
    (loot chest / level-up / victory). The chest button animates forever —
@@ -35,13 +38,15 @@ Chromium). Then:
 
 ## Flows worth driving
 
-- Success + dice ≥4 → loot chest; dice 6 → rare (+2)
+- Scene 1 is a combat-free quest-giver opening (quest + villain set, no
+  encounter); the first monster arrives after `max(2, partySize)` recorded
+  turns, the mid-quest monster after `partySize × 3`, the boss after
+  `partySize × 5` (HP = `partySize × 3 + 2`); boss at 0 → victory overlay
+- Success + dice ≥15 (or a nat-20 crit) → loot chest; ≥18 → rare (+2)
 - 6 XP (two successes) → level-up card picker
 - Failure → −1 HP; during boss → −2 HP; 0 HP → KO → rescue banner + half-HP
   revive on the next scene
-- Boss arrives after `partySize × 4` recorded turns (party bar + boss banner,
-  HP = `partySize × 3 + 2`); boss at 0 → victory overlay
-- Reload mid-adventure → levels/gear persist (zustand persist v2)
+- Reload mid-adventure → levels/gear persist (zustand persist v4)
 
 A ready-made driver script exists in the session scratchpad as
 `drive-game.js` if you're continuing a session; otherwise rebuild from the

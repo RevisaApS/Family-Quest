@@ -20,7 +20,8 @@ export function PageContainer({ children, className }: PageContainerProps) {
         }}
         aria-hidden="true"
       />
-      <div className="relative z-20 w-full max-w-md">
+      {/* Phone-first, but let tablets breathe: the column widens with the screen */}
+      <div className="relative z-20 w-full max-w-md md:max-w-2xl">
         {children}
       </div>
     </main>

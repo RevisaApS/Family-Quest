@@ -42,7 +42,7 @@ export function MonsterVictoryModal({ monsterName, finisherName, language, onCon
           <p className="text-lg">
             🏅 <span className="font-bold text-primary">{finisherName}</span> {t('finishingBlow', language)}
           </p>
-          <p className="font-bold text-success">💰 +{MONSTER_GOLD_REWARD} {t('goldForAll', language)}</p>
+          <p className="font-bold text-success">🪙 +{MONSTER_GOLD_REWARD} {t('goldForAll', language)}</p>
         </div>
         <Button className="w-full" size="lg" onClick={onContinue}>
           → ⚔️

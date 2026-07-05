@@ -29,7 +29,7 @@ export function ShopModal({ hero, characterName, language, onBuy, onClose }: Sho
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm space-y-4 pb-8"
+        className="w-full max-w-sm md:max-w-lg space-y-4 pb-8"
       >
         <div className="flex items-center gap-2">
           <span className="text-3xl">🏪</span>
@@ -38,7 +38,7 @@ export function ShopModal({ hero, characterName, language, onBuy, onClose }: Sho
             <p className="text-xs text-muted-foreground truncate">{characterName}</p>
           </div>
           <span className="ml-auto rounded-full bg-primary/15 text-primary font-bold px-3 py-1 whitespace-nowrap">
-            💰 {hero.gold}
+            🪙 {hero.gold}
           </span>
         </div>
 
@@ -75,17 +75,15 @@ export function ShopModal({ hero, characterName, language, onBuy, onClose }: Sho
               >
                 <ItemImage
                   item={toLootItem(item, language)}
-                  className="w-14 h-14 shrink-0 rounded-md border border-border"
-                  emojiClassName="text-3xl"
+                  className="w-16 h-16 md:w-24 md:h-24 shrink-0 rounded-md border border-border"
+                  emojiClassName="text-3xl md:text-4xl"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className={cn('font-serif truncate', item.tier === 3 ? 'text-primary' : 'text-foreground')}>
+                  <p className={cn('font-serif truncate md:text-lg', item.tier === 3 ? 'text-primary' : 'text-foreground')}>
                     {item.name[language]}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.bonus > 0
-                      ? <span className="text-success font-bold">+{item.bonus} {statLabel(item.stat, language)}</span>
-                      : <span>+0 {statLabel(item.stat, language)} 😅</span>}
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    <span className="text-success font-bold">+{item.bonus} {statLabel(item.stat, language)}</span>
                   </p>
                 </div>
                 {owned ? (
@@ -98,7 +96,7 @@ export function ShopModal({ hero, characterName, language, onBuy, onClose }: Sho
                     onClick={() => { sfx.chestOpen(); onBuy(item) }}
                     className="whitespace-nowrap"
                   >
-                    💰 {item.price}
+                    🪙 {item.price}
                   </Button>
                 )}
               </div>

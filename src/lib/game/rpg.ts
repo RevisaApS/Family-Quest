@@ -110,13 +110,13 @@ export function lootBonusForRoll(d20Roll: number): number {
 }
 
 // --- Quest arc & encounters ---
-// The 45-minute arc: cold-open monster at turn 0, a mid-quest monster once
-// every hero has had ~3 turns, the boss after ~5 turns each. Three
-// milestones = quest complete.
+// The 45-minute arc: a quest-giver opening with no combat, the first monster
+// once every hero has acted (min 2 turns), a mid-quest monster after ~3
+// turns each, the boss after ~5 turns each. Three milestones = quest done.
 export const QUEST_MILESTONES = 3
 
 export function encounterSpawnTurn(milestonesDone: number, partySize: number): number {
-  if (milestonesDone === 0) return 0
+  if (milestonesDone === 0) return Math.max(2, partySize)
   if (milestonesDone === 1) return partySize * 3
   return partySize * 5
 }
@@ -127,7 +127,7 @@ export function nextEncounterKind(milestonesDone: number): 'monster' | 'boss' {
 
 export function encounterMaxHp(kind: 'monster' | 'boss', milestonesDone: number, partySize: number): number {
   if (kind === 'boss') return partySize * 3 + 2
-  // the cold-open monster is a quick, confidence-building win
+  // the first monster is a quick, confidence-building win
   return milestonesDone === 0 ? partySize * 2 + 1 : partySize * 3
 }
 

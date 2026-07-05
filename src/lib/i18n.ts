@@ -49,6 +49,8 @@ const STRINGS = {
   yourDice: { da: 'Hvilke terninger har I?', en: 'Which dice do you have?' },
   diceNote: { da: 'Handlinger bruger en d20. Mangler I den, ruller appen digitalt.', en: 'Actions use a d20. If you don\'t have one, the app rolls digitally.' },
   tapYourRoll: { da: 'Kast din terning, og tryk på dit resultat:', en: 'Roll your die, then tap your result:' },
+  shopHint: { da: 'Butikken! Her kan I købe udstyr for jeres guld', en: 'The shop! Buy gear here with your gold' },
+  gotIt: { da: 'Forstået!', en: 'Got it!' },
 } as const
 
 export type StringKey = keyof typeof STRINGS

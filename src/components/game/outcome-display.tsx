@@ -90,7 +90,7 @@ export function OutcomeDisplay({
             transition={{ delay: 0.1 }}
             className="rounded-full bg-primary/15 text-primary px-3 py-1"
           >
-            💰 +{goldGained}
+            🪙 +{goldGained}
           </motion.span>
         )}
         {bossDamage > 0 && bossName && (

@@ -79,6 +79,9 @@ interface GameStore {
   quest: Quest | null
   diceInventory: DiceInventory
   soundEnabled: boolean
+  // One-time onboarding hint pointing out the shop button
+  shopHintSeen: boolean
+  setShopHintSeen: () => void
   setSoundEnabled: (enabled: boolean) => void
   setDiceInventory: (inventory: DiceInventory) => void
   initHeroes: (playerIds: string[]) => void
@@ -204,6 +207,8 @@ export const useGameStore = create<GameStore>()(
       quest: null,
       diceInventory: DEFAULT_DICE,
       soundEnabled: true,
+      shopHintSeen: false,
+      setShopHintSeen: () => set({ shopHintSeen: true }),
       setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
       setDiceInventory: (inventory) => set({ diceInventory: inventory }),
       initHeroes: (playerIds) => set({ heroes: playerIds.map(createHero), encounter: null, quest: null }),

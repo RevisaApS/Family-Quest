@@ -97,8 +97,9 @@ describe('loot (d20 scale)', () => {
 })
 
 describe('quest arc & encounters', () => {
-  it('cold open at turn 0, mid-quest monster, then the boss', () => {
-    expect(encounterSpawnTurn(0, 3)).toBe(0)
+  it('first monster once everyone has acted, mid-quest monster, then the boss', () => {
+    expect(encounterSpawnTurn(0, 1)).toBe(2) // solo hero still gets 2 story turns first
+    expect(encounterSpawnTurn(0, 3)).toBe(3)
     expect(encounterSpawnTurn(1, 3)).toBe(9)
     expect(encounterSpawnTurn(2, 3)).toBe(15)
     expect(nextEncounterKind(0)).toBe('monster')
@@ -107,7 +108,7 @@ describe('quest arc & encounters', () => {
     expect(QUEST_MILESTONES).toBe(3)
   })
 
-  it('the opening monster is a quick win, the boss is the big fight', () => {
+  it('the first monster is a quick win, the boss is the big fight', () => {
     expect(encounterMaxHp('monster', 0, 2)).toBe(5)
     expect(encounterMaxHp('monster', 1, 2)).toBe(6)
     expect(encounterMaxHp('boss', 2, 2)).toBe(8)

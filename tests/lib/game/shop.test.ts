@@ -14,11 +14,11 @@ describe('shop catalog', () => {
     }
   })
 
-  it('every slot has a 1-gold starter item with no bonus (the "really bad" one)', () => {
+  it('every slot has a 1-gold starter item that still gives +1 (bad, but never useless)', () => {
     for (const slot of ALL_SLOTS) {
       const starter = shopItemsForSlot(slot).find(i => i.tier === 0)!
       expect(starter.price).toBe(STARTING_GOLD)
-      expect(starter.bonus).toBe(0)
+      expect(starter.bonus).toBe(1)
     }
   })
 

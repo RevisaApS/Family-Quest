@@ -82,6 +82,9 @@ export interface EncounterState {
 export interface Quest {
   title: string
   goal: string
+  // The named villain behind it all — foreshadowed from scene 1, faced as
+  // the boss in chapter 3
+  villain?: string
   // Encounters beaten (0-3); 3 = boss down, quest complete
   milestonesDone: number
 }

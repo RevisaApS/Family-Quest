@@ -30,14 +30,28 @@ function describeHero(c: StoryContext['characters'][number]): string {
   return `${base} — ${details}`
 }
 
+// Classic three-act build between the quest's milestones. milestonesDone
+// doubles as the chapter index: 0 = trail, 1 = obstacle (+ twist), 2 = finale.
+const CHAPTER_BEATS = [
+  `CHAPTER 1 — THE TRAIL: the heroes follow the villain's trail. Scenes are about discovery: strange tracks, worried locals, clues about the villain's plan.`,
+  `CHAPTER 2 — THE OBSTACLE: something big stands between the heroes and the villain. Somewhere in this chapter, spring a TWIST that changes how the quest looks — a false lead, a trap, or a surprising truth about the villain.`,
+  `CHAPTER 3 — THE CONFRONTATION: the villain's lair is near. Scenes grow tenser and darker; everything builds toward the final showdown.`,
+]
+
 function questInstruction(context: StoryContext): string {
   if (context.isFirstScene) {
-    return `THIS IS THE OPENING SCENE. Two extra jobs:
-1. Invent a clear, exciting QUEST the family pursues this whole adventure (find something, rescue someone, break a curse). Return "questTitle" (2-5 words) and "questGoal" (one kid-friendly sentence) in the story language.
-2. START WITH ACTION: a small monster attacks or blocks the way in this very first scene — the kids must fight from minute one, no slow build-up. Return "encounterName" with the monster's name in the story language. ${MONSTER_TONE[context.adventureStyle]}`
+    return `THIS IS THE OPENING SCENE — the call to adventure. Three extra jobs:
+1. Introduce a memorable QUEST-GIVER (a desperate villager, a scarred old knight, a talking raven — pick something fitting) who hands the family their mission and makes clear what is at stake. NO combat in this scene: the heroes' first choice is about the story, not a fight.
+2. Invent a clear, exciting QUEST the family pursues this whole adventure (find something, rescue someone, break a curse). Return "questTitle" (2-5 words) and "questGoal" (one kid-friendly sentence) in the story language.
+3. Invent the VILLAIN behind it all and have the quest-giver speak their name with dread. Return "villainName" in the story language. The villain must NOT appear in person yet — only their shadow: rumors, traces, fear.`
   }
   if (context.quest) {
-    return `The family's quest: "${context.quest.title}" — ${context.quest.goal} (${context.quest.milestonesDone}/3 milestones done). Every scene should feel like progress toward or a twist on this goal.`
+    const villain = context.quest.villain
+      ? ` The villain ${context.quest.villain} looms over everything — weave in their traces, whispers and servants long before they appear in person.`
+      : ''
+    return `The family's quest: "${context.quest.title}" — ${context.quest.goal} (${context.quest.milestonesDone}/3 milestones done).${villain}
+${CHAPTER_BEATS[Math.min(context.quest.milestonesDone, CHAPTER_BEATS.length - 1)]}
+Every scene should feel like progress toward or a twist on this goal.`
   }
   return ''
 }
@@ -45,9 +59,9 @@ function questInstruction(context: StoryContext): string {
 function encounterInstruction(context: StoryContext): string {
   switch (context.encounterPhase) {
     case 'arriving-monster':
-      return `IMPORTANT: In THIS scene a new monster appears and blocks the heroes' path — a dramatic mid-quest twist tied to the quest. Return "encounterName" with the monster's name in the story language. ${MONSTER_TONE[context.adventureStyle]}`
+      return `IMPORTANT: In THIS scene a monster appears and blocks the heroes' path — ${context.quest?.villain ? `a servant or creature of the villain ${context.quest.villain}, proof the heroes are getting closer` : 'a dramatic twist tied to the quest'}. Return "encounterName" with the monster's name in the story language. ${MONSTER_TONE[context.adventureStyle]}`
     case 'arriving-boss':
-      return `IMPORTANT: In THIS scene, the quest's big villain finally appears for the final showdown! Introduce a dramatic boss. ${MONSTER_TONE[context.adventureStyle]} Return "encounterName" with the villain's name in the story language.`
+      return `IMPORTANT: In THIS scene, ${context.quest?.villain ? `the villain ${context.quest.villain}` : `the quest's big villain`} finally appears in person for the final showdown the whole adventure has built toward! ${MONSTER_TONE[context.adventureStyle]} Return "encounterName" with the villain's name in the story language${context.quest?.villain ? ` (it must be ${context.quest.villain})` : ''}.`
     case 'active':
       return `The heroes are mid-battle with ${context.encounter?.name} (${context.encounter?.hp}/${context.encounter?.maxHp} HP left). The scene must continue this fight — describe the enemy reacting and the battle evolving.`
     case 'just-defeated':
@@ -85,7 +99,7 @@ Generate the next scene. Return JSON:
 {
   "narration": "2-3 sentences describing the scene, what the characters see and hear",
   "imagePrompt": "A detailed prompt for generating an image of this scene",
-  "suggestedNextPlayer": "the player ID of whichever character would most naturally act next based on the story context"${context.isFirstScene ? ',\n  "questTitle": "the quest\'s short title",\n  "questGoal": "one sentence describing the goal",\n  "encounterName": "the opening monster\'s name"' : ''}${context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss' ? ',\n  "encounterName": "the enemy\'s name"' : ''}
+  "suggestedNextPlayer": "the player ID of whichever character would most naturally act next based on the story context"${context.isFirstScene ? ',\n  "questTitle": "the quest\'s short title",\n  "questGoal": "one sentence describing the goal",\n  "villainName": "the villain\'s name"' : ''}${context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss' ? ',\n  "encounterName": "the enemy\'s name"' : ''}
 }
 
 The imagePrompt must ALWAYS be written in English (it goes to an image model), regardless of the story language. Describe the location, mood and any creatures — do NOT describe the heroes' appearance, that is added separately.

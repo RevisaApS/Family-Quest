@@ -75,6 +75,7 @@ export default function PlayPage() {
     saveAdventure, savedAdventures, activeAdventureId,
     heroes, encounter, quest, initHeroes, updateHero, setEncounter, setQuest,
     diceInventory, soundEnabled, setSoundEnabled: setSoundPref, startNewAdventure,
+    shopHintSeen, setShopHintSeen,
   } = useGameStore()
   const {
     loadingScene, loadingActions, loadingOutcome, loadingImage,
@@ -245,17 +246,18 @@ export default function PlayPage() {
 
       const partySize = selectedPlayers.length
       const fallbackMonster = language === 'da' ? 'Skyggeuhyret' : 'The Shadow Beast'
-      const fallbackBoss = language === 'da' ? 'Skyggekongen' : 'The Shadow King'
+      const fallbackBoss = quest?.villain || (language === 'da' ? 'Skyggekongen' : 'The Shadow King')
 
       if (context.isFirstScene) {
-        // The adventure gets its quest and its cold-open battle in one stroke
+        // The call to adventure: a quest-giver, stakes, and a named villain
+        // whose shadow hangs over the whole arc. The first fight comes a
+        // couple of turns later.
         setQuest({
           title: scene.questTitle?.trim() || (language === 'da' ? 'Det Store Eventyr' : 'The Great Quest'),
           goal: scene.questGoal?.trim() || '',
+          villain: scene.villainName?.trim() || undefined,
           milestonesDone: 0,
         })
-        setEncounter(createEncounter('monster', scene.encounterName?.trim() || fallbackMonster, 0, partySize))
-        sfx.bossAppear()
       } else if (context.encounterPhase === 'arriving-monster') {
         setEncounter(createEncounter('monster', scene.encounterName?.trim() || fallbackMonster, quest?.milestonesDone ?? 1, partySize))
         sfx.bossAppear()
@@ -640,12 +642,41 @@ export default function PlayPage() {
       <div className="space-y-4">
         {/* Shop + sound + pause buttons */}
         <button
-          onClick={() => setShopOpen(true)}
+          onClick={() => { setShopHintSeen(); setShopOpen(true) }}
           className="fixed top-4 right-24 p-2 rounded-lg bg-card border border-border z-40"
           aria-label="Open shop"
         >
           🏪
         </button>
+
+        {/* One-time onboarding hint: an arrow at the shop button */}
+        {!shopHintSeen && _hasHydrated && gamePhase === 'scene' && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-[3.75rem] right-4 z-40 w-56"
+          >
+            {/* Only the arrow bobs — the card (and its button) stays still */}
+            <motion.div
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 1.2, repeat: Infinity }}
+              className="absolute -top-2 right-[5.5rem] w-4 h-4 rotate-45 bg-primary"
+              aria-hidden="true"
+            />
+            <div className="relative rounded-lg bg-primary text-primary-foreground p-3 text-sm shadow-lg space-y-2">
+              <p>☝️ {t('shopHint', language)}</p>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="w-full"
+                onClick={() => setShopHintSeen()}
+              >
+                {t('gotIt', language)}
+              </Button>
+            </div>
+          </motion.div>
+        )}
         <button
           onClick={() => setSoundPref(!soundEnabled)}
           className="fixed top-4 right-14 p-2 rounded-lg bg-card border border-border z-40"

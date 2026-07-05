@@ -66,7 +66,7 @@ export function PartyBar({ members, currentPlayerId, language, onSelectHero }: P
             <HpBar hp={hero.hp} maxHp={hero.maxHp} />
             <div className="flex items-center gap-0.5 h-4 text-[10px]">
               <span className="text-muted-foreground">❤️ {hero.hp}/{hero.maxHp}</span>
-              <span className="text-muted-foreground ml-1.5">💰 {hero.gold}</span>
+              <span className="text-muted-foreground ml-1.5">🪙 {hero.gold}</span>
               {gear.length > 0 && (
                 <span className="ml-auto truncate">{gear.map(item => item!.emoji).join('')}</span>
               )}

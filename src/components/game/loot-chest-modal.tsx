@@ -68,7 +68,7 @@ export function LootChestModal({ content, currentItem, namePending, language, on
                 animate={{ rotate: [0, -8, 8, 0] }}
                 transition={{ duration: 0.6, delay: 0.3 }}
               >
-                💰
+                🪙
               </motion.span>
               <p className="text-3xl font-serif text-primary">+{content.amount}</p>
               <Button className="w-full" size="lg" onClick={() => onResolve(true)}>
@@ -92,7 +92,7 @@ export function LootChestModal({ content, currentItem, namePending, language, on
                 <ItemImage
                   item={content.item}
                   defer={namePending}
-                  className="w-36 h-36 rounded-xl border-2 border-primary/40 mx-auto"
+                  className="w-36 h-36 md:w-56 md:h-56 rounded-xl border-2 border-primary/40 mx-auto"
                   emojiClassName="text-7xl"
                 />
               </div>

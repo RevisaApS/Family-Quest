@@ -31,7 +31,7 @@ export function InventoryModal({ hero, characterName, characterClass, language, 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm space-y-4 pb-8"
+        className="w-full max-w-sm md:max-w-lg space-y-4 pb-8"
       >
         {/* Hero header */}
         <div className="flex items-center gap-3">
@@ -52,7 +52,7 @@ export function InventoryModal({ hero, characterName, characterClass, language, 
               {CLASS_DEFINITIONS[characterClass].displayName} · {t('level', language)} {hero.level}
             </p>
             <p className="text-sm">
-              ❤️ {hero.hp}/{hero.maxHp} <span className="ml-2">💰 {hero.gold}</span>
+              ❤️ {hero.hp}/{hero.maxHp} <span className="ml-2">🪙 {hero.gold}</span>
             </p>
           </div>
         </div>
@@ -83,8 +83,8 @@ export function InventoryModal({ hero, characterName, characterClass, language, 
                 {item ? (
                   <ItemImage
                     item={item}
-                    className="w-12 h-12 shrink-0 rounded-md border border-border"
-                    emojiClassName="text-2xl"
+                    className="w-12 h-12 md:w-20 md:h-20 shrink-0 rounded-md border border-border"
+                    emojiClassName="text-2xl md:text-3xl"
                   />
                 ) : (
                   <span className="text-2xl w-12 text-center opacity-50">{SLOT_EMOJI[slot]}</span>

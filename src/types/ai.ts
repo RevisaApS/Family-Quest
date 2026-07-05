@@ -10,6 +10,7 @@ export interface GeneratedScene {
   // Only set on the very first scene of an adventure
   questTitle?: string
   questGoal?: string
+  villainName?: string
 }
 
 export interface HeroRpgContext {
@@ -54,6 +55,6 @@ export interface StoryContext {
   language: Language
   encounterPhase?: EncounterPhase
   encounter?: { kind: 'monster' | 'boss'; name: string; hp: number; maxHp: number } | null
-  quest?: { title: string; goal: string; milestonesDone: number } | null
+  quest?: { title: string; goal: string; villain?: string; milestonesDone: number } | null
   isFirstScene?: boolean
 }

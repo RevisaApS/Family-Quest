@@ -54,7 +54,7 @@ export function VictoryOverlay({ bossName, language, goldReward, onKeepPlaying, 
               transition={{ delay: 0.5, type: 'spring' }}
               className="text-xl font-bold text-primary"
             >
-              💰 +{goldReward} {t('bossGoldReward', language)}
+              🪙 +{goldReward} {t('bossGoldReward', language)}
             </motion.p>
           )}
         </div>
