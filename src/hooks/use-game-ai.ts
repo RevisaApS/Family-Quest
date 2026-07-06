@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import type { StoryContext, GeneratedScene, GeneratedAction } from '@/types/ai'
+import type { EpilogueContext, GeneratedEpilogue } from '@/lib/ai/epilogue'
 import type { OutcomeType, Stat, EquipSlot } from '@/types/game'
 import type { Language } from '@/lib/ai/language'
 
@@ -141,6 +142,22 @@ export function useGameAI() {
     }
   }, [])
 
+  // The storybook epilogue is best-effort: a failure returns null and the
+  // victory screen simply skips the tale.
+  const fetchEpilogue = useCallback(async (context: EpilogueContext): Promise<GeneratedEpilogue | null> => {
+    try {
+      const response = await fetch('/api/ai/epilogue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(context),
+      })
+      if (!response.ok) return null
+      return response.json()
+    } catch {
+      return null
+    }
+  }, [])
+
   // Loot naming is decorative — failures fall back to canned names, no error state.
   const fetchLootName = useCallback(async (
     slot: EquipSlot,
@@ -167,5 +184,6 @@ export function useGameAI() {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
     error,
     fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName, fetchPortrait,
+    fetchEpilogue,
   }
 }

@@ -5,6 +5,7 @@ import type {
   EncounterState, Quest, DiceInventory,
 } from '@/types/game'
 import { createHero } from '@/lib/game/rpg'
+import type { CompletedAdventure } from '@/lib/game/chronicle'
 import type { Language } from '@/lib/ai/language'
 
 interface Player {
@@ -102,6 +103,10 @@ interface GameStore {
   loadAdventure: (id: string) => void
   deleteAdventure: (id: string) => void
   startNewAdventure: () => void
+
+  // The family's permanent record of completed quests — the Hall of Heroes
+  chronicle: CompletedAdventure[]
+  addToChronicle: (record: CompletedAdventure) => void
 }
 
 const takeSnapshot = (state: GameStore): SavedAdventure['snapshot'] => ({
@@ -270,10 +275,17 @@ export const useGameStore = create<GameStore>()(
         quest: null,
         activeAdventureId: null,
       })),
+
+      chronicle: [],
+      addToChronicle: (record) => set((state) => (
+        state.chronicle.some(r => r.id === record.id)
+          ? state
+          : { chronicle: [...state.chronicle, record] }
+      )),
     }),
     {
       name: 'family-quest-storage',
-      version: 5,
+      version: 6,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
       // v1 predates the RPG update (heroes, boss, sound).
@@ -310,6 +322,9 @@ export const useGameStore = create<GameStore>()(
               assistUsed: h.assistUsed ?? false,
             })),
           }
+        }
+        if (version < 6) {
+          state = { ...state, chronicle: [] }
         }
         return state
       },

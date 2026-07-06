@@ -38,10 +38,12 @@ export const PET_CATALOG: PetDefinition[] = [
   },
 ]
 
-export function toPet(def: PetDefinition, language: Language): Pet {
+// Kids name their own pet at the shop counter; a blank name falls back to
+// the catalog name.
+export function toPet(def: PetDefinition, language: Language, customName?: string): Pet {
   return {
     id: def.id,
-    name: def.name[language],
+    name: customName?.trim() || def.name[language],
     emoji: def.emoji,
     stat: def.stat,
     bonus: def.bonus,

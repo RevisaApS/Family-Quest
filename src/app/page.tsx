@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/layout/page-container'
 import { Header } from '@/components/layout/header'
 import { useGameStore } from '@/stores/game-store'
+import { t } from '@/lib/i18n'
 
 export default function WelcomePage() {
   const router = useRouter()
   const {
     savedAdventures, loadAdventure, deleteAdventure, startNewAdventure, _hasHydrated,
+    chronicle, language,
   } = useGameStore()
 
   return (
@@ -84,6 +86,17 @@ export default function WelcomePage() {
             >
               Begin Your Journey
             </Button>
+
+            {_hasHydrated && chronicle.length > 0 && (
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={() => router.push('/hall')}
+              >
+                🏆 {t('hallTitle', language)}
+              </Button>
+            )}
 
             <p className="text-sm text-muted-foreground">
               Your story awaits

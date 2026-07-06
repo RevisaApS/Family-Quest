@@ -20,6 +20,12 @@ const SCENE_FIT_DC: Record<SceneFit, number> = {
 
 export const PARTIAL_BAND = 4
 
+// The littlest heroes get a quiet break: mixed-age families can all play on
+// the same difficulty and it still feels fair to everyone. Invisible in the
+// UI — the shown target number is simply lower.
+export const YOUNG_HERO_AGE = 7
+export const YOUNG_HERO_DC_RELIEF = 2
+
 export interface DCInput {
   difficulty: Difficulty
   sceneFit: SceneFit
@@ -27,14 +33,20 @@ export interface DCInput {
   // grow (which feels great) while the odds stay balanced.
   level: number
   encounterActive: boolean
+  // The acting player's real age (from onboarding)
+  age?: number
 }
 
 export function calculateDC(input: DCInput): number {
+  const youngRelief = input.age !== undefined && input.age < YOUNG_HERO_AGE
+    ? YOUNG_HERO_DC_RELIEF
+    : 0
   return (
     DC_BASE[input.difficulty] +
     SCENE_FIT_DC[input.sceneFit] +
     (input.level - 1) +
-    (input.encounterActive ? 1 : 0)
+    (input.encounterActive ? 1 : 0) -
+    youngRelief
   )
 }
 

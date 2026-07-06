@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { t, statLabel } from '@/lib/i18n'
 import { SLOT_EMOJI, SLOT_LABEL, ALL_SLOTS } from '@/lib/game/loot'
 import { shopItemsForSlot, toLootItem, type ShopItem } from '@/lib/game/shop'
@@ -23,12 +24,15 @@ interface ShopModalProps {
   language: Language
   onBuy: (item: ShopItem) => void
   onBuyPotion: (potion: PotionDefinition) => void
-  onBuyPet: (pet: PetDefinition) => void
+  // Kids name their new friend at the counter — blank falls back to the catalog name
+  onBuyPet: (pet: PetDefinition, customName: string) => void
   onClose: () => void
 }
 
 export function ShopModal({ hero, characterName, language, onBuy, onBuyPotion, onBuyPet, onClose }: ShopModalProps) {
   const [tab, setTab] = useState<ShopTab>('weapon')
+  const [namingPetId, setNamingPetId] = useState<string | null>(null)
+  const [petName, setPetName] = useState('')
 
   const tabLabel = tab === 'potion'
     ? t('potionsLabel', language)
@@ -128,33 +132,60 @@ export function ShopModal({ hero, characterName, language, onBuy, onBuyPotion, o
             {PET_CATALOG.map(pet => {
               const owned = hero.pet?.id === pet.id
               const affordable = hero.gold >= pet.price
+              const naming = namingPetId === pet.id
               return (
                 <div
                   key={pet.id}
                   className={cn(
-                    'rounded-lg border p-3 flex items-center gap-3 border-primary/50 bg-primary/5',
+                    'rounded-lg border p-3 space-y-2 border-primary/50 bg-primary/5',
                     owned && 'opacity-70'
                   )}
                 >
-                  <span className="text-3xl w-16 text-center shrink-0">{pet.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-serif truncate md:text-lg text-primary">{pet.name[language]}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">
-                      <span className="text-success font-bold">+{pet.bonus} {statLabel(pet.stat, language)}</span>
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl w-16 text-center shrink-0">{pet.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-serif truncate md:text-lg text-primary">
+                        {owned ? hero.pet!.name : pet.name[language]}
+                      </p>
+                      <p className="text-xs md:text-sm text-muted-foreground">
+                        <span className="text-success font-bold">+{pet.bonus} {statLabel(pet.stat, language)}</span>
+                      </p>
+                    </div>
+                    {owned ? (
+                      <span className="text-xs font-bold text-success whitespace-nowrap">✓ {t('yours', language)}</span>
+                    ) : !naming ? (
+                      <Button
+                        size="sm"
+                        variant={affordable ? 'default' : 'outline'}
+                        disabled={!affordable}
+                        onClick={() => { setNamingPetId(pet.id); setPetName(pet.name[language]) }}
+                        className="whitespace-nowrap"
+                      >
+                        🪙 {pet.price}
+                      </Button>
+                    ) : null}
                   </div>
-                  {owned ? (
-                    <span className="text-xs font-bold text-success whitespace-nowrap">✓ {t('yours', language)}</span>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant={affordable ? 'default' : 'outline'}
-                      disabled={!affordable}
-                      onClick={() => { sfx.fanfare(); onBuyPet(pet) }}
-                      className="whitespace-nowrap"
-                    >
-                      🪙 {pet.price}
-                    </Button>
+                  {naming && !owned && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-center text-muted-foreground">{t('petNamePrompt', language)}</p>
+                      <Input
+                        value={petName}
+                        onChange={(e) => setPetName(e.target.value)}
+                        className="text-center"
+                        autoFocus
+                      />
+                      <Button
+                        className="w-full"
+                        size="sm"
+                        onClick={() => {
+                          sfx.fanfare()
+                          onBuyPet(pet, petName)
+                          setNamingPetId(null)
+                        }}
+                      >
+                        {t('buy', language)} 🪙 {pet.price}
+                      </Button>
+                    </div>
                   )}
                 </div>
               )

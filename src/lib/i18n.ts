@@ -64,6 +64,17 @@ const STRINGS = {
   petsLabel: { da: 'Kæledyr', en: 'Pets' },
   petLabel: { da: 'Kæledyr', en: 'Pet' },
   yours: { da: 'Din ven!', en: 'Your friend!' },
+  petNamePrompt: { da: 'Hvad skal den hedde?', en: 'What will you call it?' },
+  hallTitle: { da: 'Heltehallen', en: 'Hall of Heroes' },
+  hallEmpty: { da: 'Fuldfør jeres første eventyr — så bliver jeres saga skrevet her!', en: 'Complete your first adventure — your legend will be written here!' },
+  adventuresLabel: { da: 'Eventyr', en: 'Adventures' },
+  critsLabel: { da: 'Kritiske hit', en: 'Critical hits' },
+  successesLabel: { da: 'Sejre', en: 'Successes' },
+  villainsDefeated: { da: 'Besejrede skurke', en: 'Villains defeated' },
+  storybook: { da: 'Eventyrbogen', en: 'Storybook' },
+  awardsTitle: { da: 'Udmærkelser', en: 'Awards' },
+  epilogueWriting: { da: 'Fortælleren skriver jeres saga...', en: 'The storyteller is writing your tale...' },
+  cheerHint: { da: 'hepper!', en: 'cheers!' },
 } as const
 
 export type StringKey = keyof typeof STRINGS
