@@ -51,6 +51,19 @@ const STRINGS = {
   tapYourRoll: { da: 'Kast din terning, og tryk på dit resultat:', en: 'Roll your die, then tap your result:' },
   shopHint: { da: 'Butikken! Her kan I købe udstyr for jeres guld', en: 'The shop! Buy gear here with your gold' },
   gotIt: { da: 'Forstået!', en: 'Got it!' },
+  whatDoYouDo: { da: 'Hvad gør du?', en: 'What do you do?' },
+  ownIdea: { da: 'Min egen idé!', en: 'My own idea!' },
+  ownIdeaPlaceholder: { da: 'Skriv din plan her...', en: 'Type your plan here...' },
+  ownIdeaGo: { da: 'Gør det!', en: 'Do it!' },
+  ownIdeaThinking: { da: 'Fortælleren tænker over din idé...', en: 'The storyteller is judging your idea...' },
+  assistTitle: { da: 'Hvem hjælper til?', en: 'Who helps?' },
+  determination: { da: 'Kampvilje', en: 'Determination' },
+  weakSpot: { da: 'Svagt punkt', en: 'Weak spot' },
+  enraged: { da: 'RASENDE!', en: 'ENRAGED!' },
+  potionsLabel: { da: 'Drikke', en: 'Potions' },
+  petsLabel: { da: 'Kæledyr', en: 'Pets' },
+  petLabel: { da: 'Kæledyr', en: 'Pet' },
+  yours: { da: 'Din ven!', en: 'Your friend!' },
 } as const
 
 export type StringKey = keyof typeof STRINGS

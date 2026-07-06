@@ -1,5 +1,6 @@
 import type {
   HeroState, OutcomeType, Stat, Skill, LootItem, EncounterState, CritType, PowerId,
+  PotionId, Pet,
 } from '@/types/game'
 import { getClassStats } from './classes'
 import type { CharacterClass } from '@/types/game'
@@ -82,11 +83,11 @@ export function rescueHp(maxHp: number): number {
   return Math.ceil(maxHp / 2)
 }
 
-// --- Combined stat bonus: class + skills + equipped loot ---
+// --- Combined stat bonus: class + skills + equipped loot + pet ---
 
 export function heroStatBonus(
   characterClass: CharacterClass,
-  hero: Pick<HeroState, 'skills' | 'equipment'>,
+  hero: Pick<HeroState, 'skills' | 'equipment' | 'pet'>,
   stat: Stat
 ): number {
   const base = getClassStats(characterClass)[stat]
@@ -94,7 +95,31 @@ export function heroStatBonus(
   const fromGear = Object.values(hero.equipment)
     .filter((item): item is LootItem => !!item && item.stat === stat)
     .reduce((sum, item) => sum + item.bonus, 0)
-  return base + fromSkills + fromGear
+  const fromPet = hero.pet && hero.pet.stat === stat ? hero.pet.bonus : 0
+  return base + fromSkills + fromGear + fromPet
+}
+
+// --- Teamwork: assist a friend's roll ---
+// One teammate can lend a hand before the dice hit the table. Helping spends
+// the assist; taking your own turn recharges it — so siblings root for each
+// other roughly once per rotation.
+
+export const ASSIST_BONUS = 1
+
+export function spendAssist(hero: HeroState): HeroState {
+  return { ...hero, assistUsed: true }
+}
+
+// --- Determination (comeback bonus) ---
+// Every failed turn stokes the hero's determination: +1 on the next roll,
+// stacking up to the cap. A success clears it — partials keep the fire lit.
+
+export const COMEBACK_CAP = 3
+
+export function nextComeback(current: number, outcome: OutcomeType): number {
+  if (outcome === 'failure') return Math.min(COMEBACK_CAP, current + 1)
+  if (outcome === 'success') return 0
+  return current
 }
 
 // --- Loot drops (d20 scale) ---
@@ -141,6 +166,42 @@ export function createEncounter(
   return { kind, name, hp: maxHp, maxHp, defeated: false }
 }
 
+// --- Boss phase 2 ---
+// At half HP the boss transforms and reveals a weak spot: from then on,
+// actions using that stat deal bonus damage. The kids coordinate who strikes.
+
+export const WEAKNESS_BONUS_DAMAGE = 1
+
+export function shouldEnrage(encounter: EncounterState): boolean {
+  return (
+    encounter.kind === 'boss' &&
+    !encounter.enraged &&
+    !encounter.defeated &&
+    encounter.hp > 0 &&
+    encounter.hp <= Math.floor(encounter.maxHp / 2)
+  )
+}
+
+export function enrageBoss(encounter: EncounterState, weakStat: Stat): EncounterState {
+  return { ...encounter, enraged: true, weakStat, enrageAnnounced: false }
+}
+
+export function rollWeakStat(): Stat {
+  const stats: Stat[] = ['strength', 'magic', 'agility', 'heart']
+  return stats[Math.floor(Math.random() * stats.length)]
+}
+
+// Extra damage when a hit lands on the revealed weak spot. Only hits that
+// already hurt (baseDamage > 0) get the bonus — a miss is still a miss.
+export function weaknessBonus(
+  encounter: Pick<EncounterState, 'enraged' | 'weakStat'> | null,
+  stat: Stat,
+  baseDamage: number
+): number {
+  if (baseDamage <= 0 || !encounter?.enraged || encounter.weakStat !== stat) return 0
+  return WEAKNESS_BONUS_DAMAGE
+}
+
 // --- Hero lifecycle ---
 
 export function createHero(playerId: string): HeroState {
@@ -155,6 +216,9 @@ export function createHero(playerId: string): HeroState {
     usedPowers: [],
     equipment: {},
     knockedOut: false,
+    potions: [],
+    comeback: 0,
+    assistUsed: false,
   }
 }
 
@@ -199,6 +263,9 @@ export function applyTurnOutcome(
       maxHp,
       hp,
       knockedOut: hp === 0,
+      comeback: nextComeback(hero.comeback, outcome),
+      // Taking your own turn recharges your assist for the next teammate
+      assistUsed: false,
     },
     leveledUp,
     damageTaken,
@@ -223,6 +290,36 @@ export function addGold(hero: HeroState, amount: number): HeroState {
 export function buyItem(hero: HeroState, item: LootItem, price: number): HeroState | null {
   if (hero.gold < price) return null
   return { ...equipLoot(hero, item), gold: hero.gold - price }
+}
+
+// --- Potion backpack ---
+
+export const MAX_POTIONS = 3
+
+export function potionCount(hero: Pick<HeroState, 'potions'>, id: PotionId): number {
+  return hero.potions.filter(p => p === id).length
+}
+
+export function addPotion(hero: HeroState, id: PotionId): HeroState {
+  return { ...hero, potions: [...hero.potions, id] }
+}
+
+// Removes one dose; no-op when the backpack has none.
+export function removePotion(hero: HeroState, id: PotionId): HeroState {
+  const index = hero.potions.indexOf(id)
+  if (index === -1) return hero
+  return { ...hero, potions: hero.potions.filter((_, i) => i !== index) }
+}
+
+export function buyPotion(hero: HeroState, id: PotionId, price: number): HeroState | null {
+  if (hero.gold < price || hero.potions.length >= MAX_POTIONS) return null
+  return { ...addPotion(hero, id), gold: hero.gold - price }
+}
+
+// A hero keeps one pet; buying another swaps it out.
+export function buyPet(hero: HeroState, pet: Pet, price: number): HeroState | null {
+  if (hero.gold < price) return null
+  return { ...hero, pet, gold: hero.gold - price }
 }
 
 export function addSkill(hero: HeroState, skill: Skill): HeroState {

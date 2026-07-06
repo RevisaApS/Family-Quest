@@ -1,6 +1,7 @@
 import { generateJSON } from './gemini'
 import { languageInstruction } from './language'
 import type { GeneratedAction, StoryContext } from '@/types/ai'
+import type { SceneFit, Stat } from '@/types/game'
 
 export async function generateActions(
   context: StoryContext,
@@ -18,7 +19,9 @@ Current Scene: ${currentScene}
 Current Character: ${currentCharacter?.characterName} the ${currentCharacter?.class}
 ${currentCharacter?.rpg?.skillNames.length ? `Their powers: ${currentCharacter.rpg.skillNames.join(', ')}` : ''}
 ${currentCharacter?.rpg?.gearNames.length ? `Their equipment: ${currentCharacter.rpg.gearNames.join(', ')}` : ''}
+${currentCharacter?.rpg?.petName ? `Their pet companion: ${currentCharacter.rpg.petName} — one action may playfully involve the pet when it fits.` : ''}
 ${inBattle ? `BATTLE: they are locked in combat with ${context.encounter!.name}! ALL 3 actions must be ways to ATTACK and inflict damage on the enemy — e.g. a mighty strike, a clever spell, a daring acrobatic maneuver, a fearless charge. NEVER offer friendly or passive options: no giving food or gifts, no befriending, no comforting, no talking it out, no running away.` : ''}
+${inBattle && context.encounter?.enraged && context.encounter.weakStat ? `The enemy's glowing WEAK SPOT is vulnerable to ${context.encounter.weakStat} — at least one action must use that stat and aim for the weak spot.` : ''}
 ${currentCharacter?.rpg?.skillNames.length || currentCharacter?.rpg?.gearNames.length ? 'When it fits the scene, let one action use a named power or piece of equipment — kids love using their own gear.' : ''}
 
 Generate exactly 3 action options the player could take. Each should:
@@ -42,4 +45,48 @@ Return JSON array:
 One option should be "good" (smart for this scene), one "okay", one "risky".`
 
   return generateJSON<GeneratedAction[]>(prompt)
+}
+
+// "My own idea!" — the kid says their own plan and the DM grades it like any
+// other action: which stat it uses and how smart it is for this scene. The
+// idea is NEVER rejected; wild plans just come back as "risky".
+export async function classifyCustomAction(
+  context: StoryContext,
+  currentScene: string,
+  idea: string
+): Promise<GeneratedAction> {
+  const currentCharacter = context.characters.find(c => c.playerId === context.currentPlayerId)
+  const inBattle = context.encounterPhase === 'active' && !!context.encounter
+
+  const prompt = `You are a D&D dungeon master. A child playing ${currentCharacter?.characterName} the ${currentCharacter?.class} has proposed their OWN action idea.
+
+${languageInstruction(context.language)}
+
+Current Scene: ${currentScene}
+${inBattle ? `They are locked in combat with ${context.encounter!.name}.` : ''}
+
+The child's idea: "${idea}"
+
+Grade the idea — never reject it, every idea is playable:
+- "stat": which stat the attempt relies on most (strength, magic, agility, heart)
+- "sceneFit": "good" if it's a clever fit for this scene, "okay" if reasonable, "risky" if wild or dangerous (wild ideas are welcome — they're just risky)
+- "sceneFitReason": one kid-friendly sentence explaining the grade, in the story language
+
+Return JSON:
+{
+  "stat": "strength|magic|agility|heart",
+  "sceneFit": "good|okay|risky",
+  "sceneFitReason": "..."
+}`
+
+  const graded = await generateJSON<{ stat: Stat; sceneFit: SceneFit; sceneFitReason: string }>(prompt)
+  const stats: Stat[] = ['strength', 'magic', 'agility', 'heart']
+  const fits: SceneFit[] = ['good', 'okay', 'risky']
+  return {
+    id: 'custom',
+    text: idea,
+    stat: stats.includes(graded.stat) ? graded.stat : 'heart',
+    sceneFit: fits.includes(graded.sceneFit) ? graded.sceneFit : 'okay',
+    sceneFitReason: graded.sceneFitReason ?? '',
+  }
 }

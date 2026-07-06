@@ -245,6 +245,9 @@ export const useGameStore = create<GameStore>()(
             ...h,
             gold: h.gold ?? 1,
             usedPowers: h.usedPowers ?? [],
+            potions: h.potions ?? [],
+            comeback: h.comeback ?? 0,
+            assistUsed: h.assistUsed ?? false,
           })),
           encounter: target.snapshot.encounter
             ?? (oldBoss ? { ...oldBoss, kind: oldBoss.kind ?? 'boss' as const } : null),
@@ -270,12 +273,13 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'family-quest-storage',
-      version: 4,
+      version: 5,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
       // v1 predates the RPG update (heroes, boss, sound).
       // v2 predates the gold economy.
       // v3 predates d20/quest arc (encounter replaces boss, powers, dice inventory).
+      // v4 predates teamwork/potions/pets (assist, comeback, potion backpack).
       migrate: (persisted, version) => {
         let state = persisted as GameStore & { boss?: EncounterState | null }
         if (version < 1) {
@@ -294,6 +298,17 @@ export const useGameStore = create<GameStore>()(
             encounter: state.boss ? { ...state.boss, kind: 'boss' as const } : null,
             quest: null,
             diceInventory: DEFAULT_DICE,
+          }
+        }
+        if (version < 5) {
+          state = {
+            ...state,
+            heroes: (state.heroes ?? []).map(h => ({
+              ...h,
+              potions: h.potions ?? [],
+              comeback: h.comeback ?? 0,
+              assistUsed: h.assistUsed ?? false,
+            })),
           }
         }
         return state

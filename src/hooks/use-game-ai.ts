@@ -8,6 +8,7 @@ import type { Language } from '@/lib/ai/language'
 export function useGameAI() {
   const [loadingScene, setLoadingScene] = useState(false)
   const [loadingActions, setLoadingActions] = useState(false)
+  const [loadingCustomAction, setLoadingCustomAction] = useState(false)
   const [loadingOutcome, setLoadingOutcome] = useState(false)
   const [loadingImage, setLoadingImage] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,6 +48,29 @@ export function useGameAI() {
       return null
     } finally {
       setLoadingActions(false)
+    }
+  }, [])
+
+  // Grading the kid's own idea is best-effort: a failure returns null and the
+  // caller falls back to a locally-built action, so nobody's plan is blocked.
+  const fetchCustomAction = useCallback(async (
+    context: StoryContext,
+    currentScene: string,
+    idea: string
+  ): Promise<GeneratedAction | null> => {
+    setLoadingCustomAction(true)
+    try {
+      const response = await fetch('/api/ai/custom-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ context, currentScene, idea }),
+      })
+      if (!response.ok) return null
+      return response.json()
+    } catch {
+      return null
+    } finally {
+      setLoadingCustomAction(false)
     }
   }, [])
 
@@ -140,8 +164,8 @@ export function useGameAI() {
   }, [])
 
   return {
-    loadingScene, loadingActions, loadingOutcome, loadingImage,
+    loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
     error,
-    fetchScene, fetchActions, fetchOutcome, fetchImage, fetchLootName, fetchPortrait,
+    fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName, fetchPortrait,
   }
 }

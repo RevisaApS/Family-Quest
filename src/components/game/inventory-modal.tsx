@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
 import { SLOT_EMOJI, SLOT_LABEL, ALL_SLOTS } from '@/lib/game/loot'
 import { ItemImage } from '@/components/game/item-image'
-import { xpForNextLevel } from '@/lib/game/rpg'
+import { xpForNextLevel, potionCount } from '@/lib/game/rpg'
+import { POTION_CATALOG } from '@/lib/game/potions'
 import { loadPortrait } from '@/lib/portraits'
 import { t, statLabel } from '@/lib/i18n'
 import type { HeroState, CharacterClass } from '@/types/game'
@@ -108,6 +109,41 @@ export function InventoryModal({ hero, characterName, characterClass, language, 
             )
           })}
         </div>
+
+        {/* Pet companion */}
+        {hero.pet && (
+          <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 flex items-center gap-3">
+            <span className="text-2xl w-12 text-center">{hero.pet.emoji}</span>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">{t('petLabel', language)}</p>
+              <p className="font-serif truncate">
+                {hero.pet.name}
+                <span className="ml-2 text-xs font-bold text-success">
+                  +{hero.pet.bonus} {statLabel(hero.pet.stat, language)}
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Potion backpack */}
+        {hero.potions.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-muted-foreground">{t('potionsLabel', language)}</h3>
+            {POTION_CATALOG.filter(p => potionCount(hero, p.id) > 0).map(potion => (
+              <div key={potion.id} className="rounded-lg border border-border bg-card p-3 flex items-center gap-3">
+                <span className="text-2xl w-12 text-center">{potion.emoji}</span>
+                <div className="min-w-0">
+                  <p className="font-serif truncate">
+                    {potion.name[language]}
+                    <span className="ml-2 text-xs font-bold text-primary">×{potionCount(hero, potion.id)}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">{potion.description[language]}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Skills */}
         {hero.skills.length > 0 && (
