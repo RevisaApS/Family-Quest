@@ -1,6 +1,8 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { useGameStore } from '@/stores/game-store'
+import { t, type StringKey } from '@/lib/i18n'
 import type { Difficulty } from '@/types/game'
 
 interface DifficultyOptionProps {
@@ -9,10 +11,10 @@ interface DifficultyOptionProps {
   onSelect: () => void
 }
 
-const difficultyData: Record<Difficulty, { name: string; emoji: string }> = {
-  easy: { name: 'Easy', emoji: '🌱' },
-  medium: { name: 'Medium', emoji: '⚔️' },
-  hard: { name: 'Hard', emoji: '🔥' },
+const difficultyData: Record<Difficulty, { nameKey: StringKey; emoji: string }> = {
+  easy: { nameKey: 'diffEasy', emoji: '🌱' },
+  medium: { nameKey: 'diffMedium', emoji: '⚔️' },
+  hard: { nameKey: 'diffHard', emoji: '🔥' },
 }
 
 const difficultyColors: Record<Difficulty, { selected: string; text: string }> = {
@@ -31,6 +33,7 @@ const difficultyColors: Record<Difficulty, { selected: string; text: string }> =
 }
 
 export function DifficultyOption({ difficulty, selected, onSelect }: DifficultyOptionProps) {
+  const language = useGameStore(s => s.language)
   const data = difficultyData[difficulty]
   const colors = difficultyColors[difficulty]
   return (
@@ -42,7 +45,7 @@ export function DifficultyOption({ difficulty, selected, onSelect }: DifficultyO
       )}
     >
       <span className="text-2xl block mb-1">{data.emoji}</span>
-      <span className={cn("font-medium block", selected ? colors.text : "text-foreground")}>{data.name}</span>
+      <span className={cn("font-medium block", selected ? colors.text : "text-foreground")}>{t(data.nameKey, language)}</span>
     </button>
   )
 }

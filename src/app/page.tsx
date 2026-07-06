@@ -66,7 +66,7 @@ export default function WelcomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.4 }}
             >
-              Embark on magical adventures together
+              {t('welcomeSub', language)}
             </motion.p>
           </div>
 
@@ -84,7 +84,7 @@ export default function WelcomePage() {
                 router.push('/players')
               }}
             >
-              ⚔️ Begin Your Journey
+              ⚔️ {t('beginJourney', language)}
             </Button>
 
             {_hasHydrated && chronicle.length > 0 && (
@@ -99,12 +99,12 @@ export default function WelcomePage() {
             )}
 
             <p className="text-sm text-muted-foreground">
-              Your story awaits
+              {t('storyAwaits', language)}
             </p>
 
             {_hasHydrated && savedAdventures.length > 0 && (
               <div className="space-y-2 pt-4 text-left">
-                <p className="text-sm text-muted-foreground text-center">Or continue an adventure:</p>
+                <p className="text-sm text-muted-foreground text-center">{t('continueList', language)}</p>
                 {savedAdventures.map((adventure) => (
                   <div
                     key={adventure.id}
@@ -126,7 +126,7 @@ export default function WelcomePage() {
                       aria-label={`Delete ${adventure.name}`}
                       className="p-2 text-muted-foreground hover:text-destructive transition-colors"
                       onClick={() => {
-                        if (window.confirm(`Delete "${adventure.name}"? This cannot be undone.`)) {
+                        if (window.confirm(`${t('deleteWord', language)} "${adventure.name}"? ${t('cannotUndo', language)}`)) {
                           deleteAdventure(adventure.id)
                         }
                       }}

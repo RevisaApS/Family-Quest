@@ -76,6 +76,104 @@ const STRINGS = {
   awardsTitle: { da: 'Udmærkelser', en: 'Awards' },
   epilogueWriting: { da: 'Fortælleren skriver jeres saga...', en: 'The storyteller is writing your tale...' },
   cheerHint: { da: 'hepper!', en: 'cheers!' },
+
+  // Home
+  welcomeSub: { da: 'Tag på magiske eventyr sammen', en: 'Embark on magical adventures together' },
+  beginJourney: { da: 'Begynd jeres rejse', en: 'Begin Your Journey' },
+  storyAwaits: { da: 'Jeres historie venter', en: 'Your story awaits' },
+  continueList: { da: 'Eller fortsæt et eventyr:', en: 'Or continue an adventure:' },
+  deleteWord: { da: 'Slet', en: 'Delete' },
+  cannotUndo: { da: 'Det kan ikke fortrydes.', en: 'This cannot be undone.' },
+
+  // Shared chrome
+  back: { da: 'Tilbage', en: 'Back' },
+  cancel: { da: 'Annullér', en: 'Cancel' },
+  continueWord: { da: 'Fortsæt', en: 'Continue' },
+
+  // Onboarding steps
+  stepPlayers: { da: 'Spillere', en: 'Players' },
+  stepSettings: { da: 'Indstillinger', en: 'Settings' },
+  stepCharacters: { da: 'Helte', en: 'Characters' },
+
+  // Players page
+  whosPlaying: { da: 'Hvem spiller?', en: "Who's Playing?" },
+  selectAdventurers: { da: 'Vælg 1-4 eventyrere til dagens eventyr', en: "Select 1-4 adventurers for today's quest" },
+  doneEditing: { da: 'Færdig', en: 'Done Editing' },
+  editPlayers: { da: 'Redigér spillere', en: 'Edit Players' },
+  nameLabel: { da: 'Navn', en: 'Name' },
+  ageLabel: { da: 'Alder', en: 'Age' },
+  enterPlayerName: { da: 'Skriv spillerens navn', en: 'Enter player name' },
+  enterAge: { da: 'Skriv alder', en: 'Enter age' },
+  addPlayer: { da: 'Tilføj spiller', en: 'Add Player' },
+  addAnotherPlayer: { da: '+ Tilføj en spiller til', en: '+ Add Another Player' },
+  selectedWord: { da: 'valgt', en: 'selected' },
+  removePlayerTitle: { da: 'Fjern spiller?', en: 'Remove Player?' },
+  removeWord: { da: 'Fjern', en: 'Remove' },
+  removeFromParty: { da: 'fra eventyrgruppen?', en: 'from the adventuring party?' },
+
+  // Settings page
+  settingsTitle: { da: 'Indstillinger', en: 'Settings' },
+  settingsSub: { da: 'Tilpas jeres eventyr', en: 'Customize your adventure experience' },
+  whatDoTheseMean: { da: 'ℹ️ Hvad betyder de her?', en: 'ℹ️ What do these mean?' },
+  hideGuide: { da: 'Skjul hjælpen', en: 'Hide guide' },
+  infoStyle: { da: 'Eventyrstil: Sætter tonen — Eventyrlig til de yngste (4-7), Episk til seje monstereventyr (7-12), Dyster til teenagere (13+)', en: 'Adventure Style: Sets the tone - Whimsical for younger kids (4-7), Epic for cool monster-filled adventure (7-12), Dark for teens (13+)' },
+  infoDifficulty: { da: 'Sværhedsgrad: Let = blid, Mellem = balanceret, Svær = rigtige konsekvenser', en: 'Difficulty: Easy = gentle, Medium = balanced, Hard = real consequences' },
+  infoDice: { da: 'Terninger: Digital = tryk for at rulle i appen, Fysisk = brug jeres egne terninger', en: 'Dice: Digital = tap to roll in-app, Physical = use your own dice' },
+  infoLanguage: { da: 'Sprog: Det sprog, eventyret fortælles på', en: 'Language: The language the adventure is told in' },
+  adventureStyleLabel: { da: 'Eventyrstil', en: 'Adventure Style' },
+  difficultyLabel: { da: 'Sværhedsgrad', en: 'Difficulty' },
+  diceSettingLabel: { da: 'Terninger', en: 'Dice' },
+  digitalDice: { da: 'Digital', en: 'Digital' },
+  physicalDice: { da: 'Fysisk', en: 'Physical' },
+  languageLabel: { da: 'Sprog', en: 'Language' },
+  continueToCharacters: { da: 'Videre til heltene', en: 'Continue to Characters' },
+
+  // Style / difficulty option names
+  styleWhimsical: { da: 'Eventyrlig', en: 'Whimsical' },
+  styleEpic: { da: 'Episk', en: 'Epic' },
+  styleDark: { da: 'Dyster', en: 'Dark' },
+  diffEasy: { da: 'Let', en: 'Easy' },
+  diffMedium: { da: 'Mellem', en: 'Medium' },
+  diffHard: { da: 'Svær', en: 'Hard' },
+
+  // Characters page
+  playerWord: { da: 'Spiller', en: 'Player' },
+  ofWord: { da: 'af', en: 'of' },
+  charTitleSuffix: { da: 's helt', en: '’s Character' },
+  characterNameLabel: { da: 'Heltens navn', en: 'Character Name' },
+  theBrave: { da: ' den Tapre', en: ' the Brave' },
+  avatarStyle: { da: 'Udseende', en: 'Avatar Style' },
+  genderMale: { da: 'Dreng', en: 'Male' },
+  genderFemale: { da: 'Pige', en: 'Female' },
+  genderNeutral: { da: 'Neutral', en: 'Neutral' },
+  chooseClass: { da: 'Vælg din helt', en: 'Choose Class' },
+  heroPortrait: { da: 'Heltebillede', en: 'Hero Portrait' },
+  paintingWord: { da: 'Maler', en: 'Painting' },
+  paintAgain: { da: 'Mal igen', en: 'Paint Again' },
+  paintPortrait: { da: 'Mal et heltebillede', en: 'Paint Hero Portrait' },
+  painterBusy: { da: 'Maleren har travlt — I kan fortsætte uden billede og prøve igen senere.', en: 'The painter is busy — you can continue without a portrait and try again later.' },
+  startAdventure: { da: 'Start eventyret!', en: 'Start Adventure!' },
+  nextPlayer: { da: 'Næste spiller →', en: 'Next Player →' },
+
+  // Play page chrome
+  preparing: { da: 'Gør jeres eventyr klar...', en: 'Preparing your adventure...' },
+  thinkingActions: { da: 'Fortælleren tænker over, hvad I kan gøre...', en: 'Thinking of what you can do...' },
+  noCharacters: { da: 'Ingen helte fundet', en: 'No characters found' },
+  startOver: { da: 'Start forfra', en: 'Start Over' },
+  paused: { da: 'Pause', en: 'Paused' },
+  resume: { da: 'Fortsæt', en: 'Resume' },
+  saveQuit: { da: 'Gem og afslut', en: 'Save & Quit' },
+  nameAdventure: { da: 'Giv eventyret et navn', en: 'Name this adventure' },
+  continueAdventure: { da: 'Eventyret fortsætter →', en: 'Continue Adventure →' },
+  storyUnfolds: { da: 'Historien folder sig ud...', en: 'The story unfolds...' },
+  outcomeSuccess: { da: 'Sejr!', en: 'Success!' },
+  outcomePartial: { da: 'Delvis sejr', en: 'Partial Success' },
+  outcomeTwist: { da: 'Uventet drejning!', en: 'Plot Twist!' },
+
+  // Errors
+  errorTitle: { da: 'Den magiske skriftrulle blev lidt rodet...', en: 'The magic scroll got a bit jumbled...' },
+  errorSub: { da: 'Noget gik galt, men alle helte møder modgang!', en: 'Something went wrong, but every hero faces setbacks!' },
+  tryAgain: { da: 'Prøv igen', en: 'Cast Again' },
 } as const
 
 export type StringKey = keyof typeof STRINGS
@@ -94,4 +192,21 @@ const STAT_LABELS: Record<Stat, Record<Language, string>> = {
 
 export function statLabel(stat: Stat, language: Language): string {
   return STAT_LABELS[stat][language]
+}
+
+// Hero class names shown on cards and the turn banner
+const CLASS_LABELS: Record<string, Record<Language, string>> = {
+  warrior: { da: 'Kriger', en: 'Warrior' },
+  wizard: { da: 'Troldmand', en: 'Wizard' },
+  rogue: { da: 'Snigtyv', en: 'Rogue' },
+  ranger: { da: 'Jæger', en: 'Ranger' },
+}
+
+export function classLabel(characterClass: string, language: Language): string {
+  return CLASS_LABELS[characterClass]?.[language] ?? characterClass
+}
+
+// "Age 8" / "8 år" — the two languages order it differently
+export function ageText(age: number, language: Language): string {
+  return language === 'da' ? `${age} år` : `Age ${age}`
 }

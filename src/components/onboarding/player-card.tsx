@@ -3,6 +3,8 @@
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
+import { useGameStore } from '@/stores/game-store'
+import { ageText } from '@/lib/i18n'
 
 interface PlayerCardProps {
   id: string
@@ -26,6 +28,7 @@ const shimmerStyle = {
 export function PlayerCard({
   name, age, color, selected, onSelect, onRemove, onMoveUp, onMoveDown, selectable = false, editMode = false,
 }: PlayerCardProps) {
+  const language = useGameStore(s => s.language)
   return (
     <>
       <style>{`
@@ -83,7 +86,7 @@ export function PlayerCard({
             </div>
             <div className="flex-1 min-h-[44px] flex flex-col justify-center">
               <p className="font-medium text-foreground">{name}</p>
-              <p className="text-sm text-muted-foreground">Age {age}</p>
+              <p className="text-sm text-muted-foreground">{ageText(age, language)}</p>
             </div>
             {selectable && !editMode && (
               <div className={cn(

@@ -446,8 +446,8 @@ export default function PlayPage() {
     return (
       <PageContainer className="justify-center">
         <div className="text-center space-y-4">
-          <p className="text-muted-foreground">No characters found</p>
-          <Button onClick={() => router.push('/players')}>Start Over</Button>
+          <p className="text-muted-foreground">{t('noCharacters', useGameStore.getState().language)}</p>
+          <Button onClick={() => router.push('/players')}>{t('startOver', useGameStore.getState().language)}</Button>
         </div>
       </PageContainer>
     )
@@ -903,13 +903,13 @@ export default function PlayPage() {
         {isPaused && (
           <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
             <div className="card-surface p-6 rounded-xl border border-primary/20 space-y-4 max-w-xs w-full">
-              <h2 className="text-xl font-serif text-primary text-center">Paused</h2>
-              <Button className="w-full" onClick={() => setIsPaused(false)}>Resume</Button>
+              <h2 className="text-xl font-serif text-primary text-center">{t('paused', language)}</h2>
+              <Button className="w-full" onClick={() => setIsPaused(false)}>{t('resume', language)}</Button>
               <div className="space-y-2">
                 <Input
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
-                  placeholder="Name this adventure"
+                  placeholder={t('nameAdventure', language)}
                   className="text-center"
                 />
                 <Button
@@ -920,7 +920,7 @@ export default function PlayPage() {
                     router.push('/')
                   }}
                 >
-                  Save &amp; Quit
+                  {t('saveQuit', language)}
                 </Button>
               </div>
             </div>
@@ -1052,7 +1052,7 @@ export default function PlayPage() {
               className="text-center py-12 space-y-4"
             >
               <span className="text-5xl block animate-bounce">🏰</span>
-              <p className="text-primary font-serif text-lg animate-pulse">Preparing your adventure...</p>
+              <p className="text-primary font-serif text-lg animate-pulse">{t('preparing', language)}</p>
             </motion.div>
           )}
 
@@ -1093,7 +1093,7 @@ export default function PlayPage() {
                   )}
                   {loadingActions ? (
                     <div className="text-center text-muted-foreground animate-pulse py-4">
-                      Thinking of what you can do...
+                      {t('thinkingActions', language)}
                     </div>
                   ) : actions.length > 0 ? (
                     <ActionPicker

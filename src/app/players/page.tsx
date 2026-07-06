@@ -10,49 +10,14 @@ import { Card } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout/page-container'
 import { Header } from '@/components/layout/header'
 import { PlayerCard } from '@/components/onboarding/player-card'
+import { StepIndicator } from '@/components/onboarding/step-indicator'
+import { t } from '@/lib/i18n'
 import { useGameStore } from '@/stores/game-store'
 import { cn } from '@/lib/utils'
 
-const steps = [
-  { label: 'Players', href: '/players' },
-  { label: 'Settings', href: '/settings' },
-  { label: 'Characters', href: '/characters' },
-]
-
-const StepIndicator = ({ currentStep }: { currentStep: number }) => (
-  <div className="flex items-center justify-center mb-6">
-    {steps.map((step, i) => (
-      <div key={step.label} className="flex items-center">
-        <div className="flex flex-col items-center">
-          <div
-            className={cn(
-              "rounded-full transition-all",
-              i < currentStep
-                ? "w-3 h-3 bg-primary"
-                : i === currentStep
-                  ? "w-4 h-4 bg-primary ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
-                  : "w-3 h-3 bg-muted"
-            )}
-          />
-          <span className={cn(
-            "text-xs mt-1.5",
-            i <= currentStep ? "text-primary" : "text-muted-foreground"
-          )}>{step.label}</span>
-        </div>
-        {i < steps.length - 1 && (
-          <div className={cn(
-            "w-16 h-0.5 mx-2 mb-5",
-            i < currentStep ? "bg-primary" : "bg-muted"
-          )} />
-        )}
-      </div>
-    ))}
-  </div>
-)
-
 export default function PlayersPage() {
   const router = useRouter()
-  const { players, addPlayer, removePlayer, reorderPlayers, selectedPlayerIds, selectPlayer, deselectPlayer } = useGameStore()
+  const { players, addPlayer, removePlayer, reorderPlayers, selectedPlayerIds, selectPlayer, deselectPlayer, language } = useGameStore()
 
   const [isAdding, setIsAdding] = useState(players.length === 0)
   const [newName, setNewName] = useState('')
@@ -93,8 +58,8 @@ export default function PlayersPage() {
           transition={{ duration: 0.4 }}
         >
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-serif text-primary">Who&apos;s Playing?</h1>
-            <p className="text-muted-foreground">Select 1-4 adventurers for today&apos;s quest</p>
+            <h1 className="text-3xl font-serif text-primary">{t('whosPlaying', language)}</h1>
+            <p className="text-muted-foreground">{t('selectAdventurers', language)}</p>
           </div>
 
           <StepIndicator currentStep={0} />
@@ -124,30 +89,30 @@ export default function PlayersPage() {
               )}
               onClick={() => setEditMode(!editMode)}
             >
-              {editMode ? 'Done Editing' : 'Edit Players'}
+              {editMode ? t('doneEditing', language) : t('editPlayers', language)}
             </button>
           )}
 
           {isAdding ? (
             <Card className="p-4 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Enter player name" />
+                <Label htmlFor="name">{t('nameLabel', language)}</Label>
+                <Input id="name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('enterPlayerName', language)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="age">Age</Label>
-                <Input id="age" type="number" min="1" max="18" value={newAge} onChange={(e) => setNewAge(e.target.value)} placeholder="Enter age" />
+                <Label htmlFor="age">{t('ageLabel', language)}</Label>
+                <Input id="age" type="number" min="1" max="18" value={newAge} onChange={(e) => setNewAge(e.target.value)} placeholder={t('enterAge', language)} />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleAddPlayer} className="flex-1">Add Player</Button>
+                <Button onClick={handleAddPlayer} className="flex-1">{t('addPlayer', language)}</Button>
                 {players.length > 0 && (
-                  <Button variant="outline" onClick={() => setIsAdding(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setIsAdding(false)}>{t('cancel', language)}</Button>
                 )}
               </div>
             </Card>
           ) : (
             <Button variant="outline" className="w-full" onClick={() => setIsAdding(true)}>
-              + Add Another Player
+              {t('addAnotherPlayer', language)}
             </Button>
           )}
 
@@ -157,7 +122,7 @@ export default function PlayersPage() {
             disabled={selectedPlayerIds.length < 1}
             onClick={() => router.push('/settings')}
           >
-            Continue ({selectedPlayerIds.length} selected)
+            {t('continueWord', language)} ({selectedPlayerIds.length} {t('selectedWord', language)})
           </Button>
         </motion.div>
       </PageContainer>
@@ -165,9 +130,9 @@ export default function PlayersPage() {
       {playerToRemove && (
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg border border-border space-y-4 max-w-xs w-full">
-            <h2 className="text-lg font-serif text-primary text-center">Remove Player?</h2>
+            <h2 className="text-lg font-serif text-primary text-center">{t('removePlayerTitle', language)}</h2>
             <p className="text-sm text-muted-foreground text-center">
-              Remove {players.find(p => p.id === playerToRemove)?.name} from the adventuring party?
+              {t('removeWord', language)} {players.find(p => p.id === playerToRemove)?.name} {t('removeFromParty', language)}
             </p>
             <div className="flex gap-2">
               <Button
@@ -175,10 +140,10 @@ export default function PlayersPage() {
                 className="flex-1"
                 onClick={() => { removePlayer(playerToRemove); setPlayerToRemove(null) }}
               >
-                Remove
+                {t('removeWord', language)}
               </Button>
               <Button variant="outline" className="flex-1" onClick={() => setPlayerToRemove(null)}>
-                Cancel
+                {t('cancel', language)}
               </Button>
             </div>
           </div>

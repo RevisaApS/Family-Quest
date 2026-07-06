@@ -3,6 +3,8 @@
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
+import { useGameStore } from '@/stores/game-store'
+import { classLabel } from '@/lib/i18n'
 import type { CharacterClass, Stat } from '@/types/game'
 import { motion } from 'framer-motion'
 
@@ -12,7 +14,13 @@ interface ClassCardProps {
   onSelect: () => void
 }
 
-const statLabel: Record<Stat, string> = { strength: 'STR', magic: 'MAG', agility: 'AGI', heart: 'HP' }
+// Short stat tags sized for the card's narrow gauge column
+const statAbbrev: Record<Stat, { en: string; da: string }> = {
+  strength: { en: 'STR', da: 'STY' },
+  magic: { en: 'MAG', da: 'MAG' },
+  agility: { en: 'AGI', da: 'HUR' },
+  heart: { en: 'HP', da: 'MOD' },
+}
 
 const classBgTint: Record<string, string> = {
   warrior: 'bg-red-950/20',
@@ -36,6 +44,7 @@ const classImage: Record<CharacterClass, string> = {
 }
 
 export function ClassCard({ characterClass, selected, onSelect }: ClassCardProps) {
+  const language = useGameStore(s => s.language)
   const classDef = CLASS_DEFINITIONS[characterClass]
   const bgTint = classBgTint[characterClass] || ''
   const glowColor = classGlowColor[characterClass] || '#ffd700'
@@ -60,18 +69,18 @@ export function ClassCard({ characterClass, selected, onSelect }: ClassCardProps
         )}>
           <Image
             src={classImage[characterClass]}
-            alt={classDef.displayName}
+            alt={classLabel(characterClass, language)}
             fill
             className="object-cover"
             sizes="112px"
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-serif text-lg text-foreground mb-1.5">{classDef.displayName}</h3>
+          <h3 className="font-serif text-lg text-foreground mb-1.5">{classLabel(characterClass, language)}</h3>
           <div className="space-y-1">
             {(Object.entries(classDef.stats) as [Stat, number][]).map(([stat, value]) => (
               <div key={stat} className="flex items-center gap-2 text-xs">
-                <span className="w-8 text-muted-foreground font-medium">{statLabel[stat]}</span>
+                <span className="w-8 text-muted-foreground font-medium">{statAbbrev[stat][language]}</span>
                 <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[80px]">
                   <div
                     className="h-full rounded-full transition-all"

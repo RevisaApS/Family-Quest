@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
+import { useGameStore } from '@/stores/game-store'
+import { classLabel } from '@/lib/i18n'
 import type { CharacterClass } from '@/types/game'
 
 interface PlayerTurnProps {
@@ -11,6 +13,7 @@ interface PlayerTurnProps {
 }
 
 export function PlayerTurn({ characterName, characterClass }: PlayerTurnProps) {
+  const language = useGameStore(s => s.language)
   const classDef = CLASS_DEFINITIONS[characterClass]
   return (
     <motion.div
@@ -24,7 +27,7 @@ export function PlayerTurn({ characterName, characterClass }: PlayerTurnProps) {
       </span>
       <div className="flex flex-col">
         <span className="text-base font-serif font-medium text-primary">{characterName}</span>
-        <span className="text-sm text-muted-foreground">{classDef.displayName}</span>
+        <span className="text-sm text-muted-foreground">{classLabel(characterClass, language)}</span>
       </div>
       <div className="ml-auto">
         <motion.div
