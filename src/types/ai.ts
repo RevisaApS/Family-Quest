@@ -20,6 +20,7 @@ export interface HeroRpgContext {
   knockedOut: boolean
   skillNames: string[]
   gearNames: string[]
+  petName?: string
 }
 
 export type EncounterPhase =
@@ -54,7 +55,17 @@ export interface StoryContext {
   currentPlayerId: string
   language: Language
   encounterPhase?: EncounterPhase
-  encounter?: { kind: 'monster' | 'boss'; name: string; hp: number; maxHp: number } | null
+  encounter?: {
+    kind: 'monster' | 'boss'
+    name: string
+    hp: number
+    maxHp: number
+    // Boss phase 2: weak spot revealed at half HP. announceEnrage marks the
+    // one scene that must narrate the transformation.
+    enraged?: boolean
+    weakStat?: Stat
+    announceEnrage?: boolean
+  } | null
   quest?: { title: string; goal: string; villain?: string; milestonesDone: number } | null
   isFirstScene?: boolean
 }

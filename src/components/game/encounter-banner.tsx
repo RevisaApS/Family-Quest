@@ -1,10 +1,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { t, statLabel } from '@/lib/i18n'
 import type { EncounterState } from '@/types/game'
+import type { Language } from '@/lib/ai/language'
 
 // Shared enemy HP bar — small monsters along the quest, the boss at the end.
-export function EncounterBanner({ encounter }: { encounter: EncounterState }) {
+// An enraged boss (phase 2) shows its revealed weak spot so the kids can
+// coordinate who attacks with what.
+export function EncounterBanner({ encounter, language }: { encounter: EncounterState; language: Language }) {
   const pct = Math.max(0, Math.round((encounter.hp / encounter.maxHp) * 100))
   const isBoss = encounter.kind === 'boss'
   return (
@@ -23,7 +27,7 @@ export function EncounterBanner({ encounter }: { encounter: EncounterState }) {
           transition={{ duration: 1.5, repeat: Infinity }}
           className="text-xl"
         >
-          {isBoss ? '👹' : '👾'}
+          {encounter.enraged ? '🔥' : isBoss ? '👹' : '👾'}
         </motion.span>
         <span className={`font-serif font-medium truncate ${isBoss ? 'text-destructive' : 'text-secondary'}`}>
           {encounter.name}
@@ -39,6 +43,18 @@ export function EncounterBanner({ encounter }: { encounter: EncounterState }) {
           className={`h-full rounded-full ${isBoss ? 'bg-destructive' : 'bg-secondary'}`}
         />
       </div>
+      {encounter.enraged && encounter.weakStat && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center justify-between text-xs font-bold"
+        >
+          <span className="text-destructive">🔥 {t('enraged', language)}</span>
+          <span className="rounded-full bg-success/15 text-success px-2.5 py-0.5">
+            ✨ {t('weakSpot', language)}: {statLabel(encounter.weakStat, language)} +1 ⚔️
+          </span>
+        </motion.div>
+      )}
     </motion.div>
   )
 }

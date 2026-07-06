@@ -8,7 +8,7 @@ import { SceneDisplay } from '@/components/game/scene-display'
 import { PlayerTurn } from '@/components/game/player-turn'
 import { PartyBar, type PartyMember } from '@/components/game/party-bar'
 import { ActionPicker } from '@/components/game/action-picker'
-import { DiceRoller } from '@/components/game/dice-roller'
+import { DiceRoller, type RollBoost } from '@/components/game/dice-roller'
 import { OutcomeDisplay, type PowerAction } from '@/components/game/outcome-display'
 import { ErrorMessage } from '@/components/game/error-message'
 import { EncounterBanner } from '@/components/game/encounter-banner'
@@ -29,10 +29,18 @@ import {
   equipLoot, addSkill, addGold, buyItem, chestIsGold, chestGoldAmount,
   MONSTER_GOLD_REWARD, BOSS_GOLD_REWARD,
   canUsePower, usePower, healHero,
+  ASSIST_BONUS, spendAssist, potionCount, removePotion, buyPotion, buyPet,
+  shouldEnrage, enrageBoss, rollWeakStat, weaknessBonus,
 } from '@/lib/game/rpg'
 import { skillChoices, POWER_META } from '@/lib/game/skills'
 import { rollLootSlot, rollLootStat, createLoot, fallbackLootName } from '@/lib/game/loot'
 import { toLootItem, type ShopItem } from '@/lib/game/shop'
+import { potionDefinition, HEAL_POTION_HP, LUCK_POTION_BONUS, type PotionDefinition } from '@/lib/game/potions'
+import { toPet, type PetDefinition } from '@/lib/game/pets'
+import { turnStatsForPlayer, type CompletedAdventure } from '@/lib/game/chronicle'
+import type { GeneratedEpilogue } from '@/lib/ai/epilogue'
+import { CLASS_DEFINITIONS } from '@/lib/game/classes'
+import { cn } from '@/lib/utils'
 import { heroVisualDescription } from '@/lib/game/appearance'
 import { loadPortraits } from '@/lib/portraits'
 import { sfx, setSoundEnabled } from '@/lib/sound'
@@ -78,8 +86,9 @@ export default function PlayPage() {
     shopHintSeen, setShopHintSeen,
   } = useGameStore()
   const {
-    loadingScene, loadingActions, loadingOutcome, loadingImage,
-    error, fetchScene, fetchActions, fetchOutcome, fetchImage, fetchLootName,
+    loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
+    error, fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName,
+    fetchEpilogue,
   } = useGameAI()
 
   const selectedPlayers = useMemo(
@@ -120,6 +129,15 @@ export default function PlayPage() {
   const [inventoryPlayerId, setInventoryPlayerId] = useState<string | null>(null)
   // Lucky Hand power: armed until a good roll lands, then guarantees a chest
   const [luckyArmedFor, setLuckyArmedFor] = useState<string | null>(null)
+  // Teamwork: which teammate is lending +1 to this roll
+  const [assistPlayerId, setAssistPlayerId] = useState<string | null>(null)
+  // A drunk luck potion rides on this turn's roll (rerolls included)
+  const [luckActive, setLuckActive] = useState(false)
+  // The storybook epilogue written when the boss falls
+  const [epilogue, setEpilogue] = useState<GeneratedEpilogue | null>(null)
+  const [epilogueLoading, setEpilogueLoading] = useState(false)
+  // Guards the one-time chronicle entry per completed adventure
+  const chronicleRecordedRef = useRef(false)
   // Pre-roll snapshot so Second Chance / Rally can re-resolve the turn cleanly
   const preRollRef = useRef<{ hero: HeroState; encounter: EncounterState | null } | null>(null)
 
@@ -160,6 +178,7 @@ export default function PlayPage() {
             knockedOut: hero.knockedOut,
             skillNames: hero.skills.map(s => s.name),
             gearNames: Object.values(hero.equipment).filter(Boolean).map(i => i!.name),
+            petName: hero.pet?.name,
           } : undefined,
         }
       }),
@@ -167,7 +186,15 @@ export default function PlayPage() {
     language,
     encounterPhase: currentEncounterPhase(),
     encounter: encounter
-      ? { kind: encounter.kind, name: encounter.name, hp: encounter.hp, maxHp: encounter.maxHp }
+      ? {
+          kind: encounter.kind,
+          name: encounter.name,
+          hp: encounter.hp,
+          maxHp: encounter.maxHp,
+          enraged: encounter.enraged,
+          weakStat: encounter.weakStat,
+          announceEnrage: !!encounter.enraged && !encounter.enrageAnnounced && !encounter.defeated,
+        }
       : null,
     quest: quest ?? null,
     isFirstScene,
@@ -180,12 +207,16 @@ export default function PlayPage() {
         if (!char) return null
         const base = heroVisualDescription(char.name, char.class, char.gender, p.color, p.age)
         // Equipped gear shows up on the hero in every scene: buy the Golden
-        // Helm and the pictures wear it
-        const gearLooks = Object.values(heroes.find(h => h.playerId === p.id)?.equipment ?? {})
+        // Helm and the pictures wear it — and the pet walks alongside
+        const hero = heroes.find(h => h.playerId === p.id)
+        const gearLooks = Object.values(hero?.equipment ?? {})
           .filter((i): i is NonNullable<typeof i> => !!i)
           .map(i => i.look)
           .filter((l): l is string => !!l)
-        return gearLooks.length ? `${base}, equipped with ${gearLooks.join(', ')}` : base
+        const parts = [base]
+        if (gearLooks.length) parts.push(`equipped with ${gearLooks.join(', ')}`)
+        if (hero?.pet) parts.push(`accompanied by ${hero.pet.look}`)
+        return parts.join(', ')
       })
       .filter((d): d is string => !!d),
   [selectedPlayers, characters, heroes])
@@ -219,21 +250,26 @@ export default function PlayPage() {
     setTurnEncounterDamage(0)
     setTurnCrit(null)
     setRescueMessage(null)
+    setAssistPlayerId(null)
+    setLuckActive(false)
     preRollRef.current = null
 
-    // Teammates help knocked-out heroes back up at the start of the next turn
+    // A knocked-out hero stays down — cheering teammates on from the
+    // sidelines — until their OWN turn begins; then friends help them back
+    // up at half HP. Nobody ever misses their turn.
     const state = useGameStore.getState()
-    const koHeroes = state.heroes.filter(h => h.knockedOut)
-    if (koHeroes.length > 0) {
-      koHeroes.forEach(h => updateHero(reviveHero(h)))
-      const koNames = koHeroes
-        .map(h => characters.find(c => c.playerId === h.playerId)?.name)
+    const koHero = state.heroes.find(h => h.knockedOut && h.playerId === currentPlayer?.id)
+    if (koHero && currentCharacter) {
+      updateHero(reviveHero(koHero))
+      const helperNames = selectedPlayers
+        .filter(p => p.id !== currentPlayer?.id)
+        .map(p => characters.find(c => c.playerId === p.id)?.name)
         .filter(Boolean)
         .join(', ')
-      if (selectedPlayers.length > 1 && currentCharacter && !koHeroes.some(h => h.playerId === currentPlayer?.id)) {
-        setRescueMessage(`🤝 ${currentCharacter.name} ${t('rescuedBy', language)} ${koNames} ${t('backUp', language)}`)
+      if (helperNames) {
+        setRescueMessage(`🤝 ${helperNames} ${t('rescuedBy', language)} ${currentCharacter.name} ${t('backUp', language)}`)
       } else {
-        setRescueMessage(`💫 ${koNames} ${t('soloRecover', language)}`)
+        setRescueMessage(`💫 ${currentCharacter.name} ${t('soloRecover', language)}`)
       }
     }
 
@@ -267,6 +303,10 @@ export default function PlayPage() {
       } else if (context.encounterPhase === 'just-defeated') {
         // Aftermath scene told — the battlefield is clear again
         setEncounter(null)
+      } else if (context.encounter?.announceEnrage) {
+        // The boss transformation scene has now been told — don't retell it
+        const enc = useGameStore.getState().encounter
+        if (enc && !enc.defeated) setEncounter({ ...enc, enrageAnnounced: true })
       }
 
       // Paint the scene in the background — the text is readable immediately
@@ -318,6 +358,79 @@ export default function PlayPage() {
     loadScene()
   }, [_hasHydrated, turnCounter]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The boss just fell and the victory overlay is up: write the storybook
+  // epilogue and record this quest in the family chronicle. Everything is
+  // snapshotted first so a quick "New adventure" tap can't corrupt the record.
+  const victoryVisible = gamePhase === 'rewards' && !monsterVictory && !pendingLoot
+    && !pendingLevelUp && showVictory && !!encounter
+
+  useEffect(() => {
+    if (!victoryVisible || chronicleRecordedRef.current) return
+    const state = useGameStore.getState()
+    const finishedQuest = state.quest
+    if (!finishedQuest) return
+    chronicleRecordedRef.current = true
+    setEpilogueLoading(true)
+
+    const heroContexts = selectedPlayers
+      .map(p => ({ player: p, char: characters.find(c => c.playerId === p.id) }))
+      .filter((x): x is { player: typeof x.player; char: NonNullable<typeof x.char> } => !!x.char)
+      .map(({ player, char }) => {
+        const hero = state.heroes.find(h => h.playerId === player.id)
+        return {
+          playerId: player.id,
+          characterName: char.name,
+          playerName: player.name,
+          class: char.class,
+          level: hero?.level ?? 1,
+          petName: hero?.pet?.name,
+          stats: turnStatsForPlayer(state.turnHistory, player.id),
+        }
+      })
+
+    const record: CompletedAdventure = {
+      id: crypto.randomUUID(),
+      completedAt: Date.now(),
+      questTitle: finishedQuest.title,
+      questGoal: finishedQuest.goal,
+      villain: finishedQuest.villain,
+      style: adventureStyle,
+      heroes: heroContexts.map(h => ({
+        playerId: h.playerId,
+        playerName: h.playerName,
+        characterName: h.characterName,
+        class: h.class,
+        level: h.level,
+        petName: h.petName,
+        ...h.stats,
+      })),
+    }
+
+    fetchEpilogue({
+      language,
+      adventureStyle,
+      questTitle: finishedQuest.title,
+      questGoal: finishedQuest.goal,
+      villain: finishedQuest.villain,
+      storyHistory: state.storyHistory,
+      heroes: heroContexts,
+    }).then(result => {
+      setEpilogue(result)
+      setEpilogueLoading(false)
+      const finalRecord: CompletedAdventure = result
+        ? {
+            ...record,
+            tale: { title: result.title, story: result.story },
+            heroes: record.heroes.map(h => {
+              const award = result.awards?.find(a => a.playerId === h.playerId)
+              return award ? { ...h, award: { title: award.title, reason: award.reason } } : h
+            }),
+          }
+        : record
+      useGameStore.getState().addToChronicle(finalRecord)
+    })
+  }, [victoryVisible]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!currentPlayer || !currentCharacter) {
     return (
       <PageContainer className="justify-center">
@@ -334,6 +447,7 @@ export default function PlayPage() {
     sceneFit: action.sceneFit,
     level: hero.level,
     encounterActive,
+    age: currentPlayer.age,
   })
 
   const handleChooseAction = async () => {
@@ -344,6 +458,13 @@ export default function PlayPage() {
   const handleActionSelect = (action: GeneratedAction) => {
     setSelectedAction(action)
     setGamePhase('dice')
+  }
+
+  // "My own idea!" — the DM grades the kid's plan; if the AI can't be
+  // reached the plan still plays as a brave, okay-fit action.
+  const handleCustomIdea = async (idea: string) => {
+    const graded = await fetchCustomAction(buildStoryContext(), currentSceneText, idea)
+    handleActionSelect(graded ?? { id: 'custom', text: idea, stat: 'heart', sceneFit: 'okay', sceneFitReason: '' })
   }
 
   // Resolve (or re-resolve, for Second Chance / Rally) the current turn from
@@ -357,8 +478,16 @@ export default function PlayPage() {
     const encActive = !!baseEncounter && !baseEncounter.defeated
 
     const statValue = heroStatBonus(currentCharacter.class, baseHero, action.stat)
-    const dc = calculateDC({ difficulty, sceneFit: action.sceneFit, level: baseHero.level, encounterActive: encActive })
-    const resolved = resolveD20(roll, statValue + bonus, dc)
+    const dc = calculateDC({
+      difficulty, sceneFit: action.sceneFit, level: baseHero.level,
+      encounterActive: encActive, age: currentPlayer?.age,
+    })
+    // Determination, a helping friend, and a drunk luck potion all ride on
+    // the roll — and stick around through Second Chance / Rally re-resolves
+    const boostBonus = baseHero.comeback
+      + (assistPlayerId ? ASSIST_BONUS : 0)
+      + (luckActive ? LUCK_POTION_BONUS : 0)
+    const resolved = resolveD20(roll, statValue + bonus + boostBonus, dc)
 
     setOutcomeType(resolved.outcome)
     setTurnCrit(resolved.crit)
@@ -395,10 +524,18 @@ export default function PlayPage() {
     let encDamage = 0
     let monsterDown = false
     if (encActive && baseEncounter) {
-      encDamage = encounterDamageForOutcome(resolved.outcome, resolved.crit)
+      const baseDamage = encounterDamageForOutcome(resolved.outcome, resolved.crit)
+      encDamage = baseDamage + weaknessBonus(baseEncounter, action.stat, baseDamage)
       const newHp = Math.max(0, baseEncounter.hp - encDamage)
       const defeated = newHp === 0
-      setEncounter({ ...baseEncounter, hp: newHp, defeated })
+      let updatedEncounter: EncounterState = { ...baseEncounter, hp: newHp, defeated }
+      // Boss phase 2: wounded to half HP, the boss transforms and reveals a
+      // weak spot — the next scene narrates it, the banner shows it
+      if (shouldEnrage(updatedEncounter)) {
+        updatedEncounter = enrageBoss(updatedEncounter, rollWeakStat())
+        sfx.bossAppear()
+      }
+      setEncounter(updatedEncounter)
       if (defeated) {
         if (baseEncounter.kind === 'boss') {
           setShowVictory(true)
@@ -447,11 +584,13 @@ export default function PlayPage() {
       }
     }
 
-    // Fetch AI-generated outcome narrative
+    // Fetch AI-generated outcome narrative — the helping teammate gets
+    // written into the story too
+    const helperCharacter = assistPlayerId ? characters.find(c => c.playerId === assistPlayerId) : null
     const context = buildStoryContext()
     const narrative = await fetchOutcome(
       context,
-      action.text,
+      helperCharacter ? `${action.text} (with help from ${helperCharacter.name})` : action.text,
       action.stat,
       resolved.outcome,
       currentSceneText,
@@ -465,6 +604,12 @@ export default function PlayPage() {
   const handleDiceRoll = async (result: number) => {
     if (!selectedAction || !currentCharacter || !currentHero) return
     setDiceResult(result)
+    // The helping teammate spends their assist now — it stays spent even
+    // through rerolls, and recharges on their own next turn
+    if (assistPlayerId) {
+      const helper = useGameStore.getState().heroes.find(h => h.playerId === assistPlayerId)
+      if (helper && !helper.assistUsed) updateHero(spendAssist(helper))
+    }
     preRollRef.current = { hero: currentHero, encounter }
     await resolveTurn(result, 0, selectedAction)
   }
@@ -613,6 +758,35 @@ export default function PlayPage() {
     if (bought) updateHero(bought)
   }
 
+  const handleBuyPotion = (potion: PotionDefinition) => {
+    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero) return
+    const bought = buyPotion(hero, potion.id, potion.price)
+    if (bought) updateHero(bought)
+  }
+
+  const handleBuyPet = (petDef: PetDefinition, customName: string) => {
+    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero) return
+    const bought = buyPet(hero, toPet(petDef, language, customName), petDef.price)
+    if (bought) updateHero(bought)
+  }
+
+  const handleDrinkHeal = () => {
+    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero || potionCount(hero, 'heal') === 0 || hero.hp >= hero.maxHp) return
+    updateHero(healHero(removePotion(hero, 'heal'), HEAL_POTION_HP))
+    sfx.success()
+  }
+
+  const handleDrinkLuck = () => {
+    const hero = useGameStore.getState().heroes.find(h => h.playerId === currentPlayer.id)
+    if (!hero || potionCount(hero, 'luck') === 0 || luckActive) return
+    updateHero(removePotion(hero, 'luck'))
+    setLuckActive(true)
+    sfx.chestOpen()
+  }
+
   const partyMembers: PartyMember[] = selectedPlayers
     .map(p => {
       const char = characters.find(c => c.playerId === p.id)
@@ -629,6 +803,31 @@ export default function PlayPage() {
   const anyoneHurt = heroes.some(h => h.hp < h.maxHp)
   const canHeal = currentHero && canUsePower(currentHero, 'heal') && anyoneHurt
   const canArmLucky = currentHero && canUsePower(currentHero, 'lucky') && luckyArmedFor !== currentPlayer.id
+  const canDrinkHeal = currentHero && potionCount(currentHero, 'heal') > 0 && currentHero.hp < currentHero.maxHp
+  const canDrinkLuck = currentHero && potionCount(currentHero, 'luck') > 0 && !luckActive
+
+  // Teammates who can lend +1 to this roll — knocked-out heroes cheer from
+  // the sidelines (📣), so being down never means sitting out
+  const helpers = selectedPlayers
+    .filter(p => p.id !== currentPlayer.id)
+    .map(p => ({
+      playerId: p.id,
+      char: characters.find(c => c.playerId === p.id),
+      hero: heroes.find(h => h.playerId === p.id),
+    }))
+    .filter(x => x.char && x.hero && !x.hero.assistUsed)
+
+  // Every bonus riding on the upcoming roll, each shown as its own chip
+  const assistHelperChar = assistPlayerId ? characters.find(c => c.playerId === assistPlayerId) : null
+  const rollBoosts: RollBoost[] = currentHero ? [
+    ...(currentHero.comeback > 0
+      ? [{ emoji: '🔥', label: t('determination', language), value: currentHero.comeback }] : []),
+    ...(assistHelperChar
+      ? [{ emoji: '🤝', label: assistHelperChar.name, value: ASSIST_BONUS }] : []),
+    ...(luckActive
+      ? [{ emoji: '🍀', label: potionDefinition('luck').name[language], value: LUCK_POTION_BONUS }] : []),
+  ] : []
+  const boostTotal = rollBoosts.reduce((sum, b) => sum + b.value, 0)
 
   const phaseTransition = {
     initial: { opacity: 0, y: 20 },
@@ -729,6 +928,8 @@ export default function PlayPage() {
             characterName={currentCharacter.name}
             language={language}
             onBuy={handleBuy}
+            onBuyPotion={handleBuyPotion}
+            onBuyPet={handleBuyPet}
             onClose={() => setShopOpen(false)}
           />
         )}
@@ -782,6 +983,15 @@ export default function PlayPage() {
             bossName={encounter.name}
             language={language}
             goldReward={BOSS_GOLD_REWARD}
+            tale={epilogue ? { title: epilogue.title, story: epilogue.story } : null}
+            awards={(epilogue?.awards ?? [])
+              .map(a => ({
+                characterName: characters.find(c => c.playerId === a.playerId)?.name ?? '',
+                title: a.title,
+                reason: a.reason,
+              }))
+              .filter(a => a.characterName)}
+            taleLoading={epilogueLoading}
             onKeepPlaying={handleVictoryContinue}
             onNewAdventure={() => {
               startNewAdventure()
@@ -801,7 +1011,7 @@ export default function PlayPage() {
           />
         )}
 
-        {encounter && !encounter.defeated && <EncounterBanner encounter={encounter} />}
+        {encounter && !encounter.defeated && <EncounterBanner encounter={encounter} language={language} />}
 
         {rescueMessage && (
           <motion.div
@@ -865,6 +1075,11 @@ export default function PlayPage() {
                       {POWER_META.heal.emoji} {POWER_META.heal.name[language]} (+3 ❤️)
                     </Button>
                   )}
+                  {canDrinkHeal && (
+                    <Button variant="outline" className="w-full border-success/40" onClick={handleDrinkHeal}>
+                      🧪 {potionDefinition('heal').name[language]} (+{HEAL_POTION_HP} ❤️)
+                    </Button>
+                  )}
                   <Button className="w-full" onClick={handleChooseAction}>
                     Choose Action
                   </Button>
@@ -898,6 +1113,8 @@ export default function PlayPage() {
                       : undefined}
                     language={language}
                     onSelect={handleActionSelect}
+                    onCustomIdea={handleCustomIdea}
+                    customLoading={loadingCustomAction}
                   />
                 ) : null}
               </div>
@@ -925,13 +1142,46 @@ export default function PlayPage() {
                 {luckyArmedFor === currentPlayer.id && (
                   <p className="text-center text-xs text-primary">🍀 ✓</p>
                 )}
+                {canDrinkLuck && (
+                  <Button variant="outline" className="w-full border-primary/40" onClick={handleDrinkLuck}>
+                    🍀 {potionDefinition('luck').name[language]} (+{LUCK_POTION_BONUS})
+                  </Button>
+                )}
+
+                {/* Teamwork: a sibling lends +1 before the dice hit the table */}
+                {helpers.length > 0 && (
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+                    <p className="text-center text-xs text-muted-foreground">
+                      🤝 {t('assistTitle', language)} (+{ASSIST_BONUS})
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      {helpers.map(({ playerId, char, hero }) => (
+                        <button
+                          key={playerId}
+                          onClick={() => setAssistPlayerId(assistPlayerId === playerId ? null : playerId)}
+                          className={cn(
+                            'rounded-full border px-3 py-1.5 text-sm font-medium transition-all active:scale-95',
+                            assistPlayerId === playerId
+                              ? 'border-primary bg-primary/15 text-primary'
+                              : 'border-border bg-card text-foreground'
+                          )}
+                        >
+                          {hero!.knockedOut ? '📣' : CLASS_DEFINITIONS[char!.class].emoji} {char!.name}
+                          {assistPlayerId === playerId && ' ✓'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <DiceRoller
                   stat={selectedAction.stat}
                   statBonus={heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat)}
                   required={requiredRolls(
                     dcForAction(selectedAction, currentHero),
-                    heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat)
+                    heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat) + boostTotal
                   )}
+                  boosts={rollBoosts}
                   dicePreference={dicePreference}
                   hasD20={(diceInventory.d20 ?? 0) > 0}
                   language={language}

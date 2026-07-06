@@ -5,6 +5,7 @@ import type {
   EncounterState, Quest, DiceInventory,
 } from '@/types/game'
 import { createHero } from '@/lib/game/rpg'
+import type { CompletedAdventure } from '@/lib/game/chronicle'
 import type { Language } from '@/lib/ai/language'
 
 interface Player {
@@ -102,6 +103,10 @@ interface GameStore {
   loadAdventure: (id: string) => void
   deleteAdventure: (id: string) => void
   startNewAdventure: () => void
+
+  // The family's permanent record of completed quests — the Hall of Heroes
+  chronicle: CompletedAdventure[]
+  addToChronicle: (record: CompletedAdventure) => void
 }
 
 const takeSnapshot = (state: GameStore): SavedAdventure['snapshot'] => ({
@@ -245,6 +250,9 @@ export const useGameStore = create<GameStore>()(
             ...h,
             gold: h.gold ?? 1,
             usedPowers: h.usedPowers ?? [],
+            potions: h.potions ?? [],
+            comeback: h.comeback ?? 0,
+            assistUsed: h.assistUsed ?? false,
           })),
           encounter: target.snapshot.encounter
             ?? (oldBoss ? { ...oldBoss, kind: oldBoss.kind ?? 'boss' as const } : null),
@@ -267,15 +275,23 @@ export const useGameStore = create<GameStore>()(
         quest: null,
         activeAdventureId: null,
       })),
+
+      chronicle: [],
+      addToChronicle: (record) => set((state) => (
+        state.chronicle.some(r => r.id === record.id)
+          ? state
+          : { chronicle: [...state.chronicle, record] }
+      )),
     }),
     {
       name: 'family-quest-storage',
-      version: 4,
+      version: 6,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
       // v1 predates the RPG update (heroes, boss, sound).
       // v2 predates the gold economy.
       // v3 predates d20/quest arc (encounter replaces boss, powers, dice inventory).
+      // v4 predates teamwork/potions/pets (assist, comeback, potion backpack).
       migrate: (persisted, version) => {
         let state = persisted as GameStore & { boss?: EncounterState | null }
         if (version < 1) {
@@ -295,6 +311,20 @@ export const useGameStore = create<GameStore>()(
             quest: null,
             diceInventory: DEFAULT_DICE,
           }
+        }
+        if (version < 5) {
+          state = {
+            ...state,
+            heroes: (state.heroes ?? []).map(h => ({
+              ...h,
+              potions: h.potions ?? [],
+              comeback: h.comeback ?? 0,
+              assistUsed: h.assistUsed ?? false,
+            })),
+          }
+        }
+        if (version < 6) {
+          state = { ...state, chronicle: [] }
         }
         return state
       },

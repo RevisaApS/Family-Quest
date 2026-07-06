@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { statLabel } from '@/lib/i18n'
+import { t, statLabel } from '@/lib/i18n'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { Stat } from '@/types/game'
 import type { GeneratedAction } from '@/types/ai'
 import type { Language } from '@/lib/ai/language'
@@ -16,13 +19,28 @@ interface ActionPickerProps {
   statBonusFor?: (option: GeneratedAction) => number
   language: Language
   onSelect: (option: GeneratedAction) => void
+  // "My own idea!" — the kid types (or a parent types for them) their own
+  // plan and the DM grades it like any other action.
+  onCustomIdea?: (idea: string) => void
+  customLoading?: boolean
   disabled?: boolean
 }
 
-export function ActionPicker({ options, statBonusFor, language, onSelect, disabled }: ActionPickerProps) {
+export function ActionPicker({
+  options, statBonusFor, language, onSelect, onCustomIdea, customLoading, disabled,
+}: ActionPickerProps) {
+  const [ideaOpen, setIdeaOpen] = useState(false)
+  const [ideaText, setIdeaText] = useState('')
+
+  const submitIdea = () => {
+    const idea = ideaText.trim()
+    if (!idea || customLoading) return
+    onCustomIdea?.(idea)
+  }
+
   return (
     <div className="space-y-2">
-      <p className="text-center text-muted-foreground text-sm">What do you do?</p>
+      <p className="text-center text-muted-foreground text-sm">{t('whatDoYouDo', language)}</p>
       <div className="space-y-2">
         {options.map((option) => {
           const bonus = statBonusFor?.(option)
@@ -30,11 +48,11 @@ export function ActionPicker({ options, statBonusFor, language, onSelect, disabl
             <button
               key={option.id}
               onClick={() => !disabled && onSelect(option)}
-              disabled={disabled}
+              disabled={disabled || customLoading}
               className={cn(
                 "w-full text-left p-4 rounded-lg border-2 transition-all bg-card border-border",
-                !disabled && "hover:border-primary hover:bg-primary/5",
-                disabled && "opacity-50 cursor-not-allowed"
+                !disabled && !customLoading && "hover:border-primary hover:bg-primary/5",
+                (disabled || customLoading) && "opacity-50 cursor-not-allowed"
               )}
             >
               <div className="flex items-start gap-3">
@@ -48,6 +66,49 @@ export function ActionPicker({ options, statBonusFor, language, onSelect, disabl
             </button>
           )
         })}
+
+        {onCustomIdea && !ideaOpen && (
+          <button
+            onClick={() => !disabled && setIdeaOpen(true)}
+            disabled={disabled || customLoading}
+            className={cn(
+              "w-full text-left p-4 rounded-lg border-2 border-dashed transition-all bg-card border-primary/40",
+              !disabled && !customLoading && "hover:border-primary hover:bg-primary/5",
+              (disabled || customLoading) && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✏️</span>
+              <p className="text-primary font-medium flex-1">{t('ownIdea', language)}</p>
+            </div>
+          </button>
+        )}
+
+        {onCustomIdea && ideaOpen && (
+          <div className="p-4 rounded-lg border-2 border-primary/40 bg-card space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">✏️</span>
+              <p className="text-primary font-medium">{t('ownIdea', language)}</p>
+            </div>
+            <Input
+              value={ideaText}
+              onChange={(e) => setIdeaText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') submitIdea() }}
+              placeholder={t('ownIdeaPlaceholder', language)}
+              disabled={customLoading}
+              autoFocus
+            />
+            {customLoading ? (
+              <p className="text-center text-sm text-muted-foreground animate-pulse py-1">
+                {t('ownIdeaThinking', language)}
+              </p>
+            ) : (
+              <Button className="w-full" onClick={submitIdea} disabled={!ideaText.trim()}>
+                {t('ownIdeaGo', language)} →
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

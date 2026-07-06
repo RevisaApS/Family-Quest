@@ -25,6 +25,7 @@ function describeHero(c: StoryContext['characters'][number]): string {
     `${c.rpg.hp}/${c.rpg.maxHp} HP`,
     c.rpg.skillNames.length ? `powers: ${c.rpg.skillNames.join(', ')}` : '',
     c.rpg.gearNames.length ? `equipment: ${c.rpg.gearNames.join(', ')}` : '',
+    c.rpg.petName ? `their loyal pet ${c.rpg.petName} at their side` : '',
     c.rpg.knockedOut ? 'currently knocked out and needs help' : '',
   ].filter(Boolean).join(', ')
   return `${base} — ${details}`
@@ -62,8 +63,17 @@ function encounterInstruction(context: StoryContext): string {
       return `IMPORTANT: In THIS scene a monster appears and blocks the heroes' path — ${context.quest?.villain ? `a servant or creature of the villain ${context.quest.villain}, proof the heroes are getting closer` : 'a dramatic twist tied to the quest'}. Return "encounterName" with the monster's name in the story language. ${MONSTER_TONE[context.adventureStyle]}`
     case 'arriving-boss':
       return `IMPORTANT: In THIS scene, ${context.quest?.villain ? `the villain ${context.quest.villain}` : `the quest's big villain`} finally appears in person for the final showdown the whole adventure has built toward! ${MONSTER_TONE[context.adventureStyle]} Return "encounterName" with the villain's name in the story language${context.quest?.villain ? ` (it must be ${context.quest.villain})` : ''}.`
-    case 'active':
-      return `The heroes are mid-battle with ${context.encounter?.name} (${context.encounter?.hp}/${context.encounter?.maxHp} HP left). The scene must continue this fight — describe the enemy reacting and the battle evolving.`
+    case 'active': {
+      const base = `The heroes are mid-battle with ${context.encounter?.name} (${context.encounter?.hp}/${context.encounter?.maxHp} HP left). The scene must continue this fight — describe the enemy reacting and the battle evolving.`
+      if (context.encounter?.announceEnrage && context.encounter.weakStat) {
+        return `${base}
+IMPORTANT: ${context.encounter.name} is badly wounded and in THIS scene TRANSFORMS into a desperate, more dramatic second form — but the transformation cracks its defenses and reveals a glowing WEAK SPOT. Describe the transformation vividly, and make clear that attacks using ${context.encounter.weakStat} (in the story language) now strike the weak spot and hit extra hard. Thrilling, never gory.`
+      }
+      if (context.encounter?.enraged && context.encounter.weakStat) {
+        return `${base} The enemy is in its enraged second form with a revealed weak spot vulnerable to ${context.encounter.weakStat} — keep the weak spot visible in the scene.`
+      }
+      return base
+    }
     case 'just-defeated':
       return `The heroes just defeated ${context.encounter?.name}! Open with the victory's aftermath, then push the quest forward.`
     default:

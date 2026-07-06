@@ -11,11 +11,20 @@ import type { Language } from '@/lib/ai/language'
 
 const statEmoji: Record<Stat, string> = { strength: '💪', magic: '✨', agility: '🏃', heart: '❤️' }
 
+// Extra bonuses riding on this roll (determination, a helping friend, a
+// luck potion) — each shown as its own chip so kids see where help comes from
+export interface RollBoost {
+  emoji: string
+  label: string
+  value: number
+}
+
 interface DiceRollerProps {
   stat: Stat
   statBonus: number
   // What to beat — shown BEFORE rolling so kids know exactly what they need
   required: RequiredRolls
+  boosts?: RollBoost[]
   dicePreference: 'physical' | 'digital'
   // Physical mode needs a real d20 on the table; otherwise we roll digitally
   hasD20: boolean
@@ -23,7 +32,7 @@ interface DiceRollerProps {
   onRoll: (result: number) => void
 }
 
-export function DiceRoller({ stat, statBonus, required, dicePreference, hasD20, language, onRoll }: DiceRollerProps) {
+export function DiceRoller({ stat, statBonus, required, boosts = [], dicePreference, hasD20, language, onRoll }: DiceRollerProps) {
   const [isRolling, setIsRolling] = useState(false)
   const [result, setResult] = useState<number | null>(null)
 
@@ -63,6 +72,18 @@ export function DiceRoller({ stat, statBonus, required, dicePreference, hasD20, 
           {statEmoji[stat]} {statLabel(stat, language)}
           <span className="ml-1 font-bold text-primary">+{statBonus}</span>
         </p>
+        {boosts.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {boosts.map((boost, i) => (
+              <span
+                key={i}
+                className="rounded-full bg-success/10 text-success px-2.5 py-0.5 text-xs font-medium"
+              >
+                {boost.emoji} {boost.label} +{boost.value}
+              </span>
+            ))}
+          </div>
+        )}
         {/* The target, up front: no more guessing what the roll means */}
         <div className="flex justify-center gap-2 text-sm font-medium">
           <span className="rounded-full bg-success/15 text-success px-3 py-1">
