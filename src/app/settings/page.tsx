@@ -9,49 +9,13 @@ import { PageContainer } from '@/components/layout/page-container'
 import { Header } from '@/components/layout/header'
 import { StyleOption } from '@/components/onboarding/style-option'
 import { DifficultyOption } from '@/components/onboarding/difficulty-option'
+import { StepIndicator } from '@/components/onboarding/step-indicator'
 import { useGameStore } from '@/stores/game-store'
 import { t } from '@/lib/i18n'
 import type { AdventureStyle, Difficulty, DiceType } from '@/types/game'
 import { cn } from '@/lib/utils'
 
 const DICE_TYPES: DiceType[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20']
-
-const steps = [
-  { label: 'Players', href: '/players' },
-  { label: 'Settings', href: '/settings' },
-  { label: 'Characters', href: '/characters' },
-]
-
-const StepIndicator = ({ currentStep }: { currentStep: number }) => (
-  <div className="flex items-center justify-center mb-6">
-    {steps.map((step, i) => (
-      <div key={step.label} className="flex items-center">
-        <div className="flex flex-col items-center">
-          <div
-            className={cn(
-              "rounded-full transition-all",
-              i < currentStep
-                ? "w-3 h-3 bg-primary"
-                : i === currentStep
-                  ? "w-4 h-4 bg-primary ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
-                  : "w-3 h-3 bg-muted"
-            )}
-          />
-          <span className={cn(
-            "text-xs mt-1.5",
-            i <= currentStep ? "text-primary" : "text-muted-foreground"
-          )}>{step.label}</span>
-        </div>
-        {i < steps.length - 1 && (
-          <div className={cn(
-            "w-16 h-0.5 mx-2 mb-5",
-            i < currentStep ? "bg-primary" : "bg-muted"
-          )} />
-        )}
-      </div>
-    ))}
-  </div>
-)
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -76,17 +40,17 @@ export default function SettingsPage() {
           transition={{ duration: 0.4 }}
         >
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-serif text-primary">Settings</h1>
-            <p className="text-muted-foreground">Customize your adventure experience</p>
+            <h1 className="text-3xl font-serif text-primary">{t('settingsTitle', language)}</h1>
+            <p className="text-muted-foreground">{t('settingsSub', language)}</p>
             <button onClick={() => setShowInfo(!showInfo)} className="text-xs text-muted-foreground underline">
-              {showInfo ? 'Hide guide' : 'ℹ️ What do these mean?'}
+              {showInfo ? t('hideGuide', language) : t('whatDoTheseMean', language)}
             </button>
             {showInfo && (
               <div className="text-xs text-muted-foreground space-y-2 bg-card/20 rounded-lg p-3 text-left">
-                <p><strong>Adventure Style:</strong> Sets the tone - Whimsical for younger kids (4-7), Epic for cool monster-filled adventure (7-12), Dark for teens (13+)</p>
-                <p><strong>Difficulty:</strong> Easy = gentle, Medium = balanced, Hard = real consequences</p>
-                <p><strong>Dice:</strong> Digital = tap to roll in-app, Physical = use your own dice</p>
-                <p><strong>Story Language:</strong> The language the adventure is told in</p>
+                <p>{t('infoStyle', language)}</p>
+                <p>{t('infoDifficulty', language)}</p>
+                <p>{t('infoDice', language)}</p>
+                <p>{t('infoLanguage', language)}</p>
               </div>
             )}
           </div>
@@ -94,7 +58,7 @@ export default function SettingsPage() {
           <StepIndicator currentStep={1} />
 
           <div className="bg-card/30 rounded-xl p-4 border border-border/50 space-y-3">
-            <Label className="text-lg">Adventure Style</Label>
+            <Label className="text-lg">{t('adventureStyleLabel', language)}</Label>
             <div className="grid grid-cols-3 gap-2">
               {(['whimsical', 'realistic', 'dark'] as AdventureStyle[]).map((style) => (
                 <StyleOption key={style} style={style} selected={adventureStyle === style} onSelect={() => setSettings({ adventureStyle: style })} />
@@ -103,7 +67,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="bg-card/30 rounded-xl p-4 border border-border/50 space-y-3">
-            <Label className="text-lg">Difficulty</Label>
+            <Label className="text-lg">{t('difficultyLabel', language)}</Label>
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map((diff) => (
                 <DifficultyOption key={diff} difficulty={diff} selected={difficulty === diff} onSelect={() => setSettings({ difficulty: diff })} />
@@ -112,7 +76,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="bg-card/30 rounded-xl p-4 border border-border/50 space-y-3">
-            <Label className="text-lg">Dice</Label>
+            <Label className="text-lg">{t('diceSettingLabel', language)}</Label>
             <div className="flex gap-2">
               <button
                 onClick={() => setSettings({ dicePreference: 'digital' })}
@@ -122,7 +86,7 @@ export default function SettingsPage() {
                 )}
               >
                 <span className="text-2xl block mb-1">🎲</span>
-                <span className="font-medium">Digital</span>
+                <span className="font-medium">{t('digitalDice', language)}</span>
               </button>
               <button
                 onClick={() => setSettings({ dicePreference: 'physical' })}
@@ -132,7 +96,7 @@ export default function SettingsPage() {
                 )}
               >
                 <span className="text-2xl block mb-1">🎯</span>
-                <span className="font-medium">Physical</span>
+                <span className="font-medium">{t('physicalDice', language)}</span>
               </button>
             </div>
 
@@ -177,7 +141,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="bg-card/30 rounded-xl p-4 border border-border/50 space-y-3">
-            <Label className="text-lg">Story Language</Label>
+            <Label className="text-lg">{t('languageLabel', language)}</Label>
             <div className="flex gap-2">
               <button
                 onClick={() => setSettings({ language: 'da' })}
@@ -203,7 +167,7 @@ export default function SettingsPage() {
           </div>
 
           <Button size="lg" className="w-full" onClick={() => router.push('/characters')}>
-            Continue to Characters
+            {t('continueToCharacters', language)}
           </Button>
         </motion.div>
       </PageContainer>

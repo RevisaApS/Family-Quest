@@ -30,10 +30,10 @@ interface OutcomeDisplayProps {
   onContinue: () => void
 }
 
-const outcomeStyles: Record<OutcomeType, { title: string; emoji: string; bgClass: string; textClass: string }> = {
-  success: { title: 'Success!', emoji: '🎉', bgClass: 'bg-success/10 border-success/30', textClass: 'text-success' },
-  partial: { title: 'Partial Success', emoji: '⚡', bgClass: 'bg-primary/10 border-primary/30', textClass: 'text-primary' },
-  failure: { title: 'Plot Twist!', emoji: '🔄', bgClass: 'bg-secondary/10 border-secondary/30', textClass: 'text-secondary' },
+const outcomeStyles: Record<OutcomeType, { titleKey: 'outcomeSuccess' | 'outcomePartial' | 'outcomeTwist'; emoji: string; bgClass: string; textClass: string }> = {
+  success: { titleKey: 'outcomeSuccess', emoji: '🎉', bgClass: 'bg-success/10 border-success/30', textClass: 'text-success' },
+  partial: { titleKey: 'outcomePartial', emoji: '⚡', bgClass: 'bg-primary/10 border-primary/30', textClass: 'text-primary' },
+  failure: { titleKey: 'outcomeTwist', emoji: '🔄', bgClass: 'bg-secondary/10 border-secondary/30', textClass: 'text-secondary' },
 }
 
 export function OutcomeDisplay({
@@ -76,7 +76,7 @@ export function OutcomeDisplay({
         >
           {style.emoji}
         </motion.span>
-        <h3 className={cn("text-3xl font-serif font-bold tracking-wide", style.textClass)}>{style.title}</h3>
+        <h3 className={cn("text-3xl font-serif font-bold tracking-wide", style.textClass)}>{t(style.titleKey, language)}</h3>
         <p className="text-muted-foreground">
           🎲 <span className="font-serif font-bold text-lg text-foreground">{diceRoll}</span>
         </p>
@@ -127,7 +127,7 @@ export function OutcomeDisplay({
 
       <div className="page-parchment p-4">
         {isLoading ? (
-          <p className="animate-pulse" style={{ color: 'var(--ink-soft)' }}>The story unfolds...</p>
+          <p className="animate-pulse" style={{ color: 'var(--ink-soft)' }}>{t('storyUnfolds', language)}</p>
         ) : (
           <p className="drop-cap text-lg leading-relaxed">{narrative}</p>
         )}
@@ -144,7 +144,7 @@ export function OutcomeDisplay({
               {action.label}
             </Button>
           ))}
-          <Button className="w-full" size="lg" onClick={onContinue}>Continue Adventure →</Button>
+          <Button className="w-full" size="lg" onClick={onContinue}>{t('continueAdventure', language)}</Button>
         </div>
       )}
     </div>

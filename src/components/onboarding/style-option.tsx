@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useGameStore } from '@/stores/game-store'
+import { t, type StringKey } from '@/lib/i18n'
 import type { AdventureStyle } from '@/types/game'
 
 interface StyleOptionProps {
@@ -10,13 +12,14 @@ interface StyleOptionProps {
   onSelect: () => void
 }
 
-const styleData: Record<AdventureStyle, { name: string; ages: string; emoji: string; bgTint: string }> = {
-  whimsical: { name: 'Whimsical', ages: '4-7', emoji: '🌈', bgTint: 'bg-orange-950/20' },
-  realistic: { name: 'Epic', ages: '7-12', emoji: '🐉', bgTint: 'bg-emerald-950/20' },
-  dark: { name: 'Dark', ages: '13+', emoji: '💀', bgTint: 'bg-slate-950/30' },
+const styleData: Record<AdventureStyle, { nameKey: StringKey; ages: string; emoji: string; bgTint: string }> = {
+  whimsical: { nameKey: 'styleWhimsical', ages: '4-7', emoji: '🌈', bgTint: 'bg-orange-950/20' },
+  realistic: { nameKey: 'styleEpic', ages: '7-12', emoji: '🐉', bgTint: 'bg-emerald-950/20' },
+  dark: { nameKey: 'styleDark', ages: '13+', emoji: '💀', bgTint: 'bg-slate-950/30' },
 }
 
 export function StyleOption({ style, selected, onSelect }: StyleOptionProps) {
+  const language = useGameStore(s => s.language)
   const data = styleData[style]
   return (
     <motion.button
@@ -32,7 +35,7 @@ export function StyleOption({ style, selected, onSelect }: StyleOptionProps) {
       )}
     >
       <span className="text-3xl block mb-1">{data.emoji}</span>
-      <span className="font-serif text-foreground block">{data.name}</span>
+      <span className="font-serif text-foreground block">{t(data.nameKey, language)}</span>
       <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground inline-block mt-1">{data.ages}</span>
     </motion.button>
   )
