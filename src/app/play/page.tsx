@@ -104,7 +104,7 @@ export default function PlayPage() {
   const [currentSceneText, setCurrentSceneText] = useState('')
   const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(null)
   const [actions, setActions] = useState<GeneratedAction[]>([])
-  const [gamePhase, setGamePhase] = useState<'loading' | 'scene' | 'action' | 'dice' | 'outcome' | 'rewards'>('loading')
+  const [gamePhase, setGamePhase] = useState<'loading' | 'scene' | 'dice' | 'outcome' | 'rewards'>('loading')
   const [selectedAction, setSelectedAction] = useState<GeneratedAction | null>(null)
   const [diceResult, setDiceResult] = useState<number | null>(null)
   const [outcomeType, setOutcomeType] = useState<OutcomeType | null>(null)
@@ -358,6 +358,17 @@ export default function PlayPage() {
     loadScene()
   }, [_hasHydrated, turnCounter]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Actions are fetched the moment the scene text lands — the family reads
+  // (or listens) while the DM thinks, and the choices are ready when they are.
+  // The ref keeps one request per scene; the retry button can always re-ask.
+  const actionsRequestedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (gamePhase !== 'scene' || loadingScene || !currentSceneText) return
+    if (actionsRequestedRef.current === currentSceneText) return
+    actionsRequestedRef.current = currentSceneText
+    loadActions()
+  }, [gamePhase, loadingScene, currentSceneText, loadActions])
+
   // The boss just fell and the victory overlay is up: write the storybook
   // epilogue and record this quest in the family chronicle. Everything is
   // snapshotted first so a quick "New adventure" tap can't corrupt the record.
@@ -449,11 +460,6 @@ export default function PlayPage() {
     encounterActive,
     age: currentPlayer.age,
   })
-
-  const handleChooseAction = async () => {
-    setGamePhase('action')
-    await loadActions()
-  }
 
   const handleActionSelect = (action: GeneratedAction) => {
     setSelectedAction(action)
@@ -837,7 +843,7 @@ export default function PlayPage() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer wide>
       <div className="space-y-4">
         {/* Shop + sound + pause buttons */}
         <button
@@ -1050,20 +1056,25 @@ export default function PlayPage() {
             </motion.div>
           )}
 
-          {gamePhase === 'scene' && (
+          {(gamePhase === 'scene' || gamePhase === 'dice') && (
             <motion.div
               key="scene"
               {...phaseTransition}
-              className="space-y-4"
+              className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0"
             >
-              <SceneDisplay
-                narration={narration}
-                isLoadingNarration={loadingScene}
-                imageUrl={sceneImageUrl ?? undefined}
-                isLoadingImage={loadingImage}
-              />
+              {/* On tablets the app opens like a book: page on the left,
+                  choices and dice on the right. The page stays put while
+                  the right side scrolls. */}
+              <div className="lg:sticky lg:top-14">
+                <SceneDisplay
+                  narration={narration}
+                  isLoadingNarration={loadingScene}
+                  imageUrl={sceneImageUrl ?? undefined}
+                  isLoadingImage={loadingImage}
+                />
+              </div>
 
-              {!loadingScene && narration && (
+              {gamePhase === 'scene' && !loadingScene && narration && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1080,114 +1091,82 @@ export default function PlayPage() {
                       🧪 {potionDefinition('heal').name[language]} (+{HEAL_POTION_HP} ❤️)
                     </Button>
                   )}
-                  <Button className="w-full" onClick={handleChooseAction}>
-                    Choose Action
-                  </Button>
+                  {loadingActions ? (
+                    <div className="text-center text-muted-foreground animate-pulse py-4">
+                      Thinking of what you can do...
+                    </div>
+                  ) : actions.length > 0 ? (
+                    <ActionPicker
+                      options={actions}
+                      statBonusFor={currentHero
+                        ? (a) => heroStatBonus(currentCharacter.class, currentHero, a.stat)
+                        : undefined}
+                      language={language}
+                      onSelect={handleActionSelect}
+                      onCustomIdea={handleCustomIdea}
+                      customLoading={loadingCustomAction}
+                    />
+                  ) : null}
                 </motion.div>
               )}
-            </motion.div>
-          )}
 
-          {gamePhase === 'action' && (
-            <motion.div
-              key="action"
-              {...phaseTransition}
-            >
-              <SceneDisplay
-                narration={narration}
-                isLoadingNarration={false}
-                imageUrl={sceneImageUrl ?? undefined}
-                isLoadingImage={loadingImage}
-              />
-
-              <div className="mt-4">
-                {loadingActions ? (
-                  <div className="text-center text-muted-foreground animate-pulse py-4">
-                    Thinking of what you can do...
-                  </div>
-                ) : actions.length > 0 ? (
-                  <ActionPicker
-                    options={actions}
-                    statBonusFor={currentHero
-                      ? (a) => heroStatBonus(currentCharacter.class, currentHero, a.stat)
-                      : undefined}
-                    language={language}
-                    onSelect={handleActionSelect}
-                    onCustomIdea={handleCustomIdea}
-                    customLoading={loadingCustomAction}
-                  />
-                ) : null}
-              </div>
-            </motion.div>
-          )}
-
-          {gamePhase === 'dice' && selectedAction && currentHero && (
-            <motion.div
-              key="dice"
-              {...phaseTransition}
-            >
-              <SceneDisplay
-                narration={narration}
-                isLoadingNarration={false}
-                imageUrl={sceneImageUrl ?? undefined}
-                isLoadingImage={loadingImage}
-              />
-
-              <div className="mt-4 space-y-2">
-                {canArmLucky && (
-                  <Button variant="outline" className="w-full border-primary/40" onClick={handleArmLucky}>
-                    {POWER_META.lucky.emoji} {POWER_META.lucky.name[language]}
-                  </Button>
-                )}
-                {luckyArmedFor === currentPlayer.id && (
-                  <p className="text-center text-xs text-primary">🍀 ✓</p>
-                )}
-                {canDrinkLuck && (
-                  <Button variant="outline" className="w-full border-primary/40" onClick={handleDrinkLuck}>
-                    🍀 {potionDefinition('luck').name[language]} (+{LUCK_POTION_BONUS})
-                  </Button>
-                )}
-
-                {/* Teamwork: a sibling lends +1 before the dice hit the table */}
-                {helpers.length > 0 && (
-                  <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-                    <p className="text-center text-xs text-muted-foreground">
-                      🤝 {t('assistTitle', language)} (+{ASSIST_BONUS})
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-1.5">
-                      {helpers.map(({ playerId, char, hero }) => (
-                        <button
-                          key={playerId}
-                          onClick={() => setAssistPlayerId(assistPlayerId === playerId ? null : playerId)}
-                          className={cn(
-                            'rounded-full border px-3 py-1.5 text-sm font-medium transition-all active:scale-95',
-                            assistPlayerId === playerId
-                              ? 'border-primary bg-primary/15 text-primary'
-                              : 'border-border bg-card text-foreground'
-                          )}
-                        >
-                          {hero!.knockedOut ? '📣' : CLASS_DEFINITIONS[char!.class].emoji} {char!.name}
-                          {assistPlayerId === playerId && ' ✓'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <DiceRoller
-                  stat={selectedAction.stat}
-                  statBonus={heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat)}
-                  required={requiredRolls(
-                    dcForAction(selectedAction, currentHero),
-                    heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat) + boostTotal
+              {gamePhase === 'dice' && selectedAction && currentHero && (
+                <div className="space-y-2">
+                  {canArmLucky && (
+                    <Button variant="outline" className="w-full border-primary/40" onClick={handleArmLucky}>
+                      {POWER_META.lucky.emoji} {POWER_META.lucky.name[language]}
+                    </Button>
                   )}
-                  boosts={rollBoosts}
-                  dicePreference={dicePreference}
-                  hasD20={(diceInventory.d20 ?? 0) > 0}
-                  language={language}
-                  onRoll={handleDiceRoll}
-                />
-              </div>
+                  {luckyArmedFor === currentPlayer.id && (
+                    <p className="text-center text-xs text-primary">🍀 ✓</p>
+                  )}
+                  {canDrinkLuck && (
+                    <Button variant="outline" className="w-full border-primary/40" onClick={handleDrinkLuck}>
+                      🍀 {potionDefinition('luck').name[language]} (+{LUCK_POTION_BONUS})
+                    </Button>
+                  )}
+
+                  {/* Teamwork: a sibling lends +1 before the dice hit the table */}
+                  {helpers.length > 0 && (
+                    <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+                      <p className="text-center text-xs text-muted-foreground">
+                        🤝 {t('assistTitle', language)} (+{ASSIST_BONUS})
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-1.5">
+                        {helpers.map(({ playerId, char, hero }) => (
+                          <button
+                            key={playerId}
+                            onClick={() => setAssistPlayerId(assistPlayerId === playerId ? null : playerId)}
+                            className={cn(
+                              'rounded-full border px-3 py-1.5 text-sm font-medium transition-all active:scale-95',
+                              assistPlayerId === playerId
+                                ? 'border-primary bg-primary/15 text-primary'
+                                : 'border-border bg-card text-foreground'
+                            )}
+                          >
+                            {hero!.knockedOut ? '📣' : CLASS_DEFINITIONS[char!.class].emoji} {char!.name}
+                            {assistPlayerId === playerId && ' ✓'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <DiceRoller
+                    stat={selectedAction.stat}
+                    statBonus={heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat)}
+                    required={requiredRolls(
+                      dcForAction(selectedAction, currentHero),
+                      heroStatBonus(currentCharacter.class, currentHero, selectedAction.stat) + boostTotal
+                    )}
+                    boosts={rollBoosts}
+                    dicePreference={dicePreference}
+                    hasD20={(diceInventory.d20 ?? 0) > 0}
+                    language={language}
+                    onRoll={handleDiceRoll}
+                  />
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1195,7 +1174,16 @@ export default function PlayPage() {
             <motion.div
               key="outcome"
               {...phaseTransition}
+              className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-6"
             >
+              <div className="hidden lg:block lg:sticky lg:top-14">
+                <SceneDisplay
+                  narration={narration}
+                  isLoadingNarration={false}
+                  imageUrl={sceneImageUrl ?? undefined}
+                  isLoadingImage={false}
+                />
+              </div>
               <OutcomeDisplay
                 outcome={outcomeType}
                 diceRoll={diceResult}

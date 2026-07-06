@@ -3,9 +3,12 @@ import { cn } from "@/lib/utils"
 interface PageContainerProps {
   children: React.ReactNode
   className?: string
+  // Screens with side-by-side content (the play screen's book spread)
+  // get the full tablet width; forms and menus stay a readable column.
+  wide?: boolean
 }
 
-export function PageContainer({ children, className }: PageContainerProps) {
+export function PageContainer({ children, className, wide = false }: PageContainerProps) {
   return (
     <main className={cn(
       // No bg here — the body paints the torchlit gradient backdrop
@@ -22,7 +25,10 @@ export function PageContainer({ children, className }: PageContainerProps) {
         aria-hidden="true"
       />
       {/* Phone-first, but let tablets breathe: the column widens with the screen */}
-      <div className="relative z-20 w-full max-w-md md:max-w-2xl">
+      <div className={cn(
+        "relative z-20 w-full",
+        wide ? "max-w-md md:max-w-3xl lg:max-w-5xl" : "max-w-md md:max-w-2xl"
+      )}>
         {children}
       </div>
     </main>

@@ -187,7 +187,7 @@ export default function CharactersPage() {
 
           <div className="space-y-3">
             <Label>Choose Class</Label>
-            <div className="space-y-2">
+            <div className="grid gap-2 md:grid-cols-2">
               {(['warrior', 'wizard', 'rogue', 'ranger'] as CharacterClass[]).map((cls) => (
                 <ClassCard key={cls} characterClass={cls} selected={selectedClass === cls} onSelect={() => setSelectedClass(cls)} />
               ))}
@@ -200,9 +200,10 @@ export default function CharactersPage() {
             <div className="space-y-3">
               <Label>Hero Portrait</Label>
               <AnimatePresence mode="wait">
+                {/* Capped so the square portrait stays portrait-sized on tablets */}
                 {portraitLoading ? (
                   <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <LoadingShimmer className="w-full aspect-square rounded-lg" />
+                    <LoadingShimmer className="w-full max-w-sm mx-auto aspect-square rounded-lg" />
                     <p className="text-center text-sm text-muted-foreground animate-pulse mt-2">
                       Painting {characterName}...
                     </p>
@@ -218,7 +219,7 @@ export default function CharactersPage() {
                     <img
                       src={portraitUrl}
                       alt={`${characterName} portrait`}
-                      className="w-full aspect-square object-cover rounded-lg border-2 border-primary/40 shadow-lg shadow-primary/10"
+                      className="w-full max-w-sm mx-auto aspect-square object-cover rounded-lg border-2 border-primary/40 shadow-lg shadow-primary/10"
                     />
                     <Button variant="outline" className="w-full" onClick={handleGeneratePortrait}>
                       🎨 Paint Again
