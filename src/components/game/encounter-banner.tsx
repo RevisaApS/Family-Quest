@@ -17,8 +17,8 @@ export function EncounterBanner({ encounter, language }: { encounter: EncounterS
       animate={{ opacity: 1, y: 0 }}
       className={
         isBoss
-          ? 'rounded-lg border-2 border-destructive/50 bg-destructive/10 px-4 py-2.5 space-y-1.5'
-          : 'rounded-lg border-2 border-secondary/50 bg-secondary/10 px-4 py-2.5 space-y-1.5'
+          ? 'rounded-xl border-2 border-destructive/60 bg-gradient-to-b from-destructive/20 to-destructive/5 px-4 py-2.5 space-y-1.5 shadow-[0_0_28px_-8px_oklch(0.64_0.21_27_/_0.6),inset_0_1px_0_oklch(1_0_0_/_0.08)]'
+          : 'rounded-xl border-2 border-secondary/60 bg-gradient-to-b from-secondary/20 to-secondary/5 px-4 py-2.5 space-y-1.5 shadow-[0_0_24px_-8px_oklch(0.63_0.13_250_/_0.5),inset_0_1px_0_oklch(1_0_0_/_0.08)]'
       }
     >
       <div className="flex items-center gap-2">
@@ -36,11 +36,11 @@ export function EncounterBanner({ encounter, language }: { encounter: EncounterS
           {encounter.hp}/{encounter.maxHp} ❤️
         </span>
       </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
+      <div className="bar-shine h-2.5 rounded-full bg-black/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] overflow-hidden">
         <motion.div
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className={`h-full rounded-full ${isBoss ? 'bg-destructive' : 'bg-secondary'}`}
+          className={`h-full rounded-full ${isBoss ? 'bg-gradient-to-b from-red-400 to-red-700' : 'bg-gradient-to-b from-sky-300 to-blue-600'}`}
         />
       </div>
       {encounter.enraged && encounter.weakStat && (

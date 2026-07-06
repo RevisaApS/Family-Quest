@@ -44,7 +44,10 @@ export function OutcomeDisplay({
 }: OutcomeDisplayProps) {
   const style = outcomeStyles[outcome]
   return (
-    <div className={cn("rounded-lg p-6 border-2 space-y-4", style.bgClass)}>
+    <div className={cn(
+      "rounded-xl p-6 border-2 space-y-4 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.07),0_14px_34px_-18px_oklch(0_0_0_/_0.75)]",
+      style.bgClass
+    )}>
       {crit === 'crit' && (
         <motion.div
           initial={{ scale: 0.3, opacity: 0 }}
@@ -65,10 +68,17 @@ export function OutcomeDisplay({
         </motion.div>
       )}
       <div className="text-center space-y-2">
-        <span className="text-4xl">{style.emoji}</span>
-        <h3 className={cn("text-2xl font-serif", style.textClass)}>{style.title}</h3>
+        <motion.span
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+          className="inline-block text-5xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
+        >
+          {style.emoji}
+        </motion.span>
+        <h3 className={cn("text-3xl font-serif font-bold tracking-wide", style.textClass)}>{style.title}</h3>
         <p className="text-muted-foreground">
-          🎲 <span className="font-bold text-foreground">{diceRoll}</span>
+          🎲 <span className="font-serif font-bold text-lg text-foreground">{diceRoll}</span>
         </p>
       </div>
 
@@ -115,11 +125,11 @@ export function OutcomeDisplay({
         )}
       </div>
 
-      <div className="bg-card rounded-lg p-4">
+      <div className="card-surface rounded-xl p-4">
         {isLoading ? (
           <p className="text-muted-foreground animate-pulse">The story unfolds...</p>
         ) : (
-          <p className="text-foreground leading-relaxed">{narrative}</p>
+          <p className="text-lg text-foreground leading-relaxed">{narrative}</p>
         )}
       </div>
       {!isLoading && (
@@ -134,7 +144,7 @@ export function OutcomeDisplay({
               {action.label}
             </Button>
           ))}
-          <Button className="w-full" size="lg" onClick={onContinue}>Continue Adventure →</Button>
+          <Button className="sheen w-full" size="lg" onClick={onContinue}>Continue Adventure →</Button>
         </div>
       )}
     </div>

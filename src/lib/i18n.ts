@@ -36,6 +36,7 @@ const STRINGS = {
   empty: { da: 'Tom', en: 'Empty' },
   close: { da: 'Luk', en: 'Close' },
   rollToSucceed: { da: 'Slå', en: 'Roll' },
+  rollTheDice: { da: 'Kast d20!', en: 'Roll the d20!' },
   orMore: { da: 'eller mere', en: 'or more' },
   partialFrom: { da: 'delvist fra', en: 'partial from' },
   critHit: { da: 'KRITISK HIT!', en: 'CRITICAL HIT!' },

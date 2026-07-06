@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { Playfair_Display, Crimson_Text } from "next/font/google"
+import { Cinzel, Crimson_Text } from "next/font/google"
 import "./globals.css"
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] })
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" })
+const cinzel = Cinzel({ subsets: ["latin"], variable: "--font-serif" })
 const crimsonText = Crimson_Text({
   weight: ["400", "600", "700"],
   subsets: ["latin"],
@@ -16,6 +16,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#12101f",
 }
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${crimsonText.variable} dark antialiased`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} ${crimsonText.variable} dark antialiased`}>
       <body className="min-h-screen">{children}</body>
     </html>
   )

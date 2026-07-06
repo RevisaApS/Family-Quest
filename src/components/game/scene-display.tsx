@@ -15,7 +15,8 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video rounded-lg overflow-hidden border border-border shadow-[0_0_15px_rgba(212,168,67,0.1)]">
+      <div className="frame-gold rounded-xl">
+      <div className="relative aspect-video rounded-[10px] overflow-hidden">
         {imageUrl ? (
           <motion.img
             key={imageUrl}
@@ -43,6 +44,7 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
           }}
         />
       </div>
+      </div>
 
       <AnimatePresence>
         {showNarrationBox && (
@@ -51,7 +53,7 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
-            className="bg-card rounded-lg p-4 border border-border"
+            className="card-surface rounded-xl p-5 border border-primary/15"
           >
             {isLoadingNarration ? (
               <div className="space-y-2">
@@ -64,7 +66,7 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8 }}
-                className="text-foreground leading-relaxed"
+                className="drop-cap text-lg text-foreground leading-relaxed"
               >
                 {narration}
               </motion.p>

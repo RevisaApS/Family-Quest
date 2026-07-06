@@ -842,7 +842,7 @@ export default function PlayPage() {
         {/* Shop + sound + pause buttons */}
         <button
           onClick={() => { setShopHintSeen(); setShopOpen(true) }}
-          className="fixed top-4 right-24 p-2 rounded-lg bg-card border border-border z-40"
+          className="fixed top-4 right-28 size-10 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
           aria-label="Open shop"
         >
           🏪
@@ -860,7 +860,7 @@ export default function PlayPage() {
             <motion.div
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 1.2, repeat: Infinity }}
-              className="absolute -top-2 right-[5.5rem] w-4 h-4 rotate-45 bg-primary"
+              className="absolute -top-2 right-[6.5rem] w-4 h-4 rotate-45 bg-primary"
               aria-hidden="true"
             />
             <div className="relative rounded-lg bg-primary text-primary-foreground p-3 text-sm shadow-lg space-y-2">
@@ -878,7 +878,7 @@ export default function PlayPage() {
         )}
         <button
           onClick={() => setSoundPref(!soundEnabled)}
-          className="fixed top-4 right-14 p-2 rounded-lg bg-card border border-border z-40"
+          className="fixed top-4 right-16 size-10 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
           aria-label="Toggle sound"
         >
           {soundEnabled ? '🔊' : '🔇'}
@@ -888,7 +888,7 @@ export default function PlayPage() {
             setSaveName(savedAdventures.find(a => a.id === activeAdventureId)?.name ?? '')
             setIsPaused(true)
           }}
-          className="fixed top-4 right-4 p-2 rounded-lg bg-card border border-border z-40"
+          className="fixed top-4 right-4 size-10 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
         >
           ⏸
         </button>
@@ -896,7 +896,7 @@ export default function PlayPage() {
         {/* Pause overlay */}
         {isPaused && (
           <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
-            <div className="bg-card p-6 rounded-lg border border-border space-y-4 max-w-xs w-full">
+            <div className="card-surface p-6 rounded-xl border border-primary/20 space-y-4 max-w-xs w-full">
               <h2 className="text-xl font-serif text-primary text-center">Paused</h2>
               <Button className="w-full" onClick={() => setIsPaused(false)}>Resume</Button>
               <div className="space-y-2">

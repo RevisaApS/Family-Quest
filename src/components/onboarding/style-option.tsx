@@ -24,9 +24,11 @@ export function StyleOption({ style, selected, onSelect }: StyleOptionProps) {
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.96 }}
       className={cn(
-        "flex-1 p-3 rounded-lg border-2 transition-all text-center",
+        "card-surface flex-1 p-3 rounded-xl border-2 transition-all text-center",
         data.bgTint,
-        selected ? "border-primary ring-2 ring-primary/20" : "border-border"
+        selected
+          ? "border-primary ring-2 ring-primary/25 shadow-[0_0_24px_-8px_oklch(0.80_0.16_80_/_0.6)]"
+          : "border-primary/10 hover:border-primary/40"
       )}
     >
       <span className="text-3xl block mb-1">{data.emoji}</span>

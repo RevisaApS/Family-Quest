@@ -46,14 +46,18 @@ export function ClassCard({ characterClass, selected, onSelect }: ClassCardProps
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      style={selected ? { boxShadow: `0 0 28px -8px ${glowColor}99, inset 0 1px 0 rgba(255,255,255,0.08)` } : undefined}
       className={cn(
-        "w-full text-left p-3 rounded-lg border-2 transition-all",
+        "card-surface w-full text-left p-3 rounded-xl border-2 transition-all",
         bgTint,
-        selected ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50 hover:shadow-lg"
+        selected ? "border-primary ring-2 ring-primary/25" : "border-primary/10 hover:border-primary/50 hover:shadow-lg"
       )}
     >
       <div className="flex items-center gap-3">
-        <div className="relative w-28 h-28 flex-shrink-0 rounded-md overflow-hidden">
+        <div className={cn(
+          "relative w-28 h-28 flex-shrink-0 rounded-lg overflow-hidden ring-1 transition-all",
+          selected ? "ring-primary/60" : "ring-white/10"
+        )}>
           <Image
             src={classImage[characterClass]}
             alt={classDef.displayName}

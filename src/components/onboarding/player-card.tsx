@@ -64,11 +64,11 @@ export function PlayerCard({
           onClick={selectable && !editMode ? onSelect : undefined}
           style={selected ? shimmerStyle : undefined}
           className={cn(
-            "relative flex-1 p-4 rounded-lg border-2 transition-all min-h-[64px]",
+            "card-surface relative flex-1 p-4 rounded-xl border-2 transition-all min-h-[64px]",
             selectable && !editMode && "cursor-pointer hover:border-primary/50",
             selected
-              ? "border-primary bg-[hsl(45_100%_50%/0.06)]"
-              : "border-muted bg-card",
+              ? "border-primary bg-[hsl(45_100%_50%/0.06)] shadow-[0_0_24px_-8px_oklch(0.80_0.16_80_/_0.5)]"
+              : "border-primary/10",
           )}
         >
           <div className="flex items-center gap-3">

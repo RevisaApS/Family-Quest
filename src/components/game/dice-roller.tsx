@@ -66,7 +66,7 @@ export function DiceRoller({ stat, statBonus, required, boosts = [], dicePrefere
     value >= required.success ? 'text-success' : value >= required.partial ? 'text-primary' : 'text-muted-foreground'
 
   return (
-    <div className="bg-card rounded-lg p-6 border border-border space-y-4">
+    <div className="card-surface rounded-xl p-6 border border-primary/15 space-y-4">
       <div className="text-center space-y-2">
         <p className="text-muted-foreground text-sm">
           {statEmoji[stat]} {statLabel(stat, language)}
@@ -99,18 +99,22 @@ export function DiceRoller({ stat, statBonus, required, boosts = [], dicePrefere
 
       <div className="flex justify-center">
         <div className={cn(
-          "w-24 h-24 rounded-xl bg-muted flex items-center justify-center relative",
-          "text-4xl font-bold text-foreground",
+          "w-24 h-24 rounded-2xl rotate-45 flex items-center justify-center relative transition-shadow",
+          "bg-gradient-to-b from-muted to-black/50 ring-2 ring-primary/30",
+          "shadow-[inset_0_1px_0_oklch(1_0_0_/_0.15),0_8px_24px_-8px_rgba(0,0,0,0.8)]",
+          result !== null && !isRolling && "ring-primary/70 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.15),0_0_32px_-6px_oklch(0.80_0.16_80_/_0.7)]",
           isRolling && "animate-bounce"
         )}>
-          {result ?? '?'}
-          <span className="absolute bottom-1 right-2 text-[10px] text-muted-foreground font-normal">d20</span>
+          <span className="-rotate-45 font-serif text-4xl font-bold text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            {result ?? '?'}
+          </span>
+          <span className="absolute bottom-0.5 right-3 -rotate-45 text-[10px] text-primary/60 font-normal">d20</span>
         </div>
       </div>
 
       {!usePhysical ? (
-        <Button className="w-full" size="lg" onClick={handleDigitalRoll} disabled={isRolling || result !== null}>
-          {isRolling ? '...' : result ? '✓' : '🎲 d20'}
+        <Button className="sheen w-full" size="lg" onClick={handleDigitalRoll} disabled={isRolling || result !== null}>
+          {isRolling ? '...' : result ? '✓' : `🎲 ${t('rollTheDice', language)}`}
         </Button>
       ) : (
         <div className="space-y-2">

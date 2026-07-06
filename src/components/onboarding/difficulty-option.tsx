@@ -37,8 +37,8 @@ export function DifficultyOption({ difficulty, selected, onSelect }: DifficultyO
     <button
       onClick={onSelect}
       className={cn(
-        "flex-1 p-3 rounded-lg border-2 transition-all bg-card text-center",
-        selected ? colors.selected : "border-border"
+        "card-surface flex-1 p-3 rounded-xl border-2 transition-all text-center active:scale-[0.98]",
+        selected ? colors.selected : "border-primary/10 hover:border-primary/40"
       )}
     >
       <span className="text-2xl block mb-1">{data.emoji}</span>

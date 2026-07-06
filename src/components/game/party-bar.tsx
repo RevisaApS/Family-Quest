@@ -25,13 +25,17 @@ interface PartyBarProps {
 function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
   const pct = Math.round((hp / maxHp) * 100)
   return (
-    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+    <div className="bar-shine h-2 w-full rounded-full bg-black/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] overflow-hidden">
       <motion.div
         animate={{ width: `${pct}%` }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className={cn(
           'h-full rounded-full',
-          pct > 50 ? 'bg-success' : pct > 25 ? 'bg-primary' : 'bg-destructive'
+          pct > 50
+            ? 'bg-gradient-to-b from-emerald-300 to-emerald-600'
+            : pct > 25
+              ? 'bg-gradient-to-b from-amber-300 to-amber-600'
+              : 'bg-gradient-to-b from-red-400 to-red-700'
         )}
       />
     </div>
@@ -49,8 +53,10 @@ export function PartyBar({ members, currentPlayerId, language, onSelectHero }: P
             key={playerId}
             onClick={() => onSelectHero?.(playerId)}
             className={cn(
-              'flex-1 min-w-0 rounded-lg border px-2 py-1.5 space-y-1 transition-all text-left active:scale-[0.98]',
-              isCurrent ? 'border-primary bg-primary/10 shadow-md shadow-primary/10' : 'border-border bg-card',
+              'flex-1 min-w-0 rounded-xl border px-2 py-1.5 space-y-1 transition-all text-left active:scale-[0.98]',
+              isCurrent
+                ? 'panel-gold glow-pulse border-primary/60'
+                : 'card-surface border-primary/10',
               hero.knockedOut && 'opacity-60 grayscale'
             )}
           >
@@ -59,7 +65,7 @@ export function PartyBar({ members, currentPlayerId, language, onSelectHero }: P
                 {hero.knockedOut ? '😵' : CLASS_DEFINITIONS[characterClass].emoji}
               </span>
               <span className="text-xs font-medium truncate">{characterName}</span>
-              <span className="ml-auto text-[10px] font-bold text-primary whitespace-nowrap">
+              <span className="ml-auto rounded-full bg-primary/15 px-1.5 py-px text-[10px] font-bold text-primary whitespace-nowrap">
                 {t('level', language)} {hero.level}
               </span>
             </div>

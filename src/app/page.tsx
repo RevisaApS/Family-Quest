@@ -40,7 +40,7 @@ export default function WelcomePage() {
 
           <div className="relative space-y-4">
             <motion.h1
-              className="text-5xl font-serif text-primary"
+              className="text-gold font-serif text-5xl md:text-6xl font-bold tracking-wide drop-shadow-[0_0_24px_oklch(0.80_0.16_80_/_0.35)]"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -55,13 +55,13 @@ export default function WelcomePage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <span className="block h-px w-12 bg-gradient-to-r from-transparent to-primary/50" />
-              <span className="text-primary/70 text-sm tracking-widest select-none">&#10022;</span>
-              <span className="block h-px w-12 bg-gradient-to-l from-transparent to-primary/50" />
+              <span className="block h-px w-16 bg-gradient-to-r from-transparent via-primary/40 to-primary/80" />
+              <span className="text-primary text-base tracking-widest select-none drop-shadow-[0_0_8px_oklch(0.80_0.16_80_/_0.8)]">&#10022;</span>
+              <span className="block h-px w-16 bg-gradient-to-l from-transparent via-primary/40 to-primary/80" />
             </motion.div>
 
             <motion.p
-              className="text-xl text-muted-foreground"
+              className="text-xl text-muted-foreground italic"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.4 }}
@@ -78,13 +78,13 @@ export default function WelcomePage() {
           >
             <Button
               size="lg"
-              className="w-full text-lg"
+              className="sheen w-full h-14 text-lg"
               onClick={() => {
                 startNewAdventure()
                 router.push('/players')
               }}
             >
-              Begin Your Journey
+              ⚔️ Begin Your Journey
             </Button>
 
             {_hasHydrated && chronicle.length > 0 && (
@@ -108,7 +108,7 @@ export default function WelcomePage() {
                 {savedAdventures.map((adventure) => (
                   <div
                     key={adventure.id}
-                    className="flex items-center gap-2 bg-card/50 border border-border rounded-lg p-3"
+                    className="card-surface flex items-center gap-2 rounded-xl border border-primary/15 p-3 transition-colors hover:border-primary/50"
                   >
                     <button
                       className="flex-1 text-left min-w-0"

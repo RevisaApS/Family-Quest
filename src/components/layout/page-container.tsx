@@ -8,7 +8,8 @@ interface PageContainerProps {
 export function PageContainer({ children, className }: PageContainerProps) {
   return (
     <main className={cn(
-      "relative min-h-screen bg-background px-4 pt-14 pb-12",
+      // No bg here — the body paints the torchlit gradient backdrop
+      "relative min-h-screen px-4 pt-14 pb-12",
       "flex flex-col items-center",
       className
     )}>
