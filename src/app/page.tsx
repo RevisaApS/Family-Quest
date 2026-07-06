@@ -24,7 +24,7 @@ export default function WelcomePage() {
           <div
             className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full opacity-30"
             style={{
-              background: 'radial-gradient(circle, oklch(0.78 0.165 75 / 0.6) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, oklch(0.68 0.14 52 / 0.55) 0%, transparent 70%)',
             }}
           />
 
@@ -40,7 +40,7 @@ export default function WelcomePage() {
 
           <div className="relative space-y-4">
             <motion.h1
-              className="text-gold font-serif text-5xl md:text-6xl font-bold tracking-wide drop-shadow-[0_0_24px_oklch(0.80_0.16_80_/_0.35)]"
+              className="text-candle font-serif text-5xl md:text-6xl drop-shadow-[0_0_24px_oklch(0.68_0.14_52_/_0.4)]"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -56,7 +56,7 @@ export default function WelcomePage() {
               transition={{ duration: 0.6, delay: 0.3 }}
             >
               <span className="block h-px w-16 bg-gradient-to-r from-transparent via-primary/40 to-primary/80" />
-              <span className="text-primary text-base tracking-widest select-none drop-shadow-[0_0_8px_oklch(0.80_0.16_80_/_0.8)]">&#10022;</span>
+              <span className="text-primary text-base tracking-widest select-none drop-shadow-[0_0_8px_oklch(0.68_0.14_52_/_0.8)]">&#10022;</span>
               <span className="block h-px w-16 bg-gradient-to-l from-transparent via-primary/40 to-primary/80" />
             </motion.div>
 
@@ -78,7 +78,7 @@ export default function WelcomePage() {
           >
             <Button
               size="lg"
-              className="sheen w-full h-14 text-lg"
+              className="w-full h-14 text-lg"
               onClick={() => {
                 startNewAdventure()
                 router.push('/players')

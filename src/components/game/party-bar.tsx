@@ -32,10 +32,10 @@ function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
         className={cn(
           'h-full rounded-full',
           pct > 50
-            ? 'bg-gradient-to-b from-emerald-300 to-emerald-600'
+            ? 'bg-gradient-to-b from-[oklch(0.74_0.11_148)] to-[oklch(0.53_0.10_146)]'
             : pct > 25
-              ? 'bg-gradient-to-b from-amber-300 to-amber-600'
-              : 'bg-gradient-to-b from-red-400 to-red-700'
+              ? 'bg-gradient-to-b from-[oklch(0.78_0.12_62)] to-[oklch(0.58_0.13_48)]'
+              : 'bg-gradient-to-b from-[oklch(0.66_0.15_32)] to-[oklch(0.46_0.15_30)]'
         )}
       />
     </div>
@@ -55,7 +55,7 @@ export function PartyBar({ members, currentPlayerId, language, onSelectHero }: P
             className={cn(
               'flex-1 min-w-0 rounded-xl border px-2 py-1.5 space-y-1 transition-all text-left active:scale-[0.98]',
               isCurrent
-                ? 'panel-gold glow-pulse border-primary/60'
+                ? 'panel-ember glow-pulse border-primary/60'
                 : 'card-surface border-primary/10',
               hero.knockedOut && 'opacity-60 grayscale'
             )}

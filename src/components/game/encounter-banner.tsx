@@ -17,8 +17,8 @@ export function EncounterBanner({ encounter, language }: { encounter: EncounterS
       animate={{ opacity: 1, y: 0 }}
       className={
         isBoss
-          ? 'rounded-xl border-2 border-destructive/60 bg-gradient-to-b from-destructive/20 to-destructive/5 px-4 py-2.5 space-y-1.5 shadow-[0_0_28px_-8px_oklch(0.64_0.21_27_/_0.6),inset_0_1px_0_oklch(1_0_0_/_0.08)]'
-          : 'rounded-xl border-2 border-secondary/60 bg-gradient-to-b from-secondary/20 to-secondary/5 px-4 py-2.5 space-y-1.5 shadow-[0_0_24px_-8px_oklch(0.63_0.13_250_/_0.5),inset_0_1px_0_oklch(1_0_0_/_0.08)]'
+          ? 'rounded-xl border-2 border-destructive/60 bg-gradient-to-b from-destructive/20 to-destructive/5 px-4 py-2.5 space-y-1.5 shadow-[0_0_28px_-8px_oklch(0.55_0.16_30_/_0.6),inset_0_1px_0_oklch(1_0_0_/_0.08)]'
+          : 'rounded-xl border-2 border-secondary/60 bg-gradient-to-b from-secondary/20 to-secondary/5 px-4 py-2.5 space-y-1.5 shadow-[0_0_24px_-8px_oklch(0.55_0.07_245_/_0.5),inset_0_1px_0_oklch(1_0_0_/_0.08)]'
       }
     >
       <div className="flex items-center gap-2">
@@ -40,7 +40,7 @@ export function EncounterBanner({ encounter, language }: { encounter: EncounterS
         <motion.div
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className={`h-full rounded-full ${isBoss ? 'bg-gradient-to-b from-red-400 to-red-700' : 'bg-gradient-to-b from-sky-300 to-blue-600'}`}
+          className={`h-full rounded-full ${isBoss ? 'bg-gradient-to-b from-[oklch(0.68_0.15_32)] to-[oklch(0.46_0.15_30)]' : 'bg-gradient-to-b from-[oklch(0.68_0.08_245)] to-[oklch(0.48_0.08_248)]'}`}
         />
       </div>
       {encounter.enraged && encounter.weakStat && (

@@ -100,20 +100,20 @@ export function DiceRoller({ stat, statBonus, required, boosts = [], dicePrefere
       <div className="flex justify-center">
         <div className={cn(
           "w-24 h-24 rounded-2xl rotate-45 flex items-center justify-center relative transition-shadow",
-          "bg-gradient-to-b from-muted to-black/50 ring-2 ring-primary/30",
+          "bg-gradient-to-b from-[oklch(0.93_0.04_86)] to-[oklch(0.80_0.05_80)] ring-2 ring-primary/40",
           "shadow-[inset_0_1px_0_oklch(1_0_0_/_0.15),0_8px_24px_-8px_rgba(0,0,0,0.8)]",
-          result !== null && !isRolling && "ring-primary/70 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.15),0_0_32px_-6px_oklch(0.80_0.16_80_/_0.7)]",
+          result !== null && !isRolling && "ring-primary/80 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.4),0_0_32px_-6px_oklch(0.68_0.14_52_/_0.75)]",
           isRolling && "animate-bounce"
         )}>
-          <span className="-rotate-45 font-serif text-4xl font-bold text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <span className="-rotate-45 font-serif text-4xl font-bold text-ink drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
             {result ?? '?'}
           </span>
-          <span className="absolute bottom-0.5 right-3 -rotate-45 text-[10px] text-primary/60 font-normal">d20</span>
+          <span className="absolute bottom-0.5 right-3 -rotate-45 text-[10px] text-ink-soft font-normal">d20</span>
         </div>
       </div>
 
       {!usePhysical ? (
-        <Button className="sheen w-full" size="lg" onClick={handleDigitalRoll} disabled={isRolling || result !== null}>
+        <Button className="w-full" size="lg" onClick={handleDigitalRoll} disabled={isRolling || result !== null}>
           {isRolling ? '...' : result ? '✓' : `🎲 ${t('rollTheDice', language)}`}
         </Button>
       ) : (

@@ -1,13 +1,21 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { Cinzel, Crimson_Text } from "next/font/google"
+import { IM_Fell_English, Alegreya } from "next/font/google"
 import "./globals.css"
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] })
-const cinzel = Cinzel({ subsets: ["latin"], variable: "--font-serif" })
-const crimsonText = Crimson_Text({
-  weight: ["400", "600", "700"],
+// IM Fell English: a digitization of genuine 17th-century book type — the
+// display voice of the storybook. Alegreya: a text face designed for
+// literature, warm and highly readable aloud.
+const fellEnglish = IM_Fell_English({
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--font-serif",
+})
+const alegreya = Alegreya({
+  style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--font-body",
 })
@@ -16,7 +24,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#12101f",
+  themeColor: "#211812",
 }
 
 export const metadata: Metadata = {
@@ -26,7 +34,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} ${crimsonText.variable} dark antialiased`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${fellEnglish.variable} ${alegreya.variable} dark antialiased`}>
       <body className="min-h-screen">{children}</body>
     </html>
   )

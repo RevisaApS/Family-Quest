@@ -10,11 +10,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "btn-gold",
+        default: "btn-ember",
         outline:
           "border-primary/35 bg-card/60 text-foreground backdrop-blur-sm hover:border-primary/70 hover:bg-primary/10 hover:text-foreground aria-expanded:bg-primary/10 aria-expanded:text-foreground",
         secondary:
-          "btn-arcane aria-expanded:brightness-110",
+          "btn-woad aria-expanded:brightness-110",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:

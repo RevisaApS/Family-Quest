@@ -13,10 +13,10 @@ const statEmoji: Record<Stat, string> = { strength: '💪', magic: '✨', agilit
 
 // Each stat gets its own gem color so choices read at a glance
 const statAccent: Record<Stat, { ring: string; chip: string }> = {
-  strength: { ring: 'hover:border-red-400/60 hover:shadow-[0_0_20px_-6px_rgba(248,113,113,0.5)]', chip: 'bg-red-400/15 text-red-300' },
-  magic: { ring: 'hover:border-purple-400/60 hover:shadow-[0_0_20px_-6px_rgba(192,132,252,0.5)]', chip: 'bg-purple-400/15 text-purple-300' },
-  agility: { ring: 'hover:border-emerald-400/60 hover:shadow-[0_0_20px_-6px_rgba(52,211,153,0.5)]', chip: 'bg-emerald-400/15 text-emerald-300' },
-  heart: { ring: 'hover:border-rose-400/60 hover:shadow-[0_0_20px_-6px_rgba(251,113,133,0.5)]', chip: 'bg-rose-400/15 text-rose-300' },
+  strength: { ring: 'hover:border-[oklch(0.62_0.15_32_/_0.7)] hover:shadow-[0_0_20px_-6px_oklch(0.62_0.15_32_/_0.55)]', chip: 'bg-[oklch(0.62_0.15_32_/_0.16)] text-[oklch(0.78_0.10_35)]' },
+  magic: { ring: 'hover:border-[oklch(0.60_0.10_300_/_0.7)] hover:shadow-[0_0_20px_-6px_oklch(0.60_0.10_300_/_0.55)]', chip: 'bg-[oklch(0.60_0.10_300_/_0.16)] text-[oklch(0.78_0.08_300)]' },
+  agility: { ring: 'hover:border-[oklch(0.62_0.11_145_/_0.7)] hover:shadow-[0_0_20px_-6px_oklch(0.62_0.11_145_/_0.55)]', chip: 'bg-[oklch(0.62_0.11_145_/_0.16)] text-[oklch(0.78_0.08_145)]' },
+  heart: { ring: 'hover:border-[oklch(0.62_0.13_0_/_0.7)] hover:shadow-[0_0_20px_-6px_oklch(0.62_0.13_0_/_0.55)]', chip: 'bg-[oklch(0.62_0.13_0_/_0.16)] text-[oklch(0.80_0.09_0)]' },
 }
 
 interface ActionPickerProps {
@@ -87,7 +87,7 @@ export function ActionPicker({
             disabled={disabled || customLoading}
             className={cn(
               "w-full text-left p-4 rounded-xl border-2 border-dashed transition-all bg-card/50 border-primary/40",
-              !disabled && !customLoading && "hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_20px_-6px_oklch(0.80_0.16_80_/_0.5)] active:scale-[0.99]",
+              !disabled && !customLoading && "hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_20px_-6px_oklch(0.68_0.14_52_/_0.5)] active:scale-[0.99]",
               (disabled || customLoading) && "opacity-50 cursor-not-allowed"
             )}
           >

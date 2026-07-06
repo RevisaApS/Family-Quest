@@ -10,13 +10,14 @@ interface SceneDisplayProps {
   isLoadingNarration: boolean
 }
 
+// The signature element of the whole app: a page of the storybook.
+// Illustration plate on top, narration in ink below — one piece of paper.
 export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNarration }: SceneDisplayProps) {
   const showNarrationBox = isLoadingNarration || !!narration
 
   return (
-    <div className="space-y-4">
-      <div className="frame-gold rounded-xl">
-      <div className="relative aspect-video rounded-[10px] overflow-hidden">
+    <div className="page-parchment p-3 sm:p-4 space-y-4">
+      <div className="plate-frame relative aspect-video overflow-hidden">
         {imageUrl ? (
           <motion.img
             key={imageUrl}
@@ -30,9 +31,9 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
         ) : isLoadingImage ? (
           // The picture is painted in the background while the scene is read
           // aloud — shimmer until it fades in.
-          <LoadingShimmer className="w-full h-full" />
+          <LoadingShimmer className="w-full h-full rounded-none from-[oklch(0.88_0.045_82)] via-[oklch(0.93_0.04_86)] to-[oklch(0.88_0.045_82)]" />
         ) : (
-          <div className="w-full h-full bg-card flex items-center justify-center">
+          <div className="w-full h-full bg-[oklch(0.88_0.045_82)] flex items-center justify-center">
             <span className="text-4xl">🏰</span>
           </div>
         )}
@@ -40,10 +41,9 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%)',
+            background: 'radial-gradient(ellipse at center, transparent 55%, rgba(40,25,10,0.35) 100%)',
           }}
         />
-      </div>
       </div>
 
       <AnimatePresence>
@@ -53,12 +53,12 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
-            className="card-surface rounded-xl p-5 border border-primary/15"
+            className="px-1 pb-1"
           >
             {isLoadingNarration ? (
               <div className="space-y-2">
-                <LoadingShimmer className="h-4 w-full" />
-                <LoadingShimmer className="h-4 w-3/4" />
+                <LoadingShimmer className="h-4 w-full from-[oklch(0.88_0.045_82)] via-[oklch(0.93_0.04_86)] to-[oklch(0.88_0.045_82)]" />
+                <LoadingShimmer className="h-4 w-3/4 from-[oklch(0.88_0.045_82)] via-[oklch(0.93_0.04_86)] to-[oklch(0.88_0.045_82)]" />
               </div>
             ) : (
               <motion.p
@@ -66,7 +66,7 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8 }}
-                className="drop-cap text-lg text-foreground leading-relaxed"
+                className="drop-cap text-lg leading-relaxed"
               >
                 {narration}
               </motion.p>

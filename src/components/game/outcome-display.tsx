@@ -125,11 +125,11 @@ export function OutcomeDisplay({
         )}
       </div>
 
-      <div className="card-surface rounded-xl p-4">
+      <div className="page-parchment p-4">
         {isLoading ? (
-          <p className="text-muted-foreground animate-pulse">The story unfolds...</p>
+          <p className="animate-pulse" style={{ color: 'var(--ink-soft)' }}>The story unfolds...</p>
         ) : (
-          <p className="text-lg text-foreground leading-relaxed">{narrative}</p>
+          <p className="drop-cap text-lg leading-relaxed">{narrative}</p>
         )}
       </div>
       {!isLoading && (
@@ -144,7 +144,7 @@ export function OutcomeDisplay({
               {action.label}
             </Button>
           ))}
-          <Button className="sheen w-full" size="lg" onClick={onContinue}>Continue Adventure →</Button>
+          <Button className="w-full" size="lg" onClick={onContinue}>Continue Adventure →</Button>
         </div>
       )}
     </div>

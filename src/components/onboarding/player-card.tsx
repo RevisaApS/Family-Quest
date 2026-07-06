@@ -19,7 +19,7 @@ interface PlayerCardProps {
 }
 
 const shimmerStyle = {
-  borderImage: 'linear-gradient(90deg, hsl(45 100% 50%) 0%, #ffd700 25%, #fff8dc 50%, #ffd700 75%, hsl(45 100% 50%) 100%) 1',
+  borderImage: 'linear-gradient(90deg, hsl(28 85% 52%) 0%, #e08840 25%, #f6e3c0 50%, #e08840 75%, hsl(28 85% 52%) 100%) 1',
   animation: 'playerCardShimmer 3s linear infinite',
 } as const
 
@@ -30,10 +30,10 @@ export function PlayerCard({
     <>
       <style>{`
         @keyframes playerCardShimmer {
-          0% { border-image-source: linear-gradient(90deg, hsl(45 100% 50%) 0%, #ffd700 25%, #fff8dc 50%, #ffd700 75%, hsl(45 100% 50%) 100%); }
-          33% { border-image-source: linear-gradient(90deg, #ffd700 0%, #fff8dc 25%, #ffd700 50%, hsl(45 100% 50%) 75%, #ffd700 100%); }
-          66% { border-image-source: linear-gradient(90deg, #fff8dc 0%, #ffd700 25%, hsl(45 100% 50%) 50%, #ffd700 75%, #fff8dc 100%); }
-          100% { border-image-source: linear-gradient(90deg, hsl(45 100% 50%) 0%, #ffd700 25%, #fff8dc 50%, #ffd700 75%, hsl(45 100% 50%) 100%); }
+          0% { border-image-source: linear-gradient(90deg, hsl(28 85% 52%) 0%, #e08840 25%, #f6e3c0 50%, #e08840 75%, hsl(28 85% 52%) 100%); }
+          33% { border-image-source: linear-gradient(90deg, #e08840 0%, #f6e3c0 25%, #e08840 50%, hsl(28 85% 52%) 75%, #e08840 100%); }
+          66% { border-image-source: linear-gradient(90deg, #f6e3c0 0%, #e08840 25%, hsl(28 85% 52%) 50%, #e08840 75%, #f6e3c0 100%); }
+          100% { border-image-source: linear-gradient(90deg, hsl(28 85% 52%) 0%, #e08840 25%, #f6e3c0 50%, #e08840 75%, hsl(28 85% 52%) 100%); }
         }
       `}</style>
       <div className="flex items-center gap-2">
@@ -67,7 +67,7 @@ export function PlayerCard({
             "card-surface relative flex-1 p-4 rounded-xl border-2 transition-all min-h-[64px]",
             selectable && !editMode && "cursor-pointer hover:border-primary/50",
             selected
-              ? "border-primary bg-[hsl(45_100%_50%/0.06)] shadow-[0_0_24px_-8px_oklch(0.80_0.16_80_/_0.5)]"
+              ? "border-primary bg-[hsl(28_85%_52%/0.07)] shadow-[0_0_24px_-8px_oklch(0.68_0.14_52_/_0.5)]"
               : "border-primary/10",
           )}
         >

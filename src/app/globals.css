@@ -44,6 +44,9 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-parchment: var(--parchment);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -53,29 +56,40 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Candlelit storybook. The app is the family's storybook read around a
+ * table at night: warm walnut darkness for the game chrome, and the story
+ * itself printed on candlelit parchment pages. Named pigments:
+ *   Hearth Walnut  – the dark around the candle (background)
+ *   Ember          – firelight orange, the one action color
+ *   Woad           – muted ink blue for monsters/secondary
+ *   Fern           – inked green for success
+ *   Madder         – old red pigment for damage and drop caps
+ *   Candlelit Parchment + Iron-Gall Ink – the page and its text
+ */
 :root {
-  --background: oklch(0.98 0.005 80);
-  --foreground: oklch(0.17 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.17 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.17 0 0);
-  --primary: oklch(0.78 0.165 75);
-  --primary-foreground: oklch(0.13 0.015 250);
-  --secondary: oklch(0.62 0.10 230);
+  --background: oklch(0.96 0.03 85);
+  --foreground: oklch(0.25 0.03 55);
+  --card: oklch(0.98 0.02 88);
+  --card-foreground: oklch(0.25 0.03 55);
+  --popover: oklch(0.98 0.02 88);
+  --popover-foreground: oklch(0.25 0.03 55);
+  --primary: oklch(0.62 0.15 48);
+  --primary-foreground: oklch(0.98 0.02 88);
+  --secondary: oklch(0.52 0.07 245);
   --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.92 0.01 240);
-  --muted-foreground: oklch(0.50 0.01 240);
-  --accent: oklch(0.92 0.01 240);
-  --accent-foreground: oklch(0.17 0 0);
-  --destructive: oklch(0.63 0.21 25);
-  --success: oklch(0.70 0.15 165);
+  --muted: oklch(0.90 0.03 82);
+  --muted-foreground: oklch(0.48 0.04 60);
+  --accent: oklch(0.90 0.03 82);
+  --accent-foreground: oklch(0.25 0.03 55);
+  --destructive: oklch(0.55 0.16 30);
+  --success: oklch(0.55 0.10 145);
   --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.80 0.17 70);
-  --warning-foreground: oklch(0.17 0 0);
-  --border: oklch(0.90 0.01 240);
-  --input: oklch(0.90 0.01 240);
-  --ring: oklch(0.78 0.165 75);
+  --warning: oklch(0.75 0.15 70);
+  --warning-foreground: oklch(0.25 0.03 55);
+  --border: oklch(0.84 0.035 78);
+  --input: oklch(0.84 0.035 78);
+  --ring: oklch(0.62 0.15 48);
   --radius: 0.75rem;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -93,28 +107,28 @@
 }
 
 .dark {
-  --background: oklch(0.13 0.028 272);
-  --foreground: oklch(0.96 0.012 85);
-  --card: oklch(0.18 0.028 268);
-  --card-foreground: oklch(0.96 0.012 85);
-  --popover: oklch(0.18 0.028 268);
-  --popover-foreground: oklch(0.96 0.012 85);
-  --primary: oklch(0.80 0.16 80);
-  --primary-foreground: oklch(0.15 0.03 265);
-  --secondary: oklch(0.63 0.13 250);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.24 0.03 262);
-  --muted-foreground: oklch(0.74 0.02 270);
-  --accent: oklch(0.24 0.03 262);
-  --accent-foreground: oklch(0.96 0.012 85);
-  --destructive: oklch(0.64 0.21 27);
-  --success: oklch(0.72 0.16 160);
+  --background: oklch(0.18 0.018 60);
+  --foreground: oklch(0.93 0.03 82);
+  --card: oklch(0.235 0.022 58);
+  --card-foreground: oklch(0.93 0.03 82);
+  --popover: oklch(0.235 0.022 58);
+  --popover-foreground: oklch(0.93 0.03 82);
+  --primary: oklch(0.68 0.14 52);
+  --primary-foreground: oklch(0.16 0.02 55);
+  --secondary: oklch(0.55 0.07 245);
+  --secondary-foreground: oklch(0.97 0.01 250);
+  --muted: oklch(0.29 0.026 58);
+  --muted-foreground: oklch(0.73 0.035 72);
+  --accent: oklch(0.29 0.026 58);
+  --accent-foreground: oklch(0.93 0.03 82);
+  --destructive: oklch(0.60 0.16 30);
+  --success: oklch(0.62 0.11 145);
   --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.80 0.17 70);
-  --warning-foreground: oklch(0.17 0 0);
-  --border: oklch(0.30 0.035 268);
-  --input: oklch(0.30 0.035 268);
-  --ring: oklch(0.80 0.16 80);
+  --warning: oklch(0.75 0.15 70);
+  --warning-foreground: oklch(0.2 0.02 55);
+  --border: oklch(0.33 0.03 60);
+  --input: oklch(0.33 0.03 60);
+  --ring: oklch(0.68 0.14 52);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -131,11 +145,17 @@
 }
 
 :root, .dark {
-  /* Metallic gold ramp shared by buttons, frames and gradient text */
-  --gold-hi: oklch(0.92 0.09 90);
-  --gold: oklch(0.80 0.16 80);
-  --gold-deep: oklch(0.64 0.14 66);
-  --gold-shadow: oklch(0.48 0.10 60);
+  /* Ember ramp for buttons and firelight accents */
+  --ember-hi: oklch(0.78 0.12 62);
+  --ember: oklch(0.68 0.14 52);
+  --ember-deep: oklch(0.56 0.14 44);
+  --ember-shadow: oklch(0.42 0.10 42);
+  /* The page and its ink */
+  --parchment: oklch(0.92 0.045 85);
+  --parchment-deep: oklch(0.86 0.05 82);
+  --parchment-edge: oklch(0.79 0.055 78);
+  --ink: oklch(0.27 0.03 55);
+  --ink-soft: oklch(0.42 0.04 55);
 }
 
 @layer base {
@@ -145,14 +165,13 @@
   body {
     @apply text-foreground;
     background-color: var(--background);
-    /* Torchlit-cavern atmosphere: warm glow above, cool magic below the fold */
+    /* Candlelight from above the table, darkness pooling at the edges */
     background-image:
       url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
-      radial-gradient(120% 65% at 50% -12%, oklch(0.34 0.07 292 / 0.55) 0%, transparent 62%),
-      radial-gradient(80% 50% at 8% 108%, oklch(0.30 0.08 220 / 0.38) 0%, transparent 60%),
-      radial-gradient(85% 55% at 95% 105%, oklch(0.28 0.09 320 / 0.32) 0%, transparent 60%);
-    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
-    background-attachment: scroll, fixed, fixed, fixed;
+      radial-gradient(120% 60% at 50% -10%, oklch(0.42 0.09 58 / 0.5) 0%, transparent 60%),
+      radial-gradient(90% 50% at 50% 115%, oklch(0.14 0.02 45 / 0.8) 0%, transparent 55%);
+    background-repeat: repeat, no-repeat, no-repeat;
+    background-attachment: scroll, fixed, fixed;
   }
   html {
     @apply font-sans;
@@ -163,78 +182,96 @@
 }
 
 @layer components {
-  /* Embossed gold button face — the "press me" primary of the game */
-  .btn-gold {
-    background: linear-gradient(180deg, var(--gold-hi) 0%, var(--gold) 48%, var(--gold-deep) 100%);
-    border-color: oklch(0.95 0.07 92 / 0.55);
-    color: oklch(0.17 0.03 265);
-    text-shadow: 0 1px 0 oklch(1 0 0 / 0.3);
+  /* Wax-seal ember button — the one loud action color in the book */
+  .btn-ember {
+    background: linear-gradient(180deg, var(--ember-hi) 0%, var(--ember) 55%, var(--ember-deep) 100%);
+    border-color: oklch(0.85 0.09 68 / 0.5);
+    color: oklch(0.15 0.02 50);
+    text-shadow: 0 1px 0 oklch(1 0 0 / 0.25);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 0.45),
-      inset 0 -2px 3px oklch(0.45 0.10 60 / 0.4),
+      inset 0 1px 0 oklch(1 0 0 / 0.35),
+      inset 0 -2px 3px var(--ember-shadow),
       0 2px 10px oklch(0 0 0 / 0.45),
-      0 0 18px oklch(0.80 0.16 80 / 0.22);
+      0 0 18px oklch(0.68 0.14 52 / 0.25);
   }
-  .btn-gold:hover {
+  .btn-ember:hover {
     filter: brightness(1.07);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 0.45),
-      inset 0 -2px 3px oklch(0.45 0.10 60 / 0.4),
+      inset 0 1px 0 oklch(1 0 0 / 0.35),
+      inset 0 -2px 3px var(--ember-shadow),
       0 2px 12px oklch(0 0 0 / 0.5),
-      0 0 26px oklch(0.80 0.16 80 / 0.38);
+      0 0 26px oklch(0.68 0.14 52 / 0.4);
   }
-  .btn-gold:active {
+  .btn-ember:active {
     filter: brightness(0.94);
   }
 
-  /* Arcane-blue sibling of .btn-gold for secondary actions */
-  .btn-arcane {
-    background: linear-gradient(180deg, oklch(0.72 0.12 252) 0%, oklch(0.60 0.14 253) 55%, oklch(0.50 0.14 256) 100%);
-    border-color: oklch(0.80 0.09 250 / 0.5);
-    color: oklch(0.98 0.01 250);
-    text-shadow: 0 1px 1px oklch(0.25 0.08 255 / 0.6);
+  /* Woad-blue sibling for secondary actions */
+  .btn-woad {
+    background: linear-gradient(180deg, oklch(0.63 0.07 245) 0%, oklch(0.53 0.08 246) 55%, oklch(0.45 0.08 248) 100%);
+    border-color: oklch(0.72 0.06 245 / 0.5);
+    color: oklch(0.97 0.01 250);
+    text-shadow: 0 1px 1px oklch(0.25 0.05 250 / 0.6);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 0.3),
-      inset 0 -2px 3px oklch(0.35 0.10 258 / 0.5),
-      0 2px 10px oklch(0 0 0 / 0.45),
-      0 0 18px oklch(0.60 0.14 253 / 0.25);
+      inset 0 1px 0 oklch(1 0 0 / 0.25),
+      inset 0 -2px 3px oklch(0.32 0.06 250 / 0.5),
+      0 2px 10px oklch(0 0 0 / 0.45);
   }
-  .btn-arcane:hover {
+  .btn-woad:hover {
     filter: brightness(1.08);
   }
-  .btn-arcane:active {
+  .btn-woad:active {
     filter: brightness(0.94);
   }
 
-  /* Raised panel surface: soft top light, deep drop shadow */
+  /* Raised dark-chrome panel: soft candlelight from above, deep shadow */
   .card-surface {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 0.05) 0%, oklch(1 0 0 / 0) 45%),
+      linear-gradient(180deg, oklch(1 0.02 80 / 0.05) 0%, oklch(1 0 0 / 0) 45%),
       var(--card);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 0.07),
+      inset 0 1px 0 oklch(1 0.02 80 / 0.07),
       0 14px 34px -18px oklch(0 0 0 / 0.75);
   }
 
-  /* Gold-trimmed panel for quest banners and highlighted chrome */
-  .panel-gold {
+  /* Ember-trimmed panel for the quest banner and highlighted chrome */
+  .panel-ember {
     background:
-      linear-gradient(180deg, oklch(0.80 0.16 80 / 0.15) 0%, oklch(0.80 0.16 80 / 0.04) 100%),
+      linear-gradient(180deg, oklch(0.68 0.14 52 / 0.14) 0%, oklch(0.68 0.14 52 / 0.04) 100%),
       var(--card);
-    border: 1px solid oklch(0.80 0.16 80 / 0.4);
+    border: 1px solid oklch(0.68 0.14 52 / 0.4);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 0.1),
-      0 0 26px -10px oklch(0.80 0.16 80 / 0.45),
+      inset 0 1px 0 oklch(1 0.02 80 / 0.1),
+      0 0 26px -10px oklch(0.68 0.14 52 / 0.45),
       0 10px 24px -16px oklch(0 0 0 / 0.7);
   }
 
-  /* Thin beveled gold picture frame — wrap an image, keep 2px padding */
-  .frame-gold {
-    padding: 2px;
-    background: linear-gradient(135deg, var(--gold-hi) 0%, var(--gold-shadow) 30%, var(--gold) 55%, var(--gold-shadow) 80%, var(--gold-deep) 100%);
+  /*
+   * The signature element: a page of the storybook. Hand-cut paper edge
+   * (uneven corner radii), candlelit paper, aged darkening at the rim,
+   * iron-gall ink text. Story content lives on these pages; game chrome
+   * stays out in the dark.
+   */
+  .page-parchment {
+    background:
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
+      linear-gradient(175deg, oklch(0.94 0.04 87) 0%, var(--parchment) 45%, var(--parchment-deep) 100%);
+    color: var(--ink);
+    border: 1px solid var(--parchment-edge);
+    border-radius: 18px 6px 16px 8px / 8px 18px 6px 20px;
     box-shadow:
-      0 14px 44px -16px oklch(0 0 0 / 0.85),
-      0 0 32px -12px oklch(0.80 0.16 80 / 0.5);
+      inset 0 0 46px oklch(0.72 0.06 75 / 0.5),
+      0 3px 0 -1px oklch(0.80 0.05 78 / 0.6),
+      0 16px 38px -16px oklch(0 0 0 / 0.85);
+  }
+  .page-parchment .text-muted-foreground {
+    color: var(--ink-soft);
+  }
+
+  /* Thin inked rule around an illustration plate on the page */
+  .plate-frame {
+    border: 1px solid oklch(0.35 0.04 55 / 0.55);
+    box-shadow: 0 0 0 4px oklch(0.92 0.045 85 / 0.9), 0 0 0 5px oklch(0.35 0.04 55 / 0.25);
   }
 
   /* Glass shine laid over HP/progress bars */
@@ -250,64 +287,42 @@
     pointer-events: none;
   }
 
-  /* Engraved-gold gradient text for titles */
-  .text-gold {
-    background: linear-gradient(180deg, oklch(0.96 0.06 92) 0%, oklch(0.86 0.13 84) 38%, oklch(0.70 0.15 70) 72%, oklch(0.60 0.12 62) 100%);
+  /* Candlelit title text: cream heart cooling into ember */
+  .text-candle {
+    background: linear-gradient(180deg, oklch(0.96 0.04 88) 0%, oklch(0.88 0.08 80) 42%, oklch(0.72 0.13 58) 78%, oklch(0.62 0.14 48) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
-  /* Storybook drop cap for narration paragraphs */
+  /* Illuminated initial in madder red, like a rubricated manuscript */
   .drop-cap::first-letter {
     float: left;
     font-family: var(--font-serif);
-    font-size: 2.7em;
-    line-height: 0.85;
-    padding-right: 0.1em;
-    color: var(--primary);
+    font-size: 3em;
+    line-height: 0.8;
+    padding-right: 0.12em;
+    color: oklch(0.50 0.15 32);
   }
 
-  /* Recurring light sweep across a CTA — subtle "look at me" */
-  .sheen {
-    position: relative;
-    overflow: hidden;
-  }
-  .sheen::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: -70%;
-    width: 45%;
-    background: linear-gradient(105deg, transparent 0%, oklch(1 0 0 / 0.35) 50%, transparent 100%);
-    animation: sheen-sweep 3.8s ease-in-out infinite;
-    pointer-events: none;
-  }
-
-  /* Breathing gold aura for the "it's your turn" chip */
+  /* Breathing ember aura for the "it's your turn" chip */
   .glow-pulse {
     animation: glow-pulse 2.4s ease-in-out infinite;
   }
 }
 
-@keyframes sheen-sweep {
-  0% { left: -70%; }
-  55%, 100% { left: 135%; }
-}
-
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 14px -5px oklch(0.80 0.16 80 / 0.55); }
-  50% { box-shadow: 0 0 24px -4px oklch(0.80 0.16 80 / 0.9); }
+  0%, 100% { box-shadow: 0 0 14px -5px oklch(0.68 0.14 52 / 0.55); }
+  50% { box-shadow: 0 0 24px -4px oklch(0.68 0.14 52 / 0.9); }
 }
 
-/* Floating sparkle particles */
+/* Drifting ember motes above the candle */
 .sparkle {
   position: absolute;
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: oklch(0.78 0.165 75 / 0.7);
+  background: oklch(0.74 0.13 58 / 0.75);
   animation: float-up 6s ease-in-out infinite, twinkle 3s ease-in-out infinite;
 }
 
@@ -382,10 +397,10 @@
 @keyframes twinkle {
   0%, 100% {
     opacity: 0.3;
-    box-shadow: 0 0 2px oklch(0.78 0.165 75 / 0.4);
+    box-shadow: 0 0 2px oklch(0.74 0.13 58 / 0.4);
   }
   50% {
     opacity: 1;
-    box-shadow: 0 0 6px oklch(0.78 0.165 75 / 0.8);
+    box-shadow: 0 0 6px oklch(0.74 0.13 58 / 0.8);
   }
 }
