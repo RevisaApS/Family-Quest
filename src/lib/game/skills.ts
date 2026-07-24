@@ -120,15 +120,26 @@ function toSkill(def: SkillDefinition, language: Language): Skill {
   }
 }
 
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
 // Up to 3 not-yet-owned skills to choose from on level-up — all the same
-// +1 boost, each with a different power.
+// +1 boost, each with a different power. Shuffled, because taking the first
+// three in pool order dealt the same cards in the same order every single
+// adventure.
 export function skillChoices(
   characterClass: CharacterClass,
   ownedSkillIds: string[],
   language: Language
 ): Skill[] {
-  return SKILL_POOLS[characterClass]
-    .filter(def => !ownedSkillIds.includes(def.id))
+  const available = SKILL_POOLS[characterClass].filter(def => !ownedSkillIds.includes(def.id))
+  return shuffle(available)
     .slice(0, 3)
     .map(def => toSkill(def, language))
 }

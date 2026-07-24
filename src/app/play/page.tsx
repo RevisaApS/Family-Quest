@@ -23,7 +23,7 @@ import { useGameStore } from '@/stores/game-store'
 import { useGameAI } from '@/hooks/use-game-ai'
 import { calculateDC, resolveD20, requiredRolls, rollD20 } from '@/lib/game/mechanics'
 import {
-  heroStatBonus, applyTurnOutcome, reviveHero, heroDamageForOutcome,
+  heroStatBonus, applyTurnOutcome, reviveHero,
   encounterDamageForOutcome, lootShouldDrop, lootBonusForRoll,
   encounterSpawnTurn, nextEncounterKind, createEncounter, QUEST_MILESTONES,
   equipLoot, addSkill, addGold, buyItem, chestIsGold, chestGoldAmount,
@@ -600,7 +600,10 @@ export default function PlayPage() {
       action.stat,
       resolved.outcome,
       currentSceneText,
-      heroDamageForOutcome(resolved.outcome, encActive),
+      // The damage the hero actually took, not a second guess at it — a
+      // recomputation here once missed the fumble retaliation, so the DM never
+      // narrated the monster's free swing.
+      resolution.damageTaken,
       encDamage,
       resolved.crit,
     )
@@ -848,7 +851,7 @@ export default function PlayPage() {
         {/* Shop + sound + pause buttons */}
         <button
           onClick={() => { setShopHintSeen(); setShopOpen(true) }}
-          className="fixed top-4 right-28 size-10 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
+          className="fixed top-4 right-28 size-11 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
           aria-label="Open shop"
         >
           🏪
@@ -884,7 +887,7 @@ export default function PlayPage() {
         )}
         <button
           onClick={() => setSoundPref(!soundEnabled)}
-          className="fixed top-4 right-16 size-10 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
+          className="fixed top-4 right-16 size-11 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
           aria-label="Toggle sound"
         >
           {soundEnabled ? '🔊' : '🔇'}
@@ -894,7 +897,7 @@ export default function PlayPage() {
             setSaveName(savedAdventures.find(a => a.id === activeAdventureId)?.name ?? '')
             setIsPaused(true)
           }}
-          className="fixed top-4 right-4 size-10 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
+          className="fixed top-4 right-4 size-11 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
         >
           ⏸
         </button>

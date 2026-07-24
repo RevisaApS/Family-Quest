@@ -3,7 +3,7 @@ import { SHOP_CATALOG, shopItemsForSlot, toLootItem } from '@/lib/game/shop'
 import { ALL_SLOTS, fallbackLootName, createLoot } from '@/lib/game/loot'
 import {
   createHero, buyItem, addGold, GOLD_PER_OUTCOME, STARTING_GOLD,
-  BOSS_GOLD_REWARD, chestGoldAmount, applyTurnOutcome,
+  BOSS_GOLD_REWARD, MONSTER_GOLD_REWARD, chestGoldAmount, applyTurnOutcome,
 } from '@/lib/game/rpg'
 
 describe('shop catalog', () => {
@@ -68,11 +68,20 @@ describe('gold economy', () => {
   })
 
   it('buying deducts gold and equips the item', () => {
-    const hero = addGold(createHero('p1'), 29) // 30 total
     const helm = SHOP_CATALOG.find(i => i.id === 'shop-helmet-3')!
+    const hero = addGold(createHero('p1'), helm.price - STARTING_GOLD) // exactly enough
     const after = buyItem(hero, toLootItem(helm, 'en'), helm.price)!
     expect(after.gold).toBe(0)
     expect(after.equipment.helmet?.name).toBe('The Golden Helm')
+  })
+
+  it('legendary gear is reachable from quest income, before the boss pays out', () => {
+    // A hero banks ~1.4 gold per turn across ~7-8 turns of their own, plus a
+    // share of both monster rewards. The boss's 20 lands after the quest is
+    // already won, so it can't count toward affording anything.
+    const questIncome = Math.round(7.6 * 1.4) + 2 * MONSTER_GOLD_REWARD
+    const cheapestLegendary = Math.min(...SHOP_CATALOG.filter(i => i.tier === 3).map(i => i.price))
+    expect(cheapestLegendary).toBeLessThanOrEqual(questIncome)
   })
 
   it('turns pay out gold by outcome (failure pays nothing)', () => {

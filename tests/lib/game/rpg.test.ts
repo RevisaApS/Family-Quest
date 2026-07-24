@@ -5,7 +5,7 @@ import {
   lootShouldDrop, lootBonusForRoll, encounterSpawnTurn, nextEncounterKind,
   encounterMaxHp, createEncounter, createHero, applyTurnOutcome, reviveHero,
   equipLoot, addSkill, canUsePower, usePower, healHero,
-  BASE_MAX_HP, MAX_LEVEL, QUEST_MILESTONES,
+  BASE_MAX_HP, MAX_LEVEL, QUEST_MILESTONES, MIN_HP, FUMBLE_RETALIATION_DAMAGE,
 } from '@/lib/game/rpg'
 import { skillChoices } from '@/lib/game/skills'
 import { fallbackLootName, createLoot } from '@/lib/game/loot'
@@ -19,15 +19,22 @@ const skill: Skill = {
 }
 
 describe('levels & xp', () => {
-  it('starts at level 1 and reaches level 2 at 6 xp', () => {
+  it('starts at level 1 and reaches level 2 at 4 xp', () => {
     expect(levelForXp(0)).toBe(1)
-    expect(levelForXp(5)).toBe(1)
-    expect(levelForXp(6)).toBe(2)
+    expect(levelForXp(3)).toBe(1)
+    expect(levelForXp(4)).toBe(2)
   })
 
   it('caps at MAX_LEVEL', () => {
     expect(levelForXp(999)).toBe(MAX_LEVEL)
     expect(xpForNextLevel(MAX_LEVEL)).toBeNull()
+  })
+
+  // A quest runs ~23 turns, so each hero acts ~7-8 times at ~2.3 xp a turn.
+  // The curve has to fit inside that or the top levels are content nobody sees.
+  it('is reachable inside one adventure — max level by roughly 8 turns each', () => {
+    const xpAfterEightAverageTurns = Math.round(8 * 2.3)
+    expect(levelForXp(xpAfterEightAverageTurns)).toBe(MAX_LEVEL)
   })
 
   it('max hp grows with level', () => {
@@ -44,8 +51,15 @@ describe('damage', () => {
   })
 
   it('battles hit harder', () => {
-    expect(heroDamageForOutcome('failure', true)).toBe(2)
+    expect(heroDamageForOutcome('failure', true)).toBe(3)
     expect(heroDamageForOutcome('partial', true)).toBe(1)
+  })
+
+  it('a natural 1 in a fight lets the monster strike back', () => {
+    expect(heroDamageForOutcome('failure', true, 'fumble'))
+      .toBe(3 + FUMBLE_RETALIATION_DAMAGE)
+    // outside a fight a fumble is pure comedy, no free swing
+    expect(heroDamageForOutcome('failure', false, 'fumble')).toBe(1)
   })
 
   it('heroes damage the enemy on success/partial, crits hit double', () => {
@@ -134,22 +148,32 @@ describe('turn resolution', () => {
     expect(goldGained).toBe(3)
   })
 
-  it('knocks out at 0 hp and revives at half max hp', () => {
-    const hero = { ...createHero('p1'), hp: 2 }
-    const { hero: after } = applyTurnOutcome(hero, 'failure', true)
-    expect(after.hp).toBe(0)
-    expect(after.knockedOut).toBe(true)
-    const revived = reviveHero(after)
-    expect(revived.knockedOut).toBe(false)
-    expect(revived.hp).toBe(rescueHp(after.maxHp))
+  it('never knocks a hero out — HP floors at MIN_HP however bad the streak', () => {
+    let hero = { ...createHero('p1'), hp: 2 }
+    // a fumble in a fight is the hardest hit in the game
+    hero = applyTurnOutcome(hero, 'failure', true, 'fumble').hero
+    expect(hero.hp).toBe(MIN_HP)
+    expect(hero.knockedOut).toBe(false)
+    // and it still can't push them under
+    hero = applyTurnOutcome(hero, 'failure', true, 'fumble').hero
+    expect(hero.hp).toBe(MIN_HP)
+    expect(hero.knockedOut).toBe(false)
   })
 
-  it('level up raises max hp and fully heals', () => {
-    const hero = { ...createHero('p1'), xp: 5, hp: 1 }
+  it('rescuing a downed hero restores half their max hp', () => {
+    const downed = { ...createHero('p1'), hp: 0, knockedOut: true }
+    const revived = reviveHero(downed)
+    expect(revived.knockedOut).toBe(false)
+    expect(revived.hp).toBe(rescueHp(downed.maxHp))
+  })
+
+  it('level up raises max hp and gives a second wind, not a full heal', () => {
+    const hero = { ...createHero('p1'), xp: 3, hp: 1 }
     const { hero: after, leveledUp } = applyTurnOutcome(hero, 'success', false)
     expect(leveledUp).toBe(true)
     expect(after.level).toBe(2)
-    expect(after.hp).toBe(after.maxHp)
+    expect(after.hp).toBeGreaterThan(1)
+    expect(after.hp).toBeLessThan(after.maxHp)
   })
 
   it('equip and skills are idempotent-safe', () => {

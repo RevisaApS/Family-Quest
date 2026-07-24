@@ -15,9 +15,12 @@ export const XP_PER_OUTCOME: Record<OutcomeType, number> = {
 
 export const MAX_LEVEL = 5
 
-// Cumulative XP needed to REACH each level. Level 2 comes fast (early win),
-// later levels stretch out across a 45-minute session.
-const LEVEL_XP: number[] = [0, 0, 6, 14, 24, 36]
+// Cumulative XP needed to REACH each level, tuned against the length of a real
+// adventure: a quest runs ~23 turns, so each hero acts ~7-8 times and banks
+// ~2.3 XP a turn. The old curve topped out at 36 and quietly capped the family
+// at level 3 — levels 4 and 5, and three of each class's five powers, were
+// content nobody ever saw. This curve reaches level 5 by the boss.
+const LEVEL_XP: number[] = [0, 0, 4, 8, 12, 17]
 
 export function levelForXp(xp: number): number {
   let level = 1
@@ -44,7 +47,10 @@ export const GOLD_PER_OUTCOME: Record<OutcomeType, number> = {
 }
 
 export const CRIT_BONUS_GOLD = 1
-export const MONSTER_GOLD_REWARD = 3
+// Monsters pay better than they used to, because legendary gear needs to be
+// buyable BEFORE the final fight — the boss's payout lands when the quest is
+// already over.
+export const MONSTER_GOLD_REWARD = 5
 export const BOSS_GOLD_REWARD = 20
 
 // A chest is either an item or a pouch of coins — the d20 sets the size.
@@ -61,12 +67,28 @@ export function chestGoldAmount(d20Roll: number): number {
 export const BASE_MAX_HP = 6
 export const HP_PER_LEVEL = 1
 
+// Heroes bend but never break: HP floors here so a bad streak can genuinely
+// scare the kids without ever taking one of them out of the story.
+export const MIN_HP = 1
+
+// A natural 1 in a fight isn't only comedy — the monster gets a free swing.
+// It's the sharpest spike of danger in the game and still can't drop a hero
+// below MIN_HP.
+export const FUMBLE_RETALIATION_DAMAGE = 2
+
 export function maxHpForLevel(level: number): number {
   return BASE_MAX_HP + (level - 1) * HP_PER_LEVEL
 }
 
-export function heroDamageForOutcome(outcome: OutcomeType, encounterActive: boolean): number {
-  if (outcome === 'failure') return encounterActive ? 2 : 1
+export function heroDamageForOutcome(
+  outcome: OutcomeType,
+  encounterActive: boolean,
+  crit: CritType = null
+): number {
+  if (outcome === 'failure') {
+    const retaliation = crit === 'fumble' && encounterActive ? FUMBLE_RETALIATION_DAMAGE : 0
+    return (encounterActive ? 3 : 1) + retaliation
+  }
   if (outcome === 'partial') return encounterActive ? 1 : 0
   return 0
 }
@@ -230,8 +252,8 @@ export interface TurnResolution {
   goldGained: number
 }
 
-// Apply one turn's outcome to the acting hero: XP, gold, damage, KO,
-// level-up (level-up raises max HP and fully heals — the skill pick happens
+// Apply one turn's outcome to the acting hero: XP, gold, damage, level-up
+// (level-up raises max HP and grants a second wind — the skill pick happens
 // in the UI).
 export function applyTurnOutcome(
   hero: HeroState,
@@ -241,17 +263,20 @@ export function applyTurnOutcome(
 ): TurnResolution {
   const xpGained = XP_PER_OUTCOME[outcome]
   const goldGained = GOLD_PER_OUTCOME[outcome] + (crit === 'crit' ? CRIT_BONUS_GOLD : 0)
-  const damageTaken = heroDamageForOutcome(outcome, encounterActive)
+  const damageTaken = heroDamageForOutcome(outcome, encounterActive, crit)
 
   const xp = hero.xp + xpGained
   const newLevel = Math.min(levelForXp(xp), MAX_LEVEL)
   const leveledUp = newLevel > hero.level
 
   let maxHp = hero.maxHp
-  let hp = Math.max(0, hero.hp - damageTaken)
+  let hp = Math.max(MIN_HP, hero.hp - damageTaken)
   if (leveledUp) {
     maxHp = maxHpForLevel(newLevel)
-    hp = maxHp
+    // A second wind, not a full reset. Levelling up used to heal to full,
+    // which — now that the family levels up nearly every other turn — would
+    // wipe out every scrape and make potions pointless.
+    hp = Math.min(maxHp, hp + Math.ceil(maxHp / 2))
   }
 
   return {

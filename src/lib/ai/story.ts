@@ -1,3 +1,4 @@
+import { SchemaType, type ResponseSchema, type Schema } from '@google/generative-ai'
 import { generateJSON } from './gemini'
 import { languageInstruction } from './language'
 import type { AdventureStyle } from '@/types/game'
@@ -81,6 +82,32 @@ IMPORTANT: ${context.encounter.name} is badly wounded and in THIS scene TRANSFOR
   }
 }
 
+// The schema has to declare exactly the fields this particular call asks for:
+// the model returns nothing that isn't declared, so a fixed schema would
+// silently swallow the quest and villain on the opening scene.
+function sceneSchema(context: StoryContext): ResponseSchema {
+  const properties: Record<string, Schema> = {
+    narration: { type: SchemaType.STRING },
+    imagePrompt: { type: SchemaType.STRING },
+    suggestedNextPlayer: { type: SchemaType.STRING },
+  }
+  const required = ['narration', 'imagePrompt', 'suggestedNextPlayer']
+
+  if (context.isFirstScene) {
+    properties.questTitle = { type: SchemaType.STRING }
+    properties.questGoal = { type: SchemaType.STRING }
+    properties.villainName = { type: SchemaType.STRING }
+    required.push('questTitle', 'questGoal', 'villainName')
+  }
+
+  if (context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss') {
+    properties.encounterName = { type: SchemaType.STRING }
+    required.push('encounterName')
+  }
+
+  return { type: SchemaType.OBJECT, properties, required }
+}
+
 export async function generateScene(context: StoryContext): Promise<GeneratedScene> {
   const currentCharacter = context.characters.find(c => c.playerId === context.currentPlayerId)
 
@@ -119,5 +146,5 @@ Available player IDs: ${context.characters.map(c => c.playerId).join(', ')}
 
 Make the narration engaging and end with a moment that calls for action.`
 
-  return generateJSON<GeneratedScene>(prompt)
+  return generateJSON<GeneratedScene>(prompt, sceneSchema(context))
 }

@@ -1,3 +1,4 @@
+import { SchemaType, type ResponseSchema } from '@google/generative-ai'
 import { generateJSON } from './gemini'
 import { languageInstruction } from './language'
 import type { AdventureStyle, CharacterClass } from '@/types/game'
@@ -32,6 +33,27 @@ export interface GeneratedEpilogue {
   awards: Array<{ playerId: string; title: string; reason: string }>
 }
 
+const EPILOGUE_SCHEMA: ResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    title: { type: SchemaType.STRING },
+    story: { type: SchemaType.STRING },
+    awards: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          playerId: { type: SchemaType.STRING },
+          title: { type: SchemaType.STRING },
+          reason: { type: SchemaType.STRING },
+        },
+        required: ['playerId', 'title', 'reason'],
+      },
+    },
+  },
+  required: ['title', 'story', 'awards'],
+}
+
 function describeHeroForEpilogue(h: EpilogueContext['heroes'][number]): string {
   const stats = `${h.stats.turns} turns, ${h.stats.successes} successes, ${h.stats.crits} legendary rolls (natural 20), ${h.stats.fumbles} comical fumbles (natural 1)`
   return `- ${h.characterName} the ${h.class} (played by ${h.playerName}), reached level ${h.level}${h.petName ? `, with their pet ${h.petName}` : ''} — ${stats}`
@@ -64,5 +86,5 @@ Award rules:
 - Every award is positive and personal — ground it in their stats or story moments (a natural 20 → something legendary; many fumbles → a lovable 'most entertaining tumbles'-style award, celebrated not mocked; few successes → bravest heart / never gave up)
 - Award titles and reasons are in the story language`
 
-  return generateJSON<GeneratedEpilogue>(prompt)
+  return generateJSON<GeneratedEpilogue>(prompt, EPILOGUE_SCHEMA)
 }

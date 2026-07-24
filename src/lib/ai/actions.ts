@@ -1,7 +1,46 @@
+import { SchemaType, type ResponseSchema, type Schema } from '@google/generative-ai'
 import { generateJSON } from './gemini'
 import { languageInstruction } from './language'
 import type { GeneratedAction, StoryContext } from '@/types/ai'
 import type { SceneFit, Stat } from '@/types/game'
+
+// Pinning stat and sceneFit to enums keeps the UI honest: an off-list value
+// used to sail through and render a blank icon instead of failing loudly.
+const STAT_SCHEMA: Schema = {
+  type: SchemaType.STRING,
+  format: 'enum',
+  enum: ['strength', 'magic', 'agility', 'heart'],
+}
+const SCENE_FIT_SCHEMA: Schema = {
+  type: SchemaType.STRING,
+  format: 'enum',
+  enum: ['good', 'okay', 'risky'],
+}
+
+const ACTIONS_SCHEMA: ResponseSchema = {
+  type: SchemaType.ARRAY,
+  items: {
+    type: SchemaType.OBJECT,
+    properties: {
+      id: { type: SchemaType.STRING },
+      text: { type: SchemaType.STRING },
+      stat: STAT_SCHEMA,
+      sceneFit: SCENE_FIT_SCHEMA,
+      sceneFitReason: { type: SchemaType.STRING },
+    },
+    required: ['id', 'text', 'stat', 'sceneFit', 'sceneFitReason'],
+  },
+}
+
+const CUSTOM_ACTION_SCHEMA: ResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    stat: STAT_SCHEMA,
+    sceneFit: SCENE_FIT_SCHEMA,
+    sceneFitReason: { type: SchemaType.STRING },
+  },
+  required: ['stat', 'sceneFit', 'sceneFitReason'],
+}
 
 export async function generateActions(
   context: StoryContext,
@@ -44,7 +83,7 @@ Return JSON array:
 
 One option should be "good" (smart for this scene), one "okay", one "risky".`
 
-  return generateJSON<GeneratedAction[]>(prompt)
+  return generateJSON<GeneratedAction[]>(prompt, ACTIONS_SCHEMA)
 }
 
 // "My own idea!" — the kid says their own plan and the DM grades it like any
@@ -79,7 +118,10 @@ Return JSON:
   "sceneFitReason": "..."
 }`
 
-  const graded = await generateJSON<{ stat: Stat; sceneFit: SceneFit; sceneFitReason: string }>(prompt)
+  const graded = await generateJSON<{ stat: Stat; sceneFit: SceneFit; sceneFitReason: string }>(
+    prompt,
+    CUSTOM_ACTION_SCHEMA
+  )
   const stats: Stat[] = ['strength', 'magic', 'agility', 'heart']
   const fits: SceneFit[] = ['good', 'okay', 'risky']
   return {

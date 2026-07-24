@@ -15,8 +15,17 @@ describe('calculateDC', () => {
   })
 
   it('rises with level and during battles', () => {
-    expect(calculateDC({ difficulty: 'medium', sceneFit: 'okay', level: 3, encounterActive: false })).toBe(14)
+    expect(calculateDC({ difficulty: 'medium', sceneFit: 'okay', level: 3, encounterActive: false })).toBe(13)
     expect(calculateDC({ difficulty: 'medium', sceneFit: 'okay', level: 1, encounterActive: true })).toBe(13)
+  })
+
+  // Heroes gain roughly +1 to the stat they use per level-up, so a DC that also
+  // climbed +1 per level cancelled it out and levelling felt like a treadmill.
+  it('climbs at half the rate heroes gain stats, so levelling feels strong', () => {
+    const base = { difficulty: 'medium' as const, sceneFit: 'okay' as const, encounterActive: false }
+    const atLevel1 = calculateDC({ ...base, level: 1 })
+    const atMaxLevel = calculateDC({ ...base, level: 5 })
+    expect(atMaxLevel - atLevel1).toBe(2)
   })
 })
 

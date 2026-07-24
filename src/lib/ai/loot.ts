@@ -1,3 +1,4 @@
+import { SchemaType, type ResponseSchema } from '@google/generative-ai'
 import { generateJSON } from './gemini'
 import type { AdventureStyle, EquipSlot, Stat } from '@/types/game'
 import type { Language } from '@/lib/ai/language'
@@ -14,6 +15,15 @@ export interface GeneratedLootName {
   name: string
   // English visual description, feeds both scene art and the item's image
   look: string
+}
+
+const LOOT_NAME_SCHEMA: ResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    name: { type: SchemaType.STRING },
+    look: { type: SchemaType.STRING },
+  },
+  required: ['name', 'look'],
 }
 
 const STAT_FLAVOR: Record<Stat, string> = {
@@ -45,5 +55,5 @@ Invent:
 
 Return JSON: { "name": "the item name", "look": "the visual description" }`
 
-  return generateJSON<GeneratedLootName>(prompt)
+  return generateJSON<GeneratedLootName>(prompt, LOOT_NAME_SCHEMA)
 }

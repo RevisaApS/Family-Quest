@@ -29,8 +29,10 @@ export const YOUNG_HERO_DC_RELIEF = 2
 export interface DCInput {
   difficulty: Difficulty
   sceneFit: SceneFit
-  // Heroes get stronger every level, so the DC climbs with them — numbers
-  // grow (which feels great) while the odds stay balanced.
+  // Heroes get stronger every level, so the DC climbs with them — numbers grow
+  // (which feels great) while the odds stay balanced. It climbs at HALF the
+  // rate they gain stats, so levelling up genuinely makes them feel stronger
+  // instead of running on a treadmill.
   level: number
   encounterActive: boolean
   // The acting player's real age (from onboarding)
@@ -44,7 +46,7 @@ export function calculateDC(input: DCInput): number {
   return (
     DC_BASE[input.difficulty] +
     SCENE_FIT_DC[input.sceneFit] +
-    (input.level - 1) +
+    Math.floor((input.level - 1) / 2) +
     (input.encounterActive ? 1 : 0) -
     youngRelief
   )
