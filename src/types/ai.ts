@@ -1,5 +1,6 @@
 import type { Stat, SceneFit, AdventureStyle, CharacterClass } from './game'
 import type { Language } from '@/lib/ai/language'
+import type { ValueThemeId } from '@/lib/game/values'
 
 export interface GeneratedScene {
   narration: string
@@ -68,6 +69,12 @@ export interface StoryContext {
   } | null
   quest?: { title: string; goal: string; villain?: string; milestonesDone: number } | null
   isFirstScene?: boolean
+  // The adventure's hidden values theme (src/lib/game/values.ts). Prompt
+  // guidance only — the theme is never named in any player-facing text.
+  valueTheme?: ValueThemeId
+  // True when THIS scene carries the act's one dilemma: a tempting shortcut
+  // with a named reward against the harder right thing that gives it up.
+  dilemma?: boolean
   // Quests this family has already finished, oldest first. The chronicle was
   // being written after every victory and never read back, so each adventure
   // started with total amnesia about the last one.

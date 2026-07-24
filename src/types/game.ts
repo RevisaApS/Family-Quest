@@ -1,3 +1,5 @@
+import type { ValueThemeId } from '@/lib/game/values'
+
 export type Stat = 'strength' | 'magic' | 'agility' | 'heart'
 export type CharacterClass = 'warrior' | 'wizard' | 'rogue' | 'ranger'
 export type AdventureStyle = 'whimsical' | 'realistic' | 'dark'
@@ -116,6 +118,12 @@ export interface Quest {
   villain?: string
   // Encounters beaten (0-3); 3 = boss down, quest complete
   milestonesDone: number
+  // The adventure's hidden values theme, picked when the quest is invented.
+  // Rides with the quest so every later scene prompt can reference it and it
+  // survives a reload or a save slot. Never rendered to players.
+  theme?: ValueThemeId
+  // The act (0-2) that has already spent its one dilemma
+  dilemmaAct?: number | null
 }
 
 export interface GameState {
