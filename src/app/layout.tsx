@@ -30,6 +30,22 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Family Quest",
   description: "AI-powered D&D adventures for families",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    // iOS ignores the web manifest when you Add to Home Screen — without this
+    // link the iPad shows a blank screenshot instead of an icon.
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  // Likewise, `display: standalone` in the manifest does nothing on iOS. This
+  // is what makes the home-screen launch run fullscreen with no Safari chrome.
+  appleWebApp: {
+    capable: true,
+    title: "Family Quest",
+    statusBarStyle: "black-translucent",
+  },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

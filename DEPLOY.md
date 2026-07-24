@@ -4,64 +4,74 @@
 **GitHub (private):** https://github.com/StevenValentin/family-quest
 **Vercel project:** family-quest (team: stevenvalentin-vismacoms-projects)
 
-## ⚠️ RPG update (July 2026): redeploy needed
+## Deploying
 
-The RPG update (scene images, levels, skills, loot, boss fights, sounds) only
-goes live after a redeploy from a machine with the Vercel login:
+**Pushing to `main` deploys to production.** The GitHub–Vercel connection is
+live: a push produces a Ready production deployment roughly 30 seconds later,
+with no CLI step. Treat `git push origin main` as "publish".
 
 ```bash
-git pull
+git push origin main            # this IS the deploy
+vercel ls family-quest --prod   # confirm the new build went Ready
+```
+
+If you ever need to deploy without pushing (a local-only experiment, or GitHub
+being down):
+
+```bash
 vercel deploy --prod --yes
 ```
 
-Scene images use `gemini-3-pro-image-preview` (Nano Banana Pro) and fall back
-to `gemini-2.5-flash-image` — both use the same `GOOGLE_AI_API_KEY`. If images
-don't appear, the story still works; check the Vercel function logs for which
-image model failed.
+## Preflight before a session
 
-## ⚠️ Before the vacation: 2 manual steps
-
-The app is deployed but **cannot generate stories yet** — both Google API keys
-in `.env.local` are invalid (Google rejects them with API_KEY_INVALID).
-
-### 1. Create a fresh Google AI API key
-
-1. Go to https://aistudio.google.com/ → **Get API key** → create key.
-2. Paste it into `family-quest/.env.local` as `GOOGLE_AI_API_KEY=...` (for local play).
-3. Add the same key in Vercel: https://vercel.com/stevenvalentin-vismacoms-projects/family-quest/settings/environment-variables
-   — name `GOOGLE_AI_API_KEY`, environment **Production**.
-
-### 2. Redeploy and verify
+Run this the night before you play. It calls the real Gemini API through the
+app's own code, so it catches an expired key, a renamed model, or a scene that
+comes back unparseable:
 
 ```bash
-cd family-quest
-vercel deploy --prod --yes        # redeploy so the env var takes effect
-
-npm run dev                       # in one terminal
-python3 ../tools/smoke_test_ai.py # in another — must print ALL STEPS PASSED
+set -a && . ./.env.local && set +a && npx vitest run tests/integration
 ```
 
-Then open https://family-quest-xi.vercel.app on the iPad and play one full
-turn (scene → action → dice → outcome) before you pack.
+Six checks must pass. Without a key in the environment the suite skips itself,
+so plain `npx vitest run` (108 unit tests) stays offline and free.
 
-## How deploys work now
+Then open the live URL on the iPad and play one full turn — scene → action →
+dice → outcome.
 
-- Deploys are pushed **from your laptop** with `vercel deploy --prod --yes`.
-- Auto-deploy on git push is NOT set up: your Vercel account has no GitHub
-  login connection. Optional fix (dashboard → Settings → Git → connect GitHub),
-  not needed for the vacation.
+## Models
 
-## iPad setup at the summer house
+| Use | Model | Notes |
+|-----|-------|-------|
+| Story, actions, outcomes, epilogue | `gemini-3.5-flash` | Thinking is disabled — three of these run per turn and thinking tripled the wait for no gain in quality |
+| Scene and item art | `gemini-3-pro-image-preview` | Falls back to `gemini-2.5-flash-image` |
+
+All of them use the same `GOOGLE_AI_API_KEY`. If images don't appear the story
+still works; check the Vercel function logs for which image model failed.
+
+Every JSON call sends a `responseSchema`. Without one this model returns
+JSON that `JSON.parse` rejects in roughly a quarter of calls, so if you add a
+new AI call, give it a schema.
+
+## iPad setup
 
 1. Open https://family-quest-xi.vercel.app in Safari.
-2. Share → **Add to Home Screen** — the app runs fullscreen (PWA manifest is configured).
-3. Adventures save to that device's browser storage. Keep using the same
-   iPad + same browser, and don't clear website data.
+2. Share → **Add to Home Screen**. You get the d20 icon, and it launches
+   fullscreen with no Safari chrome.
+3. Adventures live in that device's browser storage. Same iPad, same browser,
+   and don't clear website data.
+4. Turn off Auto-Lock for the evening (Settings → Display & Brightness →
+   Auto-Lock → Never). The app can't hold the screen awake by itself, and it
+   will sleep mid-story otherwise.
 
 ## Env vars reference
 
 | Variable | Needed? | Where |
 |----------|---------|-------|
 | `GOOGLE_AI_API_KEY` | **Yes — everything depends on it** | `.env.local` + Vercel |
-| `GOOGLE_CLOUD_TTS_API_KEY` | No (TTS is cut for now; code doesn't read it) | — |
+| `GOOGLE_CLOUD_TTS_API_KEY` | No (TTS is cut; no code reads it) | — |
 | `NEXT_PUBLIC_SUPABASE_*` | No (Supabase is not used at runtime) | — |
+
+Add or rotate the key in Vercel at
+https://vercel.com/stevenvalentin-vismacoms-projects/family-quest/settings/environment-variables
+(name `GOOGLE_AI_API_KEY`, environment **Production**), then redeploy so it
+takes effect.
