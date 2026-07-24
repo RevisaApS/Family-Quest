@@ -1,7 +1,8 @@
 import { SchemaType, type ResponseSchema, type Schema } from '@google/generative-ai'
 import { generateJSON } from './gemini'
-import { languageInstruction } from './language'
+import { languageInstruction, type Language } from './language'
 import { pickStorySeed, seedInstruction } from './story-seed'
+import { themeById, type ValueThemeId } from '@/lib/game/values'
 import type { AdventureStyle } from '@/types/game'
 import type { GeneratedScene, StoryContext } from '@/types/ai'
 
@@ -83,6 +84,39 @@ Every scene should feel like progress toward or a twist on this goal.`
   return ''
 }
 
+// The adventure's hidden spine. It shapes WHO the villain is and WHAT the
+// choices cost — and it is never said out loud. Every rule below exists to keep
+// the game from ever teaching a lesson: the kids must only ever meet a story.
+export function valuesInstruction(
+  theme: ValueThemeId | undefined,
+  plantDilemma: boolean,
+  language: Language
+): string {
+  const values = themeById(theme)
+  if (!values) return ''
+
+  const dilemma = plantDilemma
+    ? `
+
+THIS SCENE CARRIES THE CHAPTER'S ONE CHOICE. Build the scene so two ways forward stand there in the world, both real:
+${values.dilemmaGuidance}
+Make the tempting thing concrete and countable — gold, treasure, an open gate, a fight they could walk around — and put it where the heroes can see it. Make the harder way cost exactly that thing. Do NOT resolve it: end the narration with both paths open, and ask THE WHOLE ROOM, not one child: ${language === 'da' ? 'write it as "Hvad gør I?" — second person PLURAL, never "Hvad gør du?"' : 'address them as a group ("What do you do?"), never one child'}.
+Never hint which way is right. No character advises them, no adjective judges either path, and neither path is safe.`
+    : ''
+
+  return `THIS ADVENTURE'S HIDDEN SPINE — for you only, NEVER for the players:
+${values.antiVirtue}
+That is the villain's MOTIVE AND HABITS, not their costume. If this scene's raw material already fixes what kind of villain this is (an archetype, a setting, a stake), keep that shape and make this what they DO with it — a clockwork tyrant and a lonely giant can both run on the same appetite. Any example above is illustrative only; never copy it over the villain this adventure already has. Build their servants and the world they have made around it. It shows ONLY in what people do and what the heroes see — never in an explanation.
+
+IRON RULES (breaking one ruins the whole adventure):
+- NEVER state a moral, a lesson or a point. Not in narration, not in dialogue, not as a closing line.
+- NEVER name a value or a virtue (no words like patience, calm, self-control, kindness-as-a-lesson, "the right thing").
+- NO wise mentor, elder, spirit or narrator who explains what the heroes should learn. No "you see, what really matters is...".
+- The idea is NEVER named in the quest title, the quest goal or the villain's name — those name a place, a rescue, a monster. Never anything like "The Tale of Control".
+- If a sentence could be read as teaching, cut it and write something happening instead.
+- QUIET PAYBACK, RARELY: if "Story So Far" shows the heroes gave something up or helped someone at a cost, that may come back and help them now — unpredictably, not every time, and never announced or explained as a reward.${dilemma}`
+}
+
 function encounterInstruction(context: StoryContext): string {
   switch (context.encounterPhase) {
     case 'arriving-monster':
@@ -158,6 +192,8 @@ ${legendInstruction(context)}
 ${questInstruction(context)}
 
 ${encounterInstruction(context)}
+
+${valuesInstruction(context.valueTheme, !!context.dilemma, context.language)}
 
 KEEP IT FRESH: move the story somewhere new. Do not reuse a location, creature, phrase or opening word from "Story So Far", and do not restate what just happened — start from the consequence of it.
 
