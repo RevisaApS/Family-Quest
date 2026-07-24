@@ -38,6 +38,7 @@ import { toLootItem, type ShopItem } from '@/lib/game/shop'
 import { potionDefinition, HEAL_POTION_HP, LUCK_POTION_BONUS, type PotionDefinition } from '@/lib/game/potions'
 import { toPet, type PetDefinition } from '@/lib/game/pets'
 import { turnStatsForPlayer, type CompletedAdventure } from '@/lib/game/chronicle'
+import { actIndex, shouldPlantDilemma, type ValueThemeId } from '@/lib/game/values'
 import type { GeneratedEpilogue } from '@/lib/ai/epilogue'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
 import { cn } from '@/lib/utils'
@@ -87,6 +88,7 @@ export default function PlayPage() {
     heroes, encounter, quest, initHeroes, updateHero, setEncounter, setQuest,
     diceInventory, soundEnabled, setSoundEnabled: setSoundPref, startNewAdventure,
     shopHintSeen, setShopHintSeen, chronicle,
+    pickAdventureTheme, markDilemmaPlanted,
   } = useGameStore()
   const {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
@@ -143,6 +145,12 @@ export default function PlayPage() {
   const chronicleRecordedRef = useRef(false)
   // Pre-roll snapshot so Second Chance / Rally can re-resolve the turn cleanly
   const preRollRef = useRef<{ hero: HeroState; encounter: EncounterState | null } | null>(null)
+  // The values layer: the theme picked for THIS adventure (held only until the
+  // opening scene writes it into quest state), and whether the scene now on
+  // screen carries this act's one dilemma. Refs, not state — every AI call in
+  // the turn must read the same value the scene was built with.
+  const pickedThemeRef = useRef<ValueThemeId | null>(null)
+  const dilemmaRef = useRef(false)
 
   // Sound engine follows the persisted preference
   useEffect(() => { setSoundEnabled(soundEnabled) }, [soundEnabled])
@@ -201,6 +209,10 @@ export default function PlayPage() {
       : null,
     quest: quest ?? null,
     isFirstScene,
+    // The adventure's hidden spine, and whether this scene carries its act's
+    // dilemma. Prompt guidance only — never rendered anywhere.
+    valueTheme: quest?.theme ?? pickedThemeRef.current ?? undefined,
+    dilemma: dilemmaRef.current,
     // The last few quests this family finished, so the DM can call back to
     // villains they've already beaten instead of starting from nothing
     pastAdventures: chronicle.slice(-3).map(r => ({ questTitle: r.questTitle, villain: r.villain })),
@@ -310,9 +322,26 @@ export default function PlayPage() {
       }
     }
 
+    // The values layer, decided before the prompt is built. The theme is picked
+    // once, at quest invention, and then lives in quest state; the dilemma is
+    // scheduled deterministically — one per act, never during an encounter.
+    if (isFirstScene && !pickedThemeRef.current) {
+      pickedThemeRef.current = pickAdventureTheme().id
+    }
+    const act = actIndex(quest?.milestonesDone ?? 0)
+    dilemmaRef.current = shouldPlantDilemma({
+      milestonesDone: quest?.milestonesDone ?? 0,
+      lastDilemmaAct: quest?.dilemmaAct ?? null,
+      encounterPhase: currentEncounterPhase(),
+      isFirstScene,
+      hasTheme: !!(quest?.theme ?? pickedThemeRef.current),
+    })
+
     const context = buildStoryContext()
     const scene = await fetchScene(context)
     if (scene) {
+      // This act has now spent its dilemma, even across a reload
+      if (dilemmaRef.current) markDilemmaPlanted(act)
       setNarration(scene.narration)
       setCurrentSceneText(scene.narration)
       setGamePhase('scene')
@@ -330,6 +359,8 @@ export default function PlayPage() {
           goal: scene.questGoal?.trim() || '',
           villain: scene.villainName?.trim() || undefined,
           milestonesDone: 0,
+          theme: pickedThemeRef.current ?? undefined,
+          dilemmaAct: null,
         })
       } else if (context.encounterPhase === 'arriving-monster') {
         setEncounter(createEncounter('monster', scene.encounterName?.trim() || fallbackMonster, quest?.milestonesDone ?? 1, partySize))
@@ -354,7 +385,7 @@ export default function PlayPage() {
     } else {
       setRetryFn(() => () => { loadScene() })
     }
-  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, characters, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest])
+  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, characters, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest, isFirstScene, currentEncounterPhase, pickAdventureTheme, markDilemmaPlanted])
 
   // Load actions for current scene
   const loadActions = useCallback(async () => {
@@ -460,6 +491,8 @@ export default function PlayPage() {
       questTitle: finishedQuest.title,
       questGoal: finishedQuest.goal,
       villain: finishedQuest.villain,
+      // Lets the closing award find the moment a hero paid for a choice
+      valueTheme: finishedQuest.theme,
       storyHistory: state.storyHistory,
       heroes: heroContexts,
     }).then(result => {

@@ -128,6 +128,21 @@ const STRINGS = {
   languageLabel: { da: 'Sprog', en: 'Language' },
   continueToCharacters: { da: 'Videre til heltene', en: 'Continue to Characters' },
 
+  // Settings — the grown-up's corner. Collapsed by default: nothing about the
+  // adventure's idea renders until it's deliberately opened, so the kids
+  // walking through setup never meet it.
+  grownUpShow: { da: '🧭 Til den voksne', en: '🧭 For the grown-up' },
+  grownUpHide: { da: 'Skjul', en: 'Hide' },
+  themeLabel: { da: 'Eventyrets idé', en: 'The adventure’s idea' },
+  themeAuto: { da: 'Automatisk — skifter hvert eventyr', en: 'Automatic — changes each adventure' },
+  themeCurrentLabel: { da: 'Dette eventyr', en: 'This adventure' },
+  themeNotChosenYet: { da: 'Vælges når eventyret begynder', en: 'Chosen when the adventure begins' },
+  themeNextLabel: { da: 'Næste eventyr', en: 'Next adventure' },
+  themeNote: {
+    da: 'Står aldrig nogen steder i spillet. Den former kun skurken og de valg, børnene møder.',
+    en: 'Never appears anywhere in the game. It only shapes the villain and the choices the kids meet.',
+  },
+
   // Style / difficulty option names
   styleWhimsical: { da: 'Eventyrlig', en: 'Whimsical' },
   styleEpic: { da: 'Episk', en: 'Epic' },

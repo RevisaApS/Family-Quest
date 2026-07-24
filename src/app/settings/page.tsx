@@ -12,6 +12,7 @@ import { DifficultyOption } from '@/components/onboarding/difficulty-option'
 import { StepIndicator } from '@/components/onboarding/step-indicator'
 import { useGameStore } from '@/stores/game-store'
 import { t } from '@/lib/i18n'
+import { VALUE_THEMES, nextTheme, themeById } from '@/lib/game/values'
 import type { AdventureStyle, Difficulty, DiceType } from '@/types/game'
 import { cn } from '@/lib/utils'
 
@@ -19,8 +20,17 @@ const DICE_TYPES: DiceType[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20']
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { adventureStyle, difficulty, dicePreference, language, setSettings, diceInventory, setDiceInventory } = useGameStore()
+  const {
+    adventureStyle, difficulty, dicePreference, language, setSettings, diceInventory, setDiceInventory,
+    quest, themeRotation, themeOverride, setThemeOverride,
+  } = useGameStore()
   const [showInfo, setShowInfo] = useState(false)
+  // The grown-up's corner stays shut until it's tapped — on a shared iPad the
+  // adventure's idea must not be sitting on screen while the kids scroll past.
+  const [showGrownUp, setShowGrownUp] = useState(false)
+
+  const activeTheme = themeById(quest?.theme)
+  const upcomingTheme = nextTheme(themeRotation, themeOverride)
 
   const adjustDice = (die: DiceType, delta: number) => {
     setDiceInventory({
@@ -169,6 +179,58 @@ export default function SettingsPage() {
           <Button size="lg" className="w-full" onClick={() => router.push('/characters')}>
             {t('continueToCharacters', language)}
           </Button>
+
+          {/* The grown-up's corner: which idea this adventure quietly carries.
+              Nothing here is ever shown to the players. */}
+          <div className="pt-2 text-center">
+            <button
+              onClick={() => setShowGrownUp(!showGrownUp)}
+              className="text-xs text-muted-foreground underline"
+            >
+              {showGrownUp ? t('grownUpHide', language) : t('grownUpShow', language)}
+            </button>
+          </div>
+
+          {showGrownUp && (
+            <div className="bg-card/20 rounded-xl p-4 border border-border/40 space-y-3 text-left">
+              <Label className="text-sm">{t('themeLabel', language)}</Label>
+
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">{t('themeCurrentLabel', language)}:</span>{' '}
+                {activeTheme ? activeTheme[language] : t('themeNotChosenYet', language)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">{t('themeNextLabel', language)}:</span>{' '}
+                {upcomingTheme[language]}
+              </p>
+
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => setThemeOverride(null)}
+                  className={cn(
+                    'w-full rounded-lg border p-2 text-left text-xs transition-colors',
+                    themeOverride === null ? 'border-primary bg-primary/10' : 'border-border bg-card'
+                  )}
+                >
+                  {t('themeAuto', language)}
+                </button>
+                {VALUE_THEMES.map(theme => (
+                  <button
+                    key={theme.id}
+                    onClick={() => setThemeOverride(theme.id)}
+                    className={cn(
+                      'w-full rounded-lg border p-2 text-left text-xs transition-colors',
+                      themeOverride === theme.id ? 'border-primary bg-primary/10' : 'border-border bg-card'
+                    )}
+                  >
+                    {theme[language]}
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-[0.7rem] text-muted-foreground italic">{t('themeNote', language)}</p>
+            </div>
+          )}
         </motion.div>
       </PageContainer>
     </>
