@@ -5,6 +5,7 @@ import type {
   EncounterState, Quest, DiceInventory,
 } from '@/types/game'
 import { createHero } from '@/lib/game/rpg'
+import { nextTheme, type ValueTheme, type ValueThemeId } from '@/lib/game/values'
 import type { CompletedAdventure } from '@/lib/game/chronicle'
 import type { Language } from '@/lib/ai/language'
 
@@ -89,6 +90,19 @@ interface GameStore {
   updateHero: (hero: HeroState) => void
   setEncounter: (encounter: EncounterState | null) => void
   setQuest: (quest: Quest | null) => void
+
+  // The values layer (src/lib/game/values.ts). The rotation pointer walks all
+  // four ideas before repeating; the override is the grown-up's aim-it-at-this
+  // slot and always wins. Neither is ever shown to the kids.
+  themeRotation: number
+  themeOverride: ValueThemeId | null
+  setThemeOverride: (theme: ValueThemeId | null) => void
+  // Picks this adventure's theme and advances the rotation (an override doesn't
+  // consume a rotation step, so the cycle resumes where it left off).
+  pickAdventureTheme: () => ValueTheme
+  // One dilemma per act: remembers which act already spent its one
+  markDilemmaPlanted: (act: number) => void
+
   updateAdventureState: (state: Partial<{
     currentScene: string
     storyHistory: string[]
@@ -159,7 +173,7 @@ const upsertCurrent = (
 
 export const useGameStore = create<GameStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       _hasHydrated: false,
 
       players: [],
@@ -222,6 +236,20 @@ export const useGameStore = create<GameStore>()(
       })),
       setEncounter: (encounter) => set({ encounter }),
       setQuest: (quest) => set({ quest }),
+
+      themeRotation: 0,
+      themeOverride: null,
+      setThemeOverride: (theme) => set({ themeOverride: theme }),
+      pickAdventureTheme: () => {
+        const { themeRotation, themeOverride } = get()
+        const theme = nextTheme(themeRotation, themeOverride)
+        if (!themeOverride) set({ themeRotation: themeRotation + 1 })
+        return theme
+      },
+      markDilemmaPlanted: (act) => set((state) => (
+        state.quest ? { quest: { ...state.quest, dilemmaAct: act } } : state
+      )),
+
       updateAdventureState: (updates) => set((prev) => ({ ...prev, ...updates })),
       resetAdventure: () => set({
         currentScene: '',
@@ -285,13 +313,15 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'family-quest-storage',
-      version: 6,
+      version: 7,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
       // v1 predates the RPG update (heroes, boss, sound).
       // v2 predates the gold economy.
       // v3 predates d20/quest arc (encounter replaces boss, powers, dice inventory).
       // v4 predates teamwork/potions/pets (assist, comeback, potion backpack).
+      // v5 predates the Hall of Heroes chronicle.
+      // v6 predates the values layer (theme rotation + override).
       migrate: (persisted, version) => {
         let state = persisted as GameStore & { boss?: EncounterState | null }
         if (version < 1) {
@@ -325,6 +355,17 @@ export const useGameStore = create<GameStore>()(
         }
         if (version < 6) {
           state = { ...state, chronicle: [] }
+        }
+        if (version < 7) {
+          state = {
+            ...state,
+            themeRotation: state.themeRotation ?? 0,
+            themeOverride: state.themeOverride ?? null,
+            // A quest already in progress keeps NO theme: its villain was
+            // invented without one, and back-filling would put a spine on an
+            // adventure that never had it. The next new quest starts the cycle.
+            quest: state.quest ? { ...state.quest, dilemmaAct: state.quest.dilemmaAct ?? null } : state.quest,
+          }
         }
         return state
       },
