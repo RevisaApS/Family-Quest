@@ -68,4 +68,8 @@ export interface StoryContext {
   } | null
   quest?: { title: string; goal: string; villain?: string; milestonesDone: number } | null
   isFirstScene?: boolean
+  // Quests this family has already finished, oldest first. The chronicle was
+  // being written after every victory and never read back, so each adventure
+  // started with total amnesia about the last one.
+  pastAdventures?: Array<{ questTitle: string; villain?: string }>
 }

@@ -16,9 +16,11 @@ const REPEATS = 5
 const context: StoryContext = {
   adventureStyle: 'realistic',
   language: 'da',
+  // The real on-disk format written by handleContinue: bracketed meta, then
+  // pure story-language prose.
   storyHistory: [
-    'Ravn sneg sig langs muren mod porten og nåede den uden en lyd.',
-    'Storm sprængte låsen med en ildkugle, men et brøl lød inde fra borgen.',
+    '[Ravn · Jeg sniger mig langs muren · ✓] Ravn gled gennem skyggerne som en kat og nåede porten uden en lyd.',
+    '[Storm · Jeg sprænger låsen med en ildkugle · ~] Låsen sprang op, men et brøl lød dybt inde fra borgen.',
   ],
   characters: [
     {
@@ -52,6 +54,9 @@ describe.skipIf(!hasKey)('live Gemini calls', () => {
       expect(scene.narration.length).toBeGreaterThan(20)
       expect(scene.imagePrompt.length).toBeGreaterThan(20)
       expect(['p-lucas', 'p-mason']).toContain(scene.suggestedNextPlayer)
+      // The story-memory lines are bracketed meta — the DM must not copy that
+      // shape into what the family actually hears read aloud.
+      expect(scene.narration).not.toMatch(/\[.+·.+\]/)
     }
   }, 120_000)
 
@@ -81,6 +86,26 @@ describe.skipIf(!hasKey)('live Gemini calls', () => {
       expect(['good', 'okay', 'risky']).toContain(action.sceneFit)
       expect(action.text.trim()).toBeTruthy()
     }
+  }, 60_000)
+
+  it('calls back to villains the family already beat', async () => {
+    const scene = await generateScene({
+      ...context,
+      isFirstScene: true,
+      storyHistory: [],
+      quest: null,
+      pastAdventures: [
+        { questTitle: 'Solstenens Vogtere', villain: 'Skyggeherren Malakor' },
+        { questTitle: 'Frostkongens Fald', villain: 'Frostkongen' },
+      ],
+    })
+    console.log('\n--- opening scene for returning heroes ---\n' + scene.narration + '\n')
+    // The legend is a hook, not a mandate, so assert it landed somewhere:
+    // either an old villain is named, or the heroes are greeted as known.
+    const text = scene.narration.toLowerCase()
+    const nodsToThePast = ['malakor', 'frostkongen', 'helt', 'kender', 'ry', 'legend', 'igen']
+      .some(marker => text.includes(marker))
+    expect(nodsToThePast).toBe(true)
   }, 60_000)
 
   it('narrates an outcome as plain prose', async () => {

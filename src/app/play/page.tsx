@@ -50,7 +50,10 @@ import { Input } from '@/components/ui/input'
 import type { GeneratedAction, StoryContext, EncounterPhase } from '@/types/ai'
 import type { OutcomeType, Skill, CritType, HeroState, EncounterState } from '@/types/game'
 
-const MAX_STORY_HISTORY = 10
+// A quest runs ~23 turns. At 10 the epilogue's slice(-8) could already have
+// lost chapter 1, so the closing tale forgot how the family set out. Turn
+// summaries are compact now, so a longer window is cheap.
+const MAX_STORY_HISTORY = 16
 
 interface PendingLevelUp {
   playerId: string
@@ -83,7 +86,7 @@ export default function PlayPage() {
     saveAdventure, savedAdventures, activeAdventureId,
     heroes, encounter, quest, initHeroes, updateHero, setEncounter, setQuest,
     diceInventory, soundEnabled, setSoundEnabled: setSoundPref, startNewAdventure,
-    shopHintSeen, setShopHintSeen,
+    shopHintSeen, setShopHintSeen, chronicle,
   } = useGameStore()
   const {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
@@ -198,7 +201,10 @@ export default function PlayPage() {
       : null,
     quest: quest ?? null,
     isFirstScene,
-  }), [adventureStyle, storyHistory, selectedPlayers, characters, heroes, currentPlayer, language, encounter, quest, currentEncounterPhase, isFirstScene])
+    // The last few quests this family finished, so the DM can call back to
+    // villains they've already beaten instead of starting from nothing
+    pastAdventures: chronicle.slice(-3).map(r => ({ questTitle: r.questTitle, villain: r.villain })),
+  }), [adventureStyle, storyHistory, selectedPlayers, characters, heroes, currentPlayer, language, encounter, quest, currentEncounterPhase, isFirstScene, chronicle])
 
   const heroImageDescriptions = useCallback((): string[] =>
     selectedPlayers
@@ -690,8 +696,12 @@ export default function PlayPage() {
   }
 
   const handleContinue = () => {
-    // Append turn summary to story history
-    const turnSummary = `${currentPlayer.name}'s character ${currentCharacter.name} chose to ${selectedAction?.text}. Using ${selectedAction?.stat}, they ${outcomeType === 'success' ? 'succeeded' : outcomeType === 'partial' ? 'partially succeeded' : 'faced a twist'}. ${outcomeNarrative}`
+    // One line of story memory per turn. The meta sits in brackets and the
+    // prose stays purely in the story language — the old format wrapped Danish
+    // text in English sentences ("chose to", "Using", "succeeded") and fed that
+    // back into every prompt, which invites English into the output.
+    const outcomeTag = outcomeType === 'success' ? '✓' : outcomeType === 'partial' ? '~' : '✗'
+    const turnSummary = `[${currentCharacter.name} · ${selectedAction?.text} · ${outcomeTag}] ${outcomeNarrative}`
 
     const newStoryHistory = [...storyHistory, turnSummary].slice(-MAX_STORY_HISTORY)
     const newTurnHistory = [...turnHistory, {

@@ -69,8 +69,8 @@ The quest: "${context.questTitle}" — ${context.questGoal}
 The heroes:
 ${context.heroes.map(describeHeroForEpilogue).join('\n')}
 
-What happened (last chapters):
-${context.storyHistory.slice(-8).join('\n')}
+What happened, oldest first:
+${context.storyHistory.join('\n')}
 
 Write the epilogue. Return JSON:
 {

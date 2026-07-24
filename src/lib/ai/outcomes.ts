@@ -30,6 +30,10 @@ export async function generateOutcome(context: OutcomeContext): Promise<string> 
 ${languageInstruction(context.storyContext.language, 'text')}
 
 Adventure Style: ${context.storyContext.adventureStyle}
+
+What happened just before (oldest first):
+${context.storyContext.storyHistory.slice(-3).join('\n') || 'This is the first thing to happen.'}
+
 Current Scene: ${context.currentScene}
 Character: ${currentCharacter?.characterName} the ${currentCharacter?.class}
 Action Attempted: ${context.actionChosen}
@@ -43,7 +47,8 @@ ${context.damageTaken ? `The hero also gets hurt in the process (a bump, a scrap
 ${context.crit === 'crit' ? 'THE ROLL WAS A NATURAL 20 — describe a SPECTACULAR, legendary success that will be retold at the dinner table.' : ''}
 ${context.crit === 'fumble' ? 'THE ROLL WAS A NATURAL 1 — describe a COMICAL fumble (slipping, tangled cape, startled chicken). Funny, never humiliating.' : ''}
 
-Write 2-3 sentences describing what happens. Be vivid and engaging. Don't include dice numbers or game mechanics - just tell the story.`
+Write 2-3 sentences describing what happens. Be vivid and engaging. Don't include dice numbers or game mechanics - just tell the story.
+Follow on from what just happened rather than restating the scene, and don't reuse the imagery or opening words of the lines above.`
 
   return generateText(prompt)
 }

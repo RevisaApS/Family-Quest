@@ -40,6 +40,17 @@ const CHAPTER_BEATS = [
   `CHAPTER 3 — THE CONFRONTATION: the villain's lair is near. Scenes grow tenser and darker; everything builds toward the final showdown.`,
 ]
 
+// The family's own history, so a new quest can open by acknowledging the last
+// one. Nothing here is required reading for the model — it's a hook to pull on.
+function legendInstruction(context: StoryContext): string {
+  const past = context.pastAdventures ?? []
+  if (past.length === 0) return ''
+  const beaten = past
+    .map(a => (a.villain ? `${a.villain} (in "${a.questTitle}")` : `"${a.questTitle}"`))
+    .join(', ')
+  return `THE FAMILY'S LEGEND: these heroes have already won ${past.length} quest${past.length > 1 ? 's' : ''} — they defeated ${beaten}. They are known for it. Nod to that history when it fits: a villager recognises them, the new villain has heard the name of the one they felled, an old enemy's servant bears a grudge. Never contradict it, and never re-run an old quest.`
+}
+
 function questInstruction(context: StoryContext): string {
   if (context.isFirstScene) {
     return `THIS IS THE OPENING SCENE — the call to adventure. Three extra jobs:
@@ -124,13 +135,17 @@ ${context.characters.map(describeHero).join('\n')}
 Weave the heroes' powers and equipment into the story when it fits — kids love hearing their gear mentioned.
 
 Story So Far:
-${context.storyHistory.slice(-5).join('\n') || 'The adventure is just beginning.'}
+${context.storyHistory.slice(-6).join('\n') || 'The adventure is just beginning.'}
 
 Current Player: ${currentCharacter?.playerName} as ${currentCharacter?.characterName}
+
+${legendInstruction(context)}
 
 ${questInstruction(context)}
 
 ${encounterInstruction(context)}
+
+KEEP IT FRESH: move the story somewhere new. Do not reuse a location, creature, phrase or opening word from "Story So Far", and do not restate what just happened — start from the consequence of it.
 
 Generate the next scene. Return JSON:
 {
