@@ -7,12 +7,51 @@
 
 import { idbGet, idbPut, PORTRAITS_STORE } from './idb'
 
-export async function savePortrait(playerId: string, dataUrl: string): Promise<void> {
-  await idbPut(PORTRAITS_STORE, playerId, dataUrl)
+// Bump whenever heroVisualDescription changes what a hero looks like, so
+// portraits painted by the old recipe get repainted instead of quietly
+// reused for the rest of the family's adventures.
+//
+// v2: heroes start empty-handed. v1 portraits handed out free class gear —
+// the warrior's sword and shield, the wizard's staff — and since a portrait
+// is the reference image for every later scene, that gear kept reappearing
+// in the paintings no matter what the hero actually owned.
+export const PORTRAIT_RECIPE_VERSION = 2
+
+interface StoredPortrait {
+  dataUrl: string
+  recipeVersion: number
 }
 
+export interface PortraitEntry {
+  dataUrl: string
+  // Painted by an older recipe: safe to show, but repaint before it feeds
+  // a scene image.
+  stale: boolean
+}
+
+export async function savePortrait(playerId: string, dataUrl: string): Promise<void> {
+  await idbPut<StoredPortrait>(PORTRAITS_STORE, playerId, {
+    dataUrl,
+    recipeVersion: PORTRAIT_RECIPE_VERSION,
+  })
+}
+
+// Portraits saved before versioning existed are bare data URL strings, and
+// every one of them predates empty-handed heroes — so they are stale.
+export async function loadPortraitEntry(playerId: string): Promise<PortraitEntry | null> {
+  const stored = await idbGet<StoredPortrait | string>(PORTRAITS_STORE, playerId)
+  if (!stored) return null
+  if (typeof stored === 'string') return { dataUrl: stored, stale: true }
+  if (!stored.dataUrl) return null
+  return { dataUrl: stored.dataUrl, stale: stored.recipeVersion !== PORTRAIT_RECIPE_VERSION }
+}
+
+// A stale portrait counts as no portrait: scenes fall back to the written
+// hero descriptions, which is the soft failure this whole module is built
+// around, rather than smuggling unearned gear into the art.
 export async function loadPortrait(playerId: string): Promise<string | null> {
-  return idbGet(PORTRAITS_STORE, playerId)
+  const entry = await loadPortraitEntry(playerId)
+  return entry && !entry.stale ? entry.dataUrl : null
 }
 
 export async function loadPortraits(playerIds: string[]): Promise<Map<string, string>> {
@@ -20,6 +59,15 @@ export async function loadPortraits(playerIds: string[]): Promise<Map<string, st
     playerIds.map(async id => [id, await loadPortrait(id)] as const)
   )
   return new Map(entries.filter((e): e is [string, string] => !!e[1]))
+}
+
+// Who is due a repaint. Players with no portrait at all are left alone —
+// they chose to skip it.
+export async function stalePortraitIds(playerIds: string[]): Promise<string[]> {
+  const entries = await Promise.all(
+    playerIds.map(async id => [id, await loadPortraitEntry(id)] as const)
+  )
+  return entries.filter(([, entry]) => entry?.stale).map(([id]) => id)
 }
 
 // Downscale to a small square JPEG so a party of four stays well under

@@ -42,7 +42,7 @@ import type { GeneratedEpilogue } from '@/lib/ai/epilogue'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
 import { cn } from '@/lib/utils'
 import { heroVisualDescription, gearLooksFromEquipment } from '@/lib/game/appearance'
-import { loadPortraits } from '@/lib/portraits'
+import { loadPortraits, stalePortraitIds, savePortrait, downscalePortrait } from '@/lib/portraits'
 import { sfx, setSoundEnabled } from '@/lib/sound'
 import { t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
@@ -91,7 +91,7 @@ export default function PlayPage() {
   const {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
     error, fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName,
-    fetchEpilogue,
+    fetchEpilogue, fetchPortrait,
   } = useGameAI()
 
   const selectedPlayers = useMemo(
@@ -236,6 +236,39 @@ export default function PlayPage() {
     if (portraits.length > 0 || selectedPlayers.length > 0) portraitsRef.current = portraits
     return portraits
   }, [selectedPlayers])
+
+  // Portraits painted before heroes started empty-handed still show the free
+  // class gear the family never bought, and a portrait is the reference image
+  // for every scene — so they're already excluded from scene requests above.
+  // Repaint them here in the background: the first scene runs on the written
+  // descriptions alone, and the faces come back a scene or two later instead
+  // of being lost until someone happens to walk through character creation.
+  // The ref runs the sweep once per mount, and there's deliberately no
+  // cleanup that aborts it: under StrictMode's double-invoke, cancelling on
+  // unmount killed the only sweep that ever started. A repaint finishing
+  // after the family navigates away is harmless — the portrait is saved and
+  // waiting next time.
+  const repaintStartedRef = useRef(false)
+  useEffect(() => {
+    if (!_hasHydrated || repaintStartedRef.current || selectedPlayers.length === 0) return
+    repaintStartedRef.current = true
+    ;(async () => {
+      for (const playerId of await stalePortraitIds(selectedPlayers.map(p => p.id))) {
+        const player = selectedPlayers.find(p => p.id === playerId)
+        const char = characters.find(c => c.playerId === playerId)
+        if (!player || !char) continue
+        // Gear-free on purpose: a portrait is the "before" picture that every
+        // item the hero later earns has to be visible against.
+        const url = await fetchPortrait(
+          heroVisualDescription(char.name, char.class, char.gender, player.color, player.age)
+        )
+        if (!url) continue
+        await savePortrait(playerId, await downscalePortrait(url))
+        // Drop the cache so the next scene picks the fresh portrait up.
+        portraitsRef.current = null
+      }
+    })()
+  }, [_hasHydrated, selectedPlayers, characters, fetchPortrait])
 
   // Load scene for current player
   const loadScene = useCallback(async () => {
