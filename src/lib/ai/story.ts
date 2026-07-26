@@ -1,8 +1,14 @@
 import { SchemaType, type ResponseSchema, type Schema } from '@google/generative-ai'
 import { generateJSON } from './gemini'
 import { languageInstruction } from './language'
+import { pickStorySeed, seedInstruction } from './story-seed'
 import type { AdventureStyle } from '@/types/game'
 import type { GeneratedScene, StoryContext } from '@/types/ai'
+
+// Scenes are the one call where sameness is the failure mode, so they run
+// hotter than the default. Held to 1.2: past roughly 1.4 the Danish starts
+// drifting and the model wanders off the quest it just invented.
+const SCENE_TEMPERATURE = 1.2
 
 const STYLE_PROMPTS = {
   whimsical: "Keep the tone gentle and child-friendly for ages 4-7. No scary moments. Problems are solved with creativity and kindness. Use bright, cheerful imagery.",
@@ -53,10 +59,18 @@ function legendInstruction(context: StoryContext): string {
 
 function questInstruction(context: StoryContext): string {
   if (context.isFirstScene) {
+    // Drawn fresh per adventure — this is what stops every quest opening the
+    // same way with the same villain. See ./story-seed.
+    const seed = seedInstruction(
+      pickStorySeed(),
+      (context.pastAdventures ?? []).map(a => a.villain).filter((v): v is string => !!v)
+    )
     return `THIS IS THE OPENING SCENE — the call to adventure. Three extra jobs:
-1. Introduce a memorable QUEST-GIVER (a desperate villager, a scarred old knight, a talking raven — pick something fitting) who hands the family their mission and makes clear what is at stake. NO combat in this scene: the heroes' first choice is about the story, not a fight.
-2. Invent a clear, exciting QUEST the family pursues this whole adventure (find something, rescue someone, break a curse). Return "questTitle" (2-5 words) and "questGoal" (one kid-friendly sentence) in the story language.
-3. Invent the VILLAIN behind it all and have the quest-giver speak their name with dread. Return "villainName" in the story language. The villain must NOT appear in person yet — only their shadow: rumors, traces, fear.`
+1. Introduce the QUEST-GIVER named below, who hands the family their mission and makes clear what is at stake. NO combat in this scene: the heroes' first choice is about the story, not a fight.
+2. Invent a clear, exciting QUEST the family pursues this whole adventure. Return "questTitle" (2-5 words) and "questGoal" (one kid-friendly sentence) in the story language.
+3. Invent the VILLAIN behind it all and have the quest-giver speak their name with dread. Return "villainName" in the story language. The villain must NOT appear in person yet — only their shadow: rumors, traces, fear.
+
+${seed}`
   }
   if (context.quest) {
     const villain = context.quest.villain
@@ -161,5 +175,5 @@ Available player IDs: ${context.characters.map(c => c.playerId).join(', ')}
 
 Make the narration engaging and end with a moment that calls for action.`
 
-  return generateJSON<GeneratedScene>(prompt, sceneSchema(context))
+  return generateJSON<GeneratedScene>(prompt, sceneSchema(context), SCENE_TEMPERATURE)
 }

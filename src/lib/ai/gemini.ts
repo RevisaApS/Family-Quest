@@ -36,10 +36,18 @@ export async function generateText(prompt: string): Promise<string> {
 // returns JSON that JSON.parse rejects roughly a quarter of the time (a
 // doubled closing brace, or an object cut off mid-string), and mid-adventure
 // that surfaced as an error in the kids' faces.
-export async function generateJSON<T>(prompt: string, responseSchema?: ResponseSchema): Promise<T> {
+export async function generateJSON<T>(
+  prompt: string,
+  responseSchema?: ResponseSchema,
+  // Storytelling calls pass a higher temperature: with thinking off, the
+  // default settles onto the same safe phrasing (and the same villain name)
+  // every adventure. The response schema keeps the shape valid regardless.
+  temperature?: number
+): Promise<T> {
   const model = buildModel({
     responseMimeType: 'application/json',
     ...(responseSchema ? { responseSchema } : {}),
+    ...(temperature === undefined ? {} : { temperature }),
   })
 
   let lastError: unknown
