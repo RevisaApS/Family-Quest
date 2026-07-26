@@ -66,6 +66,12 @@ async function generateImage(
   return null
 }
 
+// The kids buy gear and then look for it in the picture, so equipment is the
+// one part of a scene that has to be literally right: everything they earned
+// visible, and nothing they haven't earned handed to them for free.
+const GEAR_RULE =
+  " Equipment accuracy is the most important thing in this picture: paint every item a hero is described as carrying so it is large, unobstructed and instantly recognisable, and never give a hero a weapon, shield, armor, helmet, amulet or boots that their description does not list."
+
 export function buildImagePrompt(
   sceneDescription: string,
   style: AdventureStyle,
@@ -74,10 +80,11 @@ export function buildImagePrompt(
 ): string {
   const heroes = heroDescriptions.length
     ? hasReferencePortraits
-      ? ` The heroes in this scene are the characters shown in the attached reference portraits: ${heroDescriptions.join('; ')}. Keep each hero's face, hair, outfit and colors EXACTLY as in their reference portrait.`
+      ? ` The heroes in this scene are the characters shown in the attached reference portraits: ${heroDescriptions.join('; ')}. Take each hero's face, hair, skin and body from their reference portrait. The written description above — not the portrait — decides their equipment: ignore any weapon, armor, helmet, jewellery or boots visible in a reference portrait unless the description lists it too.`
       : ` The heroes in this scene: ${heroDescriptions.join('; ')}. Keep each hero's appearance exactly as described.`
     : ''
-  return `${BASE_STYLE} ${STYLE_TONES[style]} Scene: ${sceneDescription}.${heroes} No text, letters, or UI elements in the image.`
+  const gearRule = heroDescriptions.length ? GEAR_RULE : ''
+  return `${BASE_STYLE} ${STYLE_TONES[style]} Scene: ${sceneDescription}.${heroes}${gearRule} No text, letters, or UI elements in the image.`
 }
 
 export async function generateSceneImage(
@@ -140,11 +147,14 @@ export async function generateItemImage(
 }
 
 // One-off hero portrait made at character creation — becomes the visual
-// anchor for that hero in every later scene image.
+// anchor for that hero in every later scene image. The hero owns nothing at
+// this point, so the portrait must show an empty-handed kid: it is the
+// "before" picture the first bought item gets compared against.
 export async function generateHeroPortrait(heroDescription: string): Promise<string | null> {
   const prompt =
     `${BASE_STYLE} Character portrait, waist-up, centered, looking at the viewer with a confident smile. ` +
     `Subject: ${heroDescription}. Simple softly-lit fantasy background. ` +
+    'Paint only what the description lists — do not add any weapon, shield, armor, helmet or jewellery that it does not mention. ' +
     'Friendly and heroic, suitable for children. No text or letters in the image.'
   return generateImage([{ text: prompt }], '1:1')
 }

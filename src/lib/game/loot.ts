@@ -54,8 +54,10 @@ const FALLBACK_NAMES: Record<EquipSlot, Record<Stat, Record<Language, string>>> 
 }
 
 // Generic English look for AI-named chest loot, so found gear also shows
-// up on the hero in scene images.
-const GENERIC_LOOK: Record<EquipSlot, string> = {
+// up on the hero in scene images. Also the fallback for any equipped item
+// that reached the hero without a look of its own — a filled slot must never
+// be painted as an empty one.
+export const GENERIC_LOOK: Record<EquipSlot, string> = {
   weapon: 'an enchanted glowing weapon',
   armor: 'gleaming enchanted armor',
   helmet: 'an ornate enchanted helmet',

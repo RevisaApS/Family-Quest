@@ -244,8 +244,10 @@ describe('appearance', () => {
     const desc = heroVisualDescription('Freja', 'warrior', 'female', 'hsl(210, 70%, 50%)', 9)
     expect(desc).toContain('Freja')
     expect(desc).toContain('young girl')
-    expect(desc).toContain('knight')
+    expect(desc).toContain('warrior')
     expect(desc).toContain('blue cape')
+    // Heroes own nothing until they buy or loot it — see appearance.test.ts
+    expect(desc).toContain('carrying nothing at all')
   })
 
   it('keeps grown-ups grown up', () => {

@@ -41,7 +41,7 @@ import { turnStatsForPlayer, type CompletedAdventure } from '@/lib/game/chronicl
 import type { GeneratedEpilogue } from '@/lib/ai/epilogue'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
 import { cn } from '@/lib/utils'
-import { heroVisualDescription } from '@/lib/game/appearance'
+import { heroVisualDescription, gearLooksFromEquipment } from '@/lib/game/appearance'
 import { loadPortraits } from '@/lib/portraits'
 import { sfx, setSoundEnabled } from '@/lib/sound'
 import { t } from '@/lib/i18n'
@@ -211,18 +211,16 @@ export default function PlayPage() {
       .map(p => {
         const char = characters.find(c => c.playerId === p.id)
         if (!char) return null
-        const base = heroVisualDescription(char.name, char.class, char.gender, p.color, p.age)
-        // Equipped gear shows up on the hero in every scene: buy the Golden
-        // Helm and the pictures wear it — and the pet walks alongside
+        // Gear is the whole point of the picture for the kids: heroes start
+        // empty-handed, and every item they buy or loot shows up on them from
+        // that turn on — buy the Golden Helm and the paintings wear it, buy
+        // the Crooked Stick and they're holding it. The pet walks alongside.
         const hero = heroes.find(h => h.playerId === p.id)
-        const gearLooks = Object.values(hero?.equipment ?? {})
-          .filter((i): i is NonNullable<typeof i> => !!i)
-          .map(i => i.look)
-          .filter((l): l is string => !!l)
-        const parts = [base]
-        if (gearLooks.length) parts.push(`equipped with ${gearLooks.join(', ')}`)
-        if (hero?.pet) parts.push(`accompanied by ${hero.pet.look}`)
-        return parts.join(', ')
+        return heroVisualDescription(
+          char.name, char.class, char.gender, p.color, p.age,
+          gearLooksFromEquipment(hero?.equipment ?? {}),
+          hero?.pet?.look
+        )
       })
       .filter((d): d is string => !!d),
   [selectedPlayers, characters, heroes])
