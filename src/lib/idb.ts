@@ -25,10 +25,12 @@ function openDb(): Promise<IDBDatabase> {
   })
 }
 
-export async function idbGet(store: string, key: string): Promise<string | null> {
+// Values are stored as structured clones, so records go in as-is — no JSON
+// round-trip for the megabyte-sized data URLs these stores are full of.
+export async function idbGet<T = string>(store: string, key: string): Promise<T | null> {
   try {
     const db = await openDb()
-    const result = await new Promise<string | null>((resolve, reject) => {
+    const result = await new Promise<T | null>((resolve, reject) => {
       const request = db.transaction(store, 'readonly').objectStore(store).get(key)
       request.onsuccess = () => resolve(request.result ?? null)
       request.onerror = () => reject(request.error)
@@ -40,7 +42,7 @@ export async function idbGet(store: string, key: string): Promise<string | null>
   }
 }
 
-export async function idbPut(store: string, key: string, value: string): Promise<void> {
+export async function idbPut<T = string>(store: string, key: string, value: T): Promise<void> {
   try {
     const db = await openDb()
     await new Promise<void>((resolve, reject) => {
