@@ -5,11 +5,21 @@ import type { SceneFit, Difficulty, OutcomeType, CritType } from '@/types/game'
 // Within PARTIAL_BAND below the DC = partial success.
 // Natural 20 always crits, natural 1 always fumbles.
 
+// The middle setting is where the whole family plays. It sat at 12, which — once
+// heroes are wearing bought gear — meant a 77% success rate and a party that
+// barely took a scratch. 14 puts a real d20 between the plan and the outcome.
 const DC_BASE: Record<Difficulty, number> = {
-  easy: 10,
-  medium: 12,
-  hard: 14,
+  easy: 12,
+  medium: 14,
+  hard: 16,
 }
+
+// The quest tightens as it goes. Gear grows far faster than a hero's level, so
+// without this the last chapter is the easiest one in the adventure.
+export const MILESTONE_DC = 1
+
+// The final fight is the final fight.
+export const BOSS_DC = 1
 
 // Smart choices lower the bar, risky ones raise it
 const SCENE_FIT_DC: Record<SceneFit, number> = {
@@ -35,6 +45,10 @@ export interface DCInput {
   // instead of running on a treadmill.
   level: number
   encounterActive: boolean
+  // Chapters cleared so far — the world gets more dangerous the deeper in you are
+  milestonesDone: number
+  // The last fight of the quest hits a notch harder than the monsters before it
+  bossFight?: boolean
   // The acting player's real age (from onboarding)
   age?: number
 }
@@ -47,7 +61,9 @@ export function calculateDC(input: DCInput): number {
     DC_BASE[input.difficulty] +
     SCENE_FIT_DC[input.sceneFit] +
     Math.floor((input.level - 1) / 2) +
-    (input.encounterActive ? 1 : 0) -
+    (input.encounterActive ? 1 : 0) +
+    input.milestonesDone * MILESTONE_DC +
+    (input.bossFight ? BOSS_DC : 0) -
     youngRelief
   )
 }

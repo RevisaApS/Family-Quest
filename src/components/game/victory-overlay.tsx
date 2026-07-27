@@ -17,6 +17,7 @@ interface VictoryOverlayProps {
   bossName: string
   language: Language
   goldReward?: number
+  xpReward?: number
   // The AI-written storybook epilogue; null/absent when it couldn't be reached
   tale?: { title: string; story: string } | null
   awards?: VictoryAward[]
@@ -26,7 +27,7 @@ interface VictoryOverlayProps {
 }
 
 export function VictoryOverlay({
-  bossName, language, goldReward, tale, awards = [], taleLoading, onKeepPlaying, onNewAdventure,
+  bossName, language, goldReward, xpReward, tale, awards = [], taleLoading, onKeepPlaying, onNewAdventure,
 }: VictoryOverlayProps) {
   useEffect(() => { sfx.victory() }, [])
 
@@ -67,6 +68,16 @@ export function VictoryOverlay({
               className="text-xl font-bold text-primary"
             >
               🪙 +{goldReward} {t('bossGoldReward', language)}
+            </motion.p>
+          )}
+          {!!xpReward && (
+            <motion.p
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.6, type: 'spring' }}
+              className="text-xl font-bold text-primary"
+            >
+              ⭐ +{xpReward} {t('xpForAll', language)}
             </motion.p>
           )}
         </div>

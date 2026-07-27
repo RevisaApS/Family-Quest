@@ -5,19 +5,23 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { t } from '@/lib/i18n'
 import { sfx } from '@/lib/sound'
-import { MONSTER_GOLD_REWARD } from '@/lib/game/rpg'
 import type { Language } from '@/lib/ai/language'
 
 interface MonsterVictoryModalProps {
   monsterName: string
   finisherName: string
+  // The purse this particular monster drops — later monsters pay more
+  goldReward: number
+  xpReward: number
   language: Language
   onContinue: () => void
 }
 
 // Mini celebration when the party takes down a quest monster —
 // the finishing blow gets called out, everyone gets paid.
-export function MonsterVictoryModal({ monsterName, finisherName, language, onContinue }: MonsterVictoryModalProps) {
+export function MonsterVictoryModal({
+  monsterName, finisherName, goldReward, xpReward, language, onContinue,
+}: MonsterVictoryModalProps) {
   useEffect(() => { sfx.fanfare() }, [])
 
   return (
@@ -42,7 +46,8 @@ export function MonsterVictoryModal({ monsterName, finisherName, language, onCon
           <p className="text-lg">
             🏅 <span className="font-bold text-primary">{finisherName}</span> {t('finishingBlow', language)}
           </p>
-          <p className="font-bold text-success">🪙 +{MONSTER_GOLD_REWARD} {t('goldForAll', language)}</p>
+          <p className="font-bold text-success">🪙 +{goldReward} {t('goldForAll', language)}</p>
+          <p className="font-bold text-primary">⭐ +{xpReward} {t('xpForAll', language)}</p>
         </div>
         <Button className="w-full" size="lg" onClick={onContinue}>
           → ⚔️

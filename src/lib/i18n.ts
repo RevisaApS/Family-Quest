@@ -45,6 +45,7 @@ const STRINGS = {
   monsterDefeated: { da: 'Uhyret er besejret!', en: 'Monster defeated!' },
   finishingBlow: { da: 'gav dødsstødet!', en: 'landed the finishing blow!' },
   goldForAll: { da: 'guld til alle', en: 'gold for everyone' },
+  xpForAll: { da: 'erfaring til alle', en: 'XP for everyone' },
   questLabel: { da: 'Eventyret', en: 'The Quest' },
   usePowerLabel: { da: 'Brug kraft', en: 'Use power' },
   yourDice: { da: 'Hvilke terninger har I?', en: 'Which dice do you have?' },

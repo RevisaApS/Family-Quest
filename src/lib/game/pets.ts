@@ -3,7 +3,9 @@ import type { Language } from '@/lib/ai/language'
 
 // Pet companions — the dream purchase kids save up for. Each pet boosts one
 // stat and, via its `look`, walks beside the hero in every generated scene.
-export const PET_PRICE = 15
+// Priced just under a legendary, so bringing home a wolf pup means going
+// without the Flame Blade.
+export const PET_PRICE = 10
 
 export interface PetDefinition {
   id: string

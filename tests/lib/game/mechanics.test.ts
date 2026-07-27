@@ -1,28 +1,44 @@
 import { describe, it, expect } from 'vitest'
-import { calculateDC, resolveD20, requiredRolls, rollD20, PARTIAL_BAND } from '@/lib/game/mechanics'
+import {
+  calculateDC, resolveD20, requiredRolls, rollD20, PARTIAL_BAND,
+  MILESTONE_DC, BOSS_DC,
+} from '@/lib/game/mechanics'
 
 describe('calculateDC', () => {
+  const fresh = { level: 1, encounterActive: false, milestonesDone: 0 }
+
   it('scales with difficulty', () => {
-    expect(calculateDC({ difficulty: 'easy', sceneFit: 'okay', level: 1, encounterActive: false })).toBe(10)
-    expect(calculateDC({ difficulty: 'medium', sceneFit: 'okay', level: 1, encounterActive: false })).toBe(12)
-    expect(calculateDC({ difficulty: 'hard', sceneFit: 'okay', level: 1, encounterActive: false })).toBe(14)
+    expect(calculateDC({ ...fresh, difficulty: 'easy', sceneFit: 'okay' })).toBe(12)
+    expect(calculateDC({ ...fresh, difficulty: 'medium', sceneFit: 'okay' })).toBe(14)
+    expect(calculateDC({ ...fresh, difficulty: 'hard', sceneFit: 'okay' })).toBe(16)
   })
 
   it('smart choices lower the DC, risky ones raise it', () => {
-    const base = { difficulty: 'medium' as const, level: 1, encounterActive: false }
-    expect(calculateDC({ ...base, sceneFit: 'good' })).toBe(10)
-    expect(calculateDC({ ...base, sceneFit: 'risky' })).toBe(14)
+    const base = { ...fresh, difficulty: 'medium' as const }
+    expect(calculateDC({ ...base, sceneFit: 'good' })).toBe(12)
+    expect(calculateDC({ ...base, sceneFit: 'risky' })).toBe(16)
   })
 
   it('rises with level and during battles', () => {
-    expect(calculateDC({ difficulty: 'medium', sceneFit: 'okay', level: 3, encounterActive: false })).toBe(13)
-    expect(calculateDC({ difficulty: 'medium', sceneFit: 'okay', level: 1, encounterActive: true })).toBe(13)
+    expect(calculateDC({ ...fresh, difficulty: 'medium', sceneFit: 'okay', level: 3 })).toBe(15)
+    expect(calculateDC({ ...fresh, difficulty: 'medium', sceneFit: 'okay', encounterActive: true })).toBe(15)
+  })
+
+  // Gear grows much faster than a hero's level does, so without a rising floor
+  // the last chapter would be the easiest one in the whole adventure.
+  it('tightens with every chapter cleared, and the boss hits hardest', () => {
+    const base = { difficulty: 'medium' as const, sceneFit: 'okay' as const, level: 1, encounterActive: true }
+    const firstMonster = calculateDC({ ...base, milestonesDone: 0 })
+    const secondMonster = calculateDC({ ...base, milestonesDone: 1 })
+    const boss = calculateDC({ ...base, milestonesDone: 2, bossFight: true })
+    expect(secondMonster - firstMonster).toBe(MILESTONE_DC)
+    expect(boss - secondMonster).toBe(MILESTONE_DC + BOSS_DC)
   })
 
   // Heroes gain roughly +1 to the stat they use per level-up, so a DC that also
   // climbed +1 per level cancelled it out and levelling felt like a treadmill.
   it('climbs at half the rate heroes gain stats, so levelling feels strong', () => {
-    const base = { difficulty: 'medium' as const, sceneFit: 'okay' as const, encounterActive: false }
+    const base = { ...fresh, difficulty: 'medium' as const, sceneFit: 'okay' as const }
     const atLevel1 = calculateDC({ ...base, level: 1 })
     const atMaxLevel = calculateDC({ ...base, level: 5 })
     expect(atMaxLevel - atLevel1).toBe(2)
