@@ -128,11 +128,14 @@ const STRINGS = {
   languageLabel: { da: 'Sprog', en: 'Language' },
   continueToCharacters: { da: 'Videre til heltene', en: 'Continue to Characters' },
 
-  // Settings — the grown-up's corner. Collapsed by default: nothing about the
-  // adventure's idea renders until it's deliberately opened, so the kids
-  // walking through setup never meet it.
-  grownUpShow: { da: '🧭 Til den voksne', en: '🧭 For the grown-up' },
-  grownUpHide: { da: 'Skjul', en: 'Hide' },
+  // The grown-up's page at /voksen. Unlinked from the app on purpose — the kids
+  // walk through /settings during setup, so the adventure's idea cannot live
+  // there. Reached by typing the address or from a bookmark.
+  grownUpTitle: { da: 'Til den voksne', en: 'For the grown-up' },
+  grownUpSub: {
+    da: 'Kun for dig. Luk siden, før du rækker iPad’en videre.',
+    en: 'Just for you. Close this before you hand the iPad over.',
+  },
   themeLabel: { da: 'Eventyrets idé', en: 'The adventure’s idea' },
   themeAuto: { da: 'Automatisk — skifter hvert eventyr', en: 'Automatic — changes each adventure' },
   themeCurrentLabel: { da: 'Dette eventyr', en: 'This adventure' },
