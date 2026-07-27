@@ -274,11 +274,14 @@ export default function PlayPage() {
         if (!player || !char) continue
         // Gear-free on purpose: a portrait is the "before" picture that every
         // item the hero later earns has to be visible against.
-        const url = await fetchPortrait(
-          heroVisualDescription(char.name, char.class, char.gender, player.color, player.age)
+        const description = heroVisualDescription(
+          char.name, char.class, char.gender, player.color, player.age
         )
+        const url = await fetchPortrait(description)
         if (!url) continue
-        await savePortrait(playerId, await downscalePortrait(url))
+        // Filed under the combination too, so a later trip back through
+        // character creation finds it instead of repainting it.
+        await savePortrait(playerId, await downscalePortrait(url), description)
         // Drop the cache so the next scene picks the fresh portrait up.
         portraitsRef.current = null
       }

@@ -14,7 +14,9 @@ import { LoadingShimmer } from '@/components/layout/loading-shimmer'
 import { useGameStore } from '@/stores/game-store'
 import { useGameAI } from '@/hooks/use-game-ai'
 import { heroVisualDescription } from '@/lib/game/appearance'
-import { savePortrait, loadPortraitEntry, downscalePortrait } from '@/lib/portraits'
+import {
+  savePortrait, loadPortraitEntry, loadPortraitVariant, downscalePortrait,
+} from '@/lib/portraits'
 import { t } from '@/lib/i18n'
 import type { CharacterClass } from '@/types/game'
 import { cn } from '@/lib/utils'
@@ -41,11 +43,24 @@ export default function CharactersPage() {
   const [portraitFailed, setPortraitFailed] = useState(false)
   const { fetchPortrait } = useGameAI()
 
+  // What the hero looks like right now, which is exactly what an image
+  // request would say — so it doubles as the cache key for the painting.
+  const currentDescription = currentPlayer && selectedClass && characterName
+    ? heroVisualDescription(
+        characterName, selectedClass, gender, currentPlayer.color, currentPlayer.age
+      )
+    : null
+
+  // The description behind the portrait currently on screen, so "Paint again"
+  // can tell "repaint this exact hero" from "the hero changed underneath it".
+  const paintedDescriptionRef = useRef<string | null>(null)
+
   // Sync local state from store after hydration completes
   useEffect(() => {
     if (!_hasHydrated || !currentPlayer) return
     const existing = characters.find(c => c.playerId === currentPlayer.id)
     if (existing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- form state seeded from the persisted store
       setSelectedClass(existing.class)
       setCharacterName(existing.name)
       setGender(existing.gender)
@@ -53,6 +68,38 @@ export default function CharactersPage() {
       setCharacterName(currentPlayer.name)
     }
   }, [_hasHydrated]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // `force` is for "paint me a different one" — everything else checks what
+  // this player has already been painted as first.
+  const paintPortrait = async (description: string, force = false) => {
+    if (!currentPlayer || portraitLoading) return
+    const playerId = currentPlayer.id
+
+    if (!force) {
+      const cached = await loadPortraitVariant(playerId, description)
+      if (cached) {
+        paintedDescriptionRef.current = description
+        setPortraitUrl(cached)
+        setPortraitFailed(false)
+        await savePortrait(playerId, cached)
+        return
+      }
+    }
+
+    setPortraitLoading(true)
+    setPortraitFailed(false)
+    const url = await fetchPortrait(description)
+    if (url) {
+      // Downscale once here so scene requests stay small later
+      const small = await downscalePortrait(url)
+      paintedDescriptionRef.current = description
+      setPortraitUrl(small)
+      await savePortrait(playerId, small, description)
+    } else {
+      setPortraitFailed(true)
+    }
+    setPortraitLoading(false)
+  }
 
   // Show a previously generated portrait when revisiting a player. One
   // painted before heroes started empty-handed still shows the free class
@@ -63,8 +110,10 @@ export default function CharactersPage() {
   useEffect(() => {
     if (!currentPlayer) return
     const playerId = currentPlayer.id
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear the previous player's face before their own loads
     setPortraitUrl(null)
     setPortraitFailed(false)
+    paintedDescriptionRef.current = null
     loadPortraitEntry(playerId).then(entry => {
       if (!entry) return
       setPortraitUrl(entry.dataUrl)
@@ -74,37 +123,45 @@ export default function CharactersPage() {
       const saved = characters.find(c => c.playerId === playerId)
       if (saved) {
         repaintedRef.current.add(playerId)
-        paintPortrait(saved.name, saved.class, saved.gender)
+        paintPortrait(heroVisualDescription(
+          saved.name, saved.class, saved.gender, currentPlayer.color, currentPlayer.age
+        ))
       }
     })
   }, [currentPlayer?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const paintPortrait = async (
-    name: string,
-    characterClass: CharacterClass,
-    heroGender: 'male' | 'female' | 'neutral'
-  ) => {
-    if (!currentPlayer || portraitLoading) return
-    setPortraitLoading(true)
-    setPortraitFailed(false)
-    const description = heroVisualDescription(
-      name, characterClass, heroGender, currentPlayer.color, currentPlayer.age
-    )
-    const url = await fetchPortrait(description)
-    if (url) {
-      // Downscale once here so scene requests stay small later
-      const small = await downscalePortrait(url)
-      setPortraitUrl(small)
-      await savePortrait(currentPlayer.id, small)
-    } else {
-      setPortraitFailed(true)
-    }
-    setPortraitLoading(false)
-  }
+  // Changing class, gender or name back to a combination this player has
+  // already been painted as brings that painting straight back — no request,
+  // no wait, no second bill for a picture the family already has. A miss
+  // leaves the old face on screen, same as before.
+  useEffect(() => {
+    if (!currentPlayer || !currentDescription) return
+    if (paintedDescriptionRef.current === currentDescription) return
+    const playerId = currentPlayer.id
+    let cancelled = false
+    loadPortraitVariant(playerId, currentDescription).then(cached => {
+      if (cancelled || !cached) return
+      paintedDescriptionRef.current = currentDescription
+      setPortraitUrl(cached)
+      setPortraitFailed(false)
+      // Promote it back to this player's active portrait, so walking away
+      // now leaves the hero wearing the face that's on screen.
+      savePortrait(playerId, cached)
+    })
+    return () => { cancelled = true }
+  }, [currentPlayer?.id, currentDescription]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGeneratePortrait = () => {
-    if (!selectedClass || !characterName) return
-    paintPortrait(characterName, selectedClass, gender)
+    if (!currentDescription) return
+    paintPortrait(currentDescription)
+  }
+
+  // Only a genuine repaint when the face on screen is already this hero's —
+  // if the class or name moved on, look for a cached painting of the new one
+  // before spending a request.
+  const handlePaintAgain = () => {
+    if (!currentDescription) return
+    paintPortrait(currentDescription, paintedDescriptionRef.current === currentDescription)
   }
 
   const handleContinue = () => {
@@ -212,7 +269,7 @@ export default function CharactersPage() {
                       alt={`${characterName} portrait`}
                       className="w-full max-w-sm mx-auto aspect-square object-cover rounded-lg border-2 border-primary/40 shadow-lg shadow-primary/10"
                     />
-                    <Button variant="outline" className="w-full" onClick={handleGeneratePortrait}>
+                    <Button variant="outline" className="w-full" onClick={handlePaintAgain}>
                       🎨 {t('paintAgain', language)}
                     </Button>
                   </motion.div>
