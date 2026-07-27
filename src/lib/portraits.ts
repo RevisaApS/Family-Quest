@@ -29,11 +29,54 @@ export interface PortraitEntry {
   stale: boolean
 }
 
-export async function savePortrait(playerId: string, dataUrl: string): Promise<void> {
-  await idbPut<StoredPortrait>(PORTRAITS_STORE, playerId, {
-    dataUrl,
-    recipeVersion: PORTRAIT_RECIPE_VERSION,
-  })
+// A portrait is a function of the words that painted it, so the description
+// is the cache key. Mason painting a warrior, trying rogue, then going back
+// to warrior gets his first warrior painting handed straight back instead of
+// the family paying to paint it twice.
+function hashDescription(description: string): string {
+  // FNV-1a, 32-bit. Enough to tell a handful of class/gender/name combos
+  // apart, and stable across reloads — which is the whole point.
+  let hash = 0x811c9dc5
+  for (let i = 0; i < description.length; i++) {
+    hash ^= description.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return (hash >>> 0).toString(36)
+}
+
+// Variants share the portraits store with the active portraits, under their
+// own `variant:` namespace so a player id can never collide with one.
+function variantKey(playerId: string, description: string): string {
+  return `variant:${playerId}:${hashDescription(description)}`
+}
+
+// Passing the description files the portrait under that combination too, so
+// coming back to it later is free. Leave it off when you are only promoting
+// an already-cached painting back to being this player's active one.
+export async function savePortrait(
+  playerId: string,
+  dataUrl: string,
+  description?: string
+): Promise<void> {
+  const record: StoredPortrait = { dataUrl, recipeVersion: PORTRAIT_RECIPE_VERSION }
+  await idbPut<StoredPortrait>(PORTRAITS_STORE, playerId, record)
+  if (description) {
+    await idbPut<StoredPortrait>(PORTRAITS_STORE, variantKey(playerId, description), record)
+  }
+}
+
+// The portrait this player already has for exactly this combination, or null.
+// A variant from an older recipe is no use to anyone — it would hand back the
+// free class gear the repaint machinery exists to get rid of.
+export async function loadPortraitVariant(
+  playerId: string,
+  description: string
+): Promise<string | null> {
+  const stored = await idbGet<StoredPortrait | string>(
+    PORTRAITS_STORE, variantKey(playerId, description)
+  )
+  if (!stored || typeof stored === 'string' || !stored.dataUrl) return null
+  return stored.recipeVersion === PORTRAIT_RECIPE_VERSION ? stored.dataUrl : null
 }
 
 // Portraits saved before versioning existed are bare data URL strings, and

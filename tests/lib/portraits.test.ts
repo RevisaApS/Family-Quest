@@ -10,7 +10,7 @@ vi.mock('@/lib/idb', () => ({
 
 const {
   savePortrait, loadPortrait, loadPortraits, loadPortraitEntry, stalePortraitIds,
-  PORTRAIT_RECIPE_VERSION,
+  loadPortraitVariant, PORTRAIT_RECIPE_VERSION,
 } = await import('@/lib/portraits')
 
 const FRESH = 'data:image/jpeg;base64,fresh'
@@ -63,5 +63,58 @@ describe('portrait recipe versioning', () => {
   it('returns nothing for a player with no portrait', async () => {
     expect(await loadPortraitEntry('nobody')).toBeNull()
     expect(await loadPortrait('nobody')).toBeNull()
+  })
+})
+
+// Mason paints a warrior, tries rogue, then goes back to warrior. The warrior
+// painting he already has should come back instead of being paid for twice.
+describe('portrait variant cache', () => {
+  const WARRIOR = 'Mason, a brave young boy warrior in a plain undyed linen tunic'
+  const ROGUE = 'Mason, a brave young boy rogue in plain dark travelling clothes'
+  const WARRIOR_ART = 'data:image/jpeg;base64,warrior'
+  const ROGUE_ART = 'data:image/jpeg;base64,rogue'
+
+  beforeEach(() => store.clear())
+
+  it('hands back a combination this player was already painted as', async () => {
+    await savePortrait('mason', WARRIOR_ART, WARRIOR)
+    await savePortrait('mason', ROGUE_ART, ROGUE)
+
+    // Both survive the switch — the rogue did not overwrite the warrior.
+    expect(await loadPortraitVariant('mason', WARRIOR)).toBe(WARRIOR_ART)
+    expect(await loadPortraitVariant('mason', ROGUE)).toBe(ROGUE_ART)
+    // ...and the last one painted is still who Mason currently is.
+    expect(await loadPortrait('mason')).toBe(ROGUE_ART)
+  })
+
+  it('misses on a combination nobody painted yet', async () => {
+    await savePortrait('mason', WARRIOR_ART, WARRIOR)
+    expect(await loadPortraitVariant('mason', ROGUE)).toBeNull()
+  })
+
+  it('keeps one player out of another player\'s cache', async () => {
+    await savePortrait('mason', WARRIOR_ART, WARRIOR)
+    expect(await loadPortraitVariant('ellie', WARRIOR)).toBeNull()
+  })
+
+  it('files nothing under a combination when no description is given', async () => {
+    // Promoting a cached painting back to active must not re-file it.
+    await savePortrait('mason', WARRIOR_ART)
+    expect(await loadPortrait('mason')).toBe(WARRIOR_ART)
+    expect(await loadPortraitVariant('mason', WARRIOR)).toBeNull()
+  })
+
+  it('ignores a variant painted by an older recipe', async () => {
+    await savePortrait('mason', WARRIOR_ART, WARRIOR)
+    const key = [...store.keys()].find(k => k.startsWith('variant:'))!
+    store.set(key, { dataUrl: WARRIOR_ART, recipeVersion: PORTRAIT_RECIPE_VERSION - 1 })
+    expect(await loadPortraitVariant('mason', WARRIOR)).toBeNull()
+  })
+
+  it('keeps variant keys out of the active-portrait namespace', async () => {
+    await savePortrait('mason', WARRIOR_ART, WARRIOR)
+    // The sweep walks player ids; a variant must never be mistaken for one.
+    expect([...store.keys()].filter(k => !k.startsWith('variant:'))).toEqual(['mason'])
+    expect(await stalePortraitIds(['mason'])).toEqual([])
   })
 })
