@@ -3,7 +3,7 @@ import { SHOP_CATALOG, shopItemsForSlot, toLootItem } from '@/lib/game/shop'
 import { ALL_SLOTS, fallbackLootName, createLoot } from '@/lib/game/loot'
 import {
   createHero, buyItem, addGold, GOLD_PER_OUTCOME, STARTING_GOLD,
-  BOSS_GOLD_REWARD, MONSTER_GOLD_REWARD, chestGoldAmount, applyTurnOutcome,
+  BOSS_GOLD_REWARD, monsterGoldReward, chestGoldAmount, applyTurnOutcome,
 } from '@/lib/game/rpg'
 
 describe('shop catalog', () => {
@@ -75,28 +75,41 @@ describe('gold economy', () => {
     expect(after.equipment.helmet?.name).toBe('The Golden Helm')
   })
 
-  it('legendary gear is reachable from quest income, before the boss pays out', () => {
-    // A hero banks ~1.4 gold per turn across ~7-8 turns of their own, plus a
-    // share of both monster rewards. The boss's 20 lands after the quest is
-    // already won, so it can't count toward affording anything.
-    const questIncome = Math.round(7.6 * 1.4) + 2 * MONSTER_GOLD_REWARD
+  it('legendary gear is reachable from quest income — but only if you save', () => {
+    // Simulated over 4000 adventures: a hero banks ~16 gold before the boss
+    // arrives (own successes, a share of both monsters, the odd chest). The
+    // boss's 20 lands after the quest is already won, so it can't count.
+    const questIncome = 16
     const cheapestLegendary = Math.min(...SHOP_CATALOG.filter(i => i.tier === 3).map(i => i.price))
     expect(cheapestLegendary).toBeLessThanOrEqual(questIncome)
+    // ...and it has to cost enough that buying one means going without
+    const fullKitOfTier2 = 5 * SHOP_CATALOG.find(i => i.tier === 2)!.price
+    expect(cheapestLegendary).toBeLessThan(fullKitOfTier2)
   })
 
-  it('turns pay out gold by outcome (failure pays nothing)', () => {
-    expect(GOLD_PER_OUTCOME.success).toBe(2)
-    expect(GOLD_PER_OUTCOME.partial).toBe(1)
+  it('gold is for winning, not for turning up', () => {
+    expect(GOLD_PER_OUTCOME.success).toBe(1)
+    expect(GOLD_PER_OUTCOME.partial).toBe(0)
     expect(GOLD_PER_OUTCOME.failure).toBe(0)
     const { hero, goldGained } = applyTurnOutcome(createHero('p1'), 'success', false)
-    expect(goldGained).toBe(2)
-    expect(hero.gold).toBe(STARTING_GOLD + 2)
+    expect(goldGained).toBe(1)
+    expect(hero.gold).toBe(STARTING_GOLD + 1)
   })
 
-  it('chest pouches scale with the d20, boss pays the big reward', () => {
-    expect(chestGoldAmount(20)).toBe(9)
-    expect(chestGoldAmount(15)).toBe(8)
+  it('the real money is monsters, and later ones pay more', () => {
+    expect(monsterGoldReward(0)).toBe(3)
+    expect(monsterGoldReward(1)).toBe(8)
+    expect(monsterGoldReward(1)).toBeGreaterThan(monsterGoldReward(0))
     expect(BOSS_GOLD_REWARD).toBe(20)
+  })
+
+  // A 5-9 gold pouch on turn one made a hero rich before the story started.
+  it('chest pouches are pocket money, never a windfall', () => {
+    expect(chestGoldAmount(20)).toBe(4)
+    expect(chestGoldAmount(15)).toBe(4)
+    expect(chestGoldAmount(1)).toBe(2)
+    const dearestTier1 = Math.max(...SHOP_CATALOG.filter(i => i.tier === 1).map(i => i.price))
+    expect(chestGoldAmount(20)).toBeLessThanOrEqual(dearestTier1 + 1)
   })
 
   it('found loot has fallback names for all five slots and a generic look', () => {

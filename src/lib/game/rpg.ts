@@ -7,20 +7,29 @@ import type { CharacterClass } from '@/types/game'
 
 // --- XP & levels (per-adventure progression, resets on new adventure) ---
 
+// XP is for things you actually pulled off. A flat 1 XP for a failed roll made
+// the bar creep up no matter what happened, which is exactly what it felt like
+// at the table: levelling was something the clock did, not something you earned.
+// A partial still counts — you got part of the way.
 export const XP_PER_OUTCOME: Record<OutcomeType, number> = {
   success: 3,
-  partial: 2,
-  failure: 1,
+  partial: 1,
+  failure: 0,
 }
+
+// Bringing a monster down is the party's win, so the party's XP. This is the
+// other half of "you level up when you clear something": your own good turns,
+// plus every monster the family beats together.
+export const MONSTER_XP_REWARD = 2
+export const BOSS_XP_REWARD = 4
 
 export const MAX_LEVEL = 5
 
-// Cumulative XP needed to REACH each level, tuned against the length of a real
-// adventure: a quest runs ~23 turns, so each hero acts ~7-8 times and banks
-// ~2.3 XP a turn. The old curve topped out at 36 and quietly capped the family
-// at level 3 — levels 4 and 5, and three of each class's five powers, were
-// content nobody ever saw. This curve reaches level 5 by the boss.
-const LEVEL_XP: number[] = [0, 0, 4, 8, 12, 17]
+// Cumulative XP needed to REACH each level. A hero banks ~24 XP over a full
+// quest (own successes plus the party's monster kills), so this curve puts
+// level 5 at the end of a good adventure — reached in roughly two out of three
+// runs, not handed out every time.
+const LEVEL_XP: number[] = [0, 0, 5, 10, 16, 23]
 
 export function levelForXp(xp: number): number {
   let level = 1
@@ -36,21 +45,26 @@ export function xpForNextLevel(level: number): number | null {
 
 // --- Gold economy ---
 // Heroes start nearly broke (1 gold buys the hilariously bad starter gear).
-// Gold flows from BEATING things: turns pay a little, monsters pay the party,
-// the boss pays out big. Tier-3 gear is a post-boss trophy purchase.
+// Gold is for WINNING, not for turning up: a clean success pays a single coin,
+// and the real money is the purse a beaten monster drops on the whole party.
+// Paying 2 a turn plus a 5-9 gold chest meant a hero could be eight coins rich
+// on their first roll of the night, and the shop stopped being a decision.
 export const STARTING_GOLD = 1
 
 export const GOLD_PER_OUTCOME: Record<OutcomeType, number> = {
-  success: 2,
-  partial: 1,
+  success: 1,
+  partial: 0,
   failure: 0,
 }
 
 export const CRIT_BONUS_GOLD = 1
-// Monsters pay better than they used to, because legendary gear needs to be
-// buyable BEFORE the final fight — the boss's payout lands when the quest is
-// already over.
-export const MONSTER_GOLD_REWARD = 5
+
+// The deeper into the quest, the fatter the purse — so the big money lands in
+// chapter 3, when there is finally something worth saving up for.
+export function monsterGoldReward(milestonesDone: number): number {
+  return 3 + 5 * milestonesDone // 3 for the first monster, 8 for the second
+}
+
 export const BOSS_GOLD_REWARD = 20
 
 // A chest is either an item or a pouch of coins — the d20 sets the size.
@@ -59,7 +73,7 @@ export function chestIsGold(): boolean {
 }
 
 export function chestGoldAmount(d20Roll: number): number {
-  return 4 + Math.ceil(d20Roll / 4) // 5-9
+  return 1 + Math.ceil(d20Roll / 7) // 2-4
 }
 
 // --- HP & damage ---
@@ -67,19 +81,23 @@ export function chestGoldAmount(d20Roll: number): number {
 export const BASE_MAX_HP = 6
 export const HP_PER_LEVEL = 1
 
-// Heroes bend but never break: HP floors here so a bad streak can genuinely
-// scare the kids without ever taking one of them out of the story.
-export const MIN_HP = 1
+// A hero CAN go down again. At 0 HP they sit out, grey and cheering, and their
+// friends haul them back up at half HP the moment their own turn comes round —
+// so nobody ever misses a turn, and the hearts finally mean something. Raise
+// this to 1 to make the party unbreakable again.
+export const MIN_HP = 0
 
 // A natural 1 in a fight isn't only comedy — the monster gets a free swing.
-// It's the sharpest spike of danger in the game and still can't drop a hero
-// below MIN_HP.
+// It's the sharpest spike of danger in the game.
 export const FUMBLE_RETALIATION_DAMAGE = 2
 
 export function maxHpForLevel(level: number): number {
   return BASE_MAX_HP + (level - 1) * HP_PER_LEVEL
 }
 
+// Getting hurt is the price of a fight. A half-landed blow in combat costs 2 —
+// partials are common, and a monster that only punishes outright misses left
+// the party arriving at the boss untouched.
 export function heroDamageForOutcome(
   outcome: OutcomeType,
   encounterActive: boolean,
@@ -87,9 +105,9 @@ export function heroDamageForOutcome(
 ): number {
   if (outcome === 'failure') {
     const retaliation = crit === 'fumble' && encounterActive ? FUMBLE_RETALIATION_DAMAGE : 0
-    return (encounterActive ? 3 : 1) + retaliation
+    return (encounterActive ? 3 : 2) + retaliation
   }
-  if (outcome === 'partial') return encounterActive ? 1 : 0
+  if (outcome === 'partial') return encounterActive ? 2 : 0
   return 0
 }
 
@@ -104,6 +122,10 @@ export function encounterDamageForOutcome(outcome: OutcomeType, crit: CritType):
 export function rescueHp(maxHp: number): number {
   return Math.ceil(maxHp / 2)
 }
+
+// A second wind, not a full reset — and a small one, so a level-up can't wash
+// away a whole fight's worth of scrapes.
+export const LEVEL_UP_HEAL = 2
 
 // --- Combined stat bonus: class + skills + equipped loot + pet ---
 
@@ -273,10 +295,7 @@ export function applyTurnOutcome(
   let hp = Math.max(MIN_HP, hero.hp - damageTaken)
   if (leveledUp) {
     maxHp = maxHpForLevel(newLevel)
-    // A second wind, not a full reset. Levelling up used to heal to full,
-    // which — now that the family levels up nearly every other turn — would
-    // wipe out every scrape and make potions pointless.
-    hp = Math.min(maxHp, hp + Math.ceil(maxHp / 2))
+    hp = Math.min(maxHp, hp + LEVEL_UP_HEAL)
   }
 
   return {
@@ -296,6 +315,34 @@ export function applyTurnOutcome(
     damageTaken,
     xpGained,
     goldGained,
+  }
+}
+
+// A monster the party brought down pays everyone, whoever landed the last hit.
+// XP can push a hero over a level here, so this reports the level-up the same
+// way a turn does — the UI queues a power pick for each hero who earned one.
+export function applyPartyReward(
+  hero: HeroState,
+  gold: number,
+  xp: number
+): { hero: HeroState; leveledUp: boolean } {
+  const newXp = hero.xp + xp
+  const newLevel = Math.min(levelForXp(newXp), MAX_LEVEL)
+  const leveledUp = newLevel > hero.level
+  const maxHp = leveledUp ? maxHpForLevel(newLevel) : hero.maxHp
+  const hp = leveledUp ? Math.min(maxHp, hero.hp + LEVEL_UP_HEAL) : hero.hp
+
+  return {
+    hero: {
+      ...hero,
+      gold: hero.gold + gold,
+      xp: newXp,
+      level: newLevel,
+      maxHp,
+      hp,
+      knockedOut: hp === 0,
+    },
+    leveledUp,
   }
 }
 

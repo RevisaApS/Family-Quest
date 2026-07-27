@@ -27,7 +27,8 @@ import {
   encounterDamageForOutcome, lootShouldDrop, lootBonusForRoll,
   encounterSpawnTurn, nextEncounterKind, createEncounter, QUEST_MILESTONES,
   equipLoot, addSkill, addGold, buyItem, chestIsGold, chestGoldAmount,
-  MONSTER_GOLD_REWARD, BOSS_GOLD_REWARD,
+  applyPartyReward, monsterGoldReward, BOSS_GOLD_REWARD,
+  MONSTER_XP_REWARD, BOSS_XP_REWARD,
   canUsePower, usePower, healHero,
   ASSIST_BONUS, spendAssist, potionCount, removePotion, buyPotion, buyPet,
   shouldEnrage, enrageBoss, rollWeakStat, weaknessBonus,
@@ -126,7 +127,9 @@ export default function PlayPage() {
   const [turnEncounterDamage, setTurnEncounterDamage] = useState(0)
   const [turnCrit, setTurnCrit] = useState<CritType>(null)
   const [pendingLoot, setPendingLoot] = useState<PendingChest | null>(null)
-  const [pendingLevelUp, setPendingLevelUp] = useState<PendingLevelUp | null>(null)
+  // Level-ups queue: a hero can earn one on their own turn AND again the moment
+  // the party fells a monster, and every one of them gets its own power pick.
+  const [levelUpQueue, setLevelUpQueue] = useState<PendingLevelUp[]>([])
   const [monsterVictory, setMonsterVictory] = useState<PendingMonsterVictory | null>(null)
   const [showVictory, setShowVictory] = useState(false)
   const [rescueMessage, setRescueMessage] = useState<string | null>(null)
@@ -441,7 +444,7 @@ export default function PlayPage() {
   // epilogue and record this quest in the family chronicle. Everything is
   // snapshotted first so a quick "New adventure" tap can't corrupt the record.
   const victoryVisible = gamePhase === 'rewards' && !monsterVictory && !pendingLoot
-    && !pendingLevelUp && showVictory && !!encounter
+    && levelUpQueue.length === 0 && showVictory && !!encounter
 
   useEffect(() => {
     if (!victoryVisible || chronicleRecordedRef.current) return
@@ -528,6 +531,8 @@ export default function PlayPage() {
     sceneFit: action.sceneFit,
     level: hero.level,
     encounterActive,
+    milestonesDone: quest?.milestonesDone ?? 0,
+    bossFight: encounter?.kind === 'boss',
     age: currentPlayer.age,
   })
 
@@ -556,7 +561,10 @@ export default function PlayPage() {
     const statValue = heroStatBonus(currentCharacter.class, baseHero, action.stat)
     const dc = calculateDC({
       difficulty, sceneFit: action.sceneFit, level: baseHero.level,
-      encounterActive: encActive, age: currentPlayer?.age,
+      encounterActive: encActive,
+      milestonesDone: quest?.milestonesDone ?? 0,
+      bossFight: baseEncounter?.kind === 'boss',
+      age: currentPlayer?.age,
     })
     // Determination, a helping friend, and a drunk luck potion all ride on
     // the roll — and stick around through Second Chance / Rally re-resolves
@@ -569,7 +577,7 @@ export default function PlayPage() {
     setTurnCrit(resolved.crit)
     setGamePhase('outcome')
     setPendingLoot(null)
-    setPendingLevelUp(null)
+    setLevelUpQueue([])
     setMonsterVictory(null)
     setShowVictory(false)
 
@@ -587,12 +595,12 @@ export default function PlayPage() {
 
     // Level up → queue the "pick your power" cards
     if (resolution.leveledUp) {
-      setPendingLevelUp({
+      setLevelUpQueue([{
         playerId: baseHero.playerId,
         characterName: currentCharacter.name,
         newLevel: resolution.hero.level,
         choices: skillChoices(currentCharacter.class, resolution.hero.skills.map(s => s.id), language),
-      })
+      }])
     }
 
     // Damage the shared enemy; defeat queues the celebration (rewards applied
@@ -789,17 +797,37 @@ export default function PlayPage() {
 
     // Celebration → loot chest → level-up cards → (boss victory) → next scene
     setGamePhase('rewards')
-    if (!monsterVictory && !pendingLoot && !pendingLevelUp && !showVictory) {
+    if (!monsterVictory && !pendingLoot && levelUpQueue.length === 0 && !showVictory) {
       setTurnCounter(prev => prev + 1)
     }
   }
 
   const handleMonsterVictoryContinue = () => {
-    // The party payday + quest progress land here so a reroll can't double-pay
-    useGameStore.getState().heroes.forEach(h => updateHero(addGold(h, MONSTER_GOLD_REWARD)))
-    if (quest) setQuest({ ...quest, milestonesDone: Math.min(QUEST_MILESTONES, quest.milestonesDone + 1) })
+    // The party payday + quest progress land here so a reroll can't double-pay.
+    // A monster the family brought down together pays everyone — coins AND the
+    // XP, whoever happened to land the last blow. Later monsters pay more.
+    const milestonesDone = quest?.milestonesDone ?? 0
+    const gold = monsterGoldReward(milestonesDone)
+    const earned: PendingLevelUp[] = []
+    useGameStore.getState().heroes.forEach(h => {
+      const { hero, leveledUp } = applyPartyReward(h, gold, MONSTER_XP_REWARD)
+      updateHero(hero)
+      const character = characters.find(c => c.playerId === hero.playerId)
+      if (leveledUp && character) {
+        earned.push({
+          playerId: hero.playerId,
+          characterName: character.name,
+          newLevel: hero.level,
+          choices: skillChoices(character.class, hero.skills.map(s => s.id), language),
+        })
+      }
+    })
+    setLevelUpQueue(prev => [...prev, ...earned])
+    if (quest) setQuest({ ...quest, milestonesDone: Math.min(QUEST_MILESTONES, milestonesDone + 1) })
     setMonsterVictory(null)
-    if (!pendingLoot && !pendingLevelUp && !showVictory) setTurnCounter(prev => prev + 1)
+    if (!pendingLoot && levelUpQueue.length === 0 && earned.length === 0 && !showVictory) {
+      setTurnCounter(prev => prev + 1)
+    }
   }
 
   const handleLootResolve = (equip: boolean) => {
@@ -815,20 +843,35 @@ export default function PlayPage() {
       }
     }
     setPendingLoot(null)
-    if (!pendingLevelUp && !showVictory) setTurnCounter(prev => prev + 1)
+    if (levelUpQueue.length === 0 && !showVictory) setTurnCounter(prev => prev + 1)
   }
 
   const handleSkillPick = (skill: Skill | null) => {
-    if (skill && pendingLevelUp) {
-      const hero = useGameStore.getState().heroes.find(h => h.playerId === pendingLevelUp.playerId)
+    const current = levelUpQueue[0]
+    if (skill && current) {
+      const hero = useGameStore.getState().heroes.find(h => h.playerId === current.playerId)
       if (hero) updateHero(addSkill(hero, skill))
     }
-    setPendingLevelUp(null)
-    if (!showVictory) setTurnCounter(prev => prev + 1)
+    // Re-deal the cards for whoever is still in the queue: two level-ups in one
+    // beat could otherwise offer a power the hero just took.
+    const rest = levelUpQueue.slice(1).map(entry => {
+      const hero = useGameStore.getState().heroes.find(h => h.playerId === entry.playerId)
+      const character = characters.find(c => c.playerId === entry.playerId)
+      return hero && character
+        ? { ...entry, choices: skillChoices(character.class, hero.skills.map(sk => sk.id), language) }
+        : entry
+    })
+    setLevelUpQueue(rest)
+    if (rest.length === 0 && !showVictory) setTurnCounter(prev => prev + 1)
   }
 
   const handleVictoryContinue = () => {
-    useGameStore.getState().heroes.forEach(h => updateHero(addGold(h, BOSS_GOLD_REWARD)))
+    // The boss pays the whole party in gold and XP. No power cards this time —
+    // the quest is over, and a level-up screen after the final curtain would
+    // only be paperwork.
+    useGameStore.getState().heroes.forEach(h => {
+      updateHero(applyPartyReward(h, BOSS_GOLD_REWARD, BOSS_XP_REWARD).hero)
+    })
     if (quest) setQuest({ ...quest, milestonesDone: QUEST_MILESTONES })
     setShowVictory(false)
     setTurnCounter(prev => prev + 1)
@@ -898,7 +941,9 @@ export default function PlayPage() {
       char: characters.find(c => c.playerId === p.id),
       hero: heroes.find(h => h.playerId === p.id),
     }))
-    .filter(x => x.char && x.hero && !x.hero.assistUsed)
+    // A hero who is down can't lend a hand — being a helper short is exactly
+    // what a knock-out is supposed to cost the party.
+    .filter(x => x.char && x.hero && !x.hero.assistUsed && !x.hero.knockedOut)
 
   // Every bonus riding on the upcoming roll, each shown as its own chip
   const assistHelperChar = assistPlayerId ? characters.find(c => c.playerId === assistPlayerId) : null
@@ -1037,6 +1082,8 @@ export default function PlayPage() {
           <MonsterVictoryModal
             monsterName={monsterVictory.monsterName}
             finisherName={monsterVictory.finisherName}
+            goldReward={monsterGoldReward(quest?.milestonesDone ?? 0)}
+            xpReward={MONSTER_XP_REWARD}
             language={language}
             onContinue={handleMonsterVictoryContinue}
           />
@@ -1052,20 +1099,22 @@ export default function PlayPage() {
             onResolve={handleLootResolve}
           />
         )}
-        {gamePhase === 'rewards' && !monsterVictory && !pendingLoot && pendingLevelUp && (
+        {gamePhase === 'rewards' && !monsterVictory && !pendingLoot && levelUpQueue[0] && (
           <LevelUpModal
-            characterName={pendingLevelUp.characterName}
-            newLevel={pendingLevelUp.newLevel}
-            choices={pendingLevelUp.choices}
+            key={`${levelUpQueue[0].playerId}-${levelUpQueue[0].newLevel}`}
+            characterName={levelUpQueue[0].characterName}
+            newLevel={levelUpQueue[0].newLevel}
+            choices={levelUpQueue[0].choices}
             language={language}
             onPick={handleSkillPick}
           />
         )}
-        {gamePhase === 'rewards' && !monsterVictory && !pendingLoot && !pendingLevelUp && showVictory && encounter && (
+        {gamePhase === 'rewards' && !monsterVictory && !pendingLoot && levelUpQueue.length === 0 && showVictory && encounter && (
           <VictoryOverlay
             bossName={encounter.name}
             language={language}
             goldReward={BOSS_GOLD_REWARD}
+            xpReward={BOSS_XP_REWARD}
             tale={epilogue ? { title: epilogue.title, story: epilogue.story } : null}
             awards={(epilogue?.awards ?? [])
               .map(a => ({

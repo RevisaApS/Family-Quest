@@ -72,7 +72,10 @@ describe('hall of heroes aggregation', () => {
 })
 
 describe('young hero DC relief', () => {
-  const base = { difficulty: 'medium' as const, sceneFit: 'okay' as const, level: 1, encounterActive: false }
+  const base = {
+    difficulty: 'medium' as const, sceneFit: 'okay' as const,
+    level: 1, encounterActive: false, milestonesDone: 0,
+  }
 
   it('gives kids under the threshold an invisible break', () => {
     expect(calculateDC({ ...base, age: YOUNG_HERO_AGE - 1 })).toBe(calculateDC(base) - YOUNG_HERO_DC_RELIEF)
@@ -81,7 +84,7 @@ describe('young hero DC relief', () => {
   it('changes nothing for everyone else', () => {
     expect(calculateDC({ ...base, age: YOUNG_HERO_AGE })).toBe(calculateDC(base))
     expect(calculateDC({ ...base, age: 35 })).toBe(calculateDC(base))
-    expect(calculateDC(base)).toBe(12)
+    expect(calculateDC(base)).toBe(14)
   })
 })
 
