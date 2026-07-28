@@ -1,0 +1,142 @@
+<h2>Onboarding Optimization: What Do We Actually Need?</h2>
+<p class="subtitle">Minimum friction to first adventure — every question costs conversions</p>
+
+<div class="section">
+  <h3>Required Information Audit</h3>
+  <div style="display: grid; gap: 12px;">
+
+    <!-- Must have before play -->
+    <div style="background: rgba(45, 90, 74, 0.2); border: 1px solid rgba(45, 90, 74, 0.3); border-radius: 12px; padding: 16px;">
+      <div style="color: #4ade80; font-weight: 600; margin-bottom: 8px;">🎯 Must Have Before Play</div>
+      <div style="color: #a8c4b8; font-size: 14px; line-height: 1.6;">
+        <strong>Players</strong> — Who's playing? (names + classes)<br/>
+        <strong>Dice</strong> — Physical (which types?) or digital?
+      </div>
+    </div>
+
+    <!-- Can default, ask later -->
+    <div style="background: rgba(244, 168, 54, 0.1); border: 1px solid rgba(244, 168, 54, 0.2); border-radius: 12px; padding: 16px;">
+      <div style="color: #F4A836; font-weight: 600; margin-bottom: 8px;">⚡ Can Default + Ask Later</div>
+      <div style="color: #c4b8a8; font-size: 14px; line-height: 1.6;">
+        <strong>Language</strong> — Default English, detect from browser, or subtle toggle on Welcome<br/>
+        <strong>Account</strong> — Defer until after first session ("Save your progress?")
+      </div>
+    </div>
+
+    <!-- Removed for MVP -->
+    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 16px;">
+      <div style="color: #ef4444; font-weight: 600; margin-bottom: 8px;">🗑️ Removed for MVP</div>
+      <div style="color: #c4a8a8; font-size: 14px; line-height: 1.6;">
+        <strong>Adventure selection</strong> — Single adventure ("Dungeons & Dragons")<br/>
+        <strong>Age ratings</strong> — Not needed with one adventure
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h3>Streamlined Flow Options</h3>
+  <div class="options">
+    <div class="option" data-choice="flow-a" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>2-Screen Flow (Recommended)</h3>
+        <p><strong>Welcome</strong> (language toggle in corner) → <strong>Party Setup</strong> (players + dice) → <strong>Play!</strong></p>
+        <div style="margin-top: 8px; padding: 8px 12px; background: rgba(74, 59, 107, 0.2); border-radius: 6px; font-size: 12px; color: #a89888;">
+          Fastest path. Account creation after first session.
+        </div>
+      </div>
+    </div>
+    <div class="option" data-choice="flow-b" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>1-Screen Flow (Most Aggressive)</h3>
+        <p><strong>Welcome + Setup Combined</strong> — "Add players" right on welcome screen → <strong>Play!</strong></p>
+        <div style="margin-top: 8px; padding: 8px 12px; background: rgba(74, 59, 107, 0.2); border-radius: 6px; font-size: 12px; color: #a89888;">
+          Even faster, but might feel cramped on mobile.
+        </div>
+      </div>
+    </div>
+    <div class="option" data-choice="flow-c" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>Progressive Disclosure</h3>
+        <p><strong>Welcome</strong> → <strong>Play immediately</strong> with default character → Ask for details during natural pauses</p>
+        <div style="margin-top: 8px; padding: 8px 12px; background: rgba(74, 59, 107, 0.2); border-radius: 6px; font-size: 12px; color: #a89888;">
+          Fastest to first scene, but loses party setup moment.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Language Handling Options</h3>
+  <div class="options">
+    <div class="option" data-choice="lang-a" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Browser Detection + Toggle (Recommended)</h3>
+        <p>Auto-detect from browser. Small flag/toggle in Welcome screen corner if user wants to switch.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="lang-b" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Explicit Choice First</h3>
+        <p>First screen shows two big buttons: "English" / "Dansk" — then proceed.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="lang-c" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>Default English, Change in Settings</h3>
+        <p>Always start English. Danish users find it in settings later.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Account Creation Timing</h3>
+  <div class="options">
+    <div class="option" data-choice="account-a" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>After First Session (Recommended)</h3>
+        <p>"That was fun! Save your progress?" — Create account to keep campaign.</p>
+        <div style="margin-top: 8px; padding: 8px 12px; background: rgba(74, 59, 107, 0.2); border-radius: 6px; font-size: 12px; color: #a89888;">
+          User already experienced value. Higher conversion.
+        </div>
+      </div>
+    </div>
+    <div class="option" data-choice="account-b" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Optional on Welcome</h3>
+        <p>"Start Adventure" (no account) vs "Sign In" (returning users)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background: rgba(74, 59, 107, 0.15); border-radius: 12px; padding: 20px; margin-top: 16px;">
+  <h3>My Recommendation</h3>
+  <div style="color: #F5F0E6; line-height: 1.6;">
+    <p><strong>Flow A</strong> (2 screens) + <strong>Language A</strong> (browser detect + toggle) + <strong>Account A</strong> (after first session)</p>
+    <div style="margin-top: 12px; padding: 16px; background: rgba(45, 31, 61, 0.5); border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="background: #4A3B6B; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Welcome</span>
+        <span style="color: #F4A836;">→</span>
+        <span style="background: #4A3B6B; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Party + Dice</span>
+        <span style="color: #F4A836;">→</span>
+        <span style="background: #2D5A4A; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Play!</span>
+        <span style="color: #71717a;">···</span>
+        <span style="background: rgba(244, 168, 54, 0.2); color: #F4A836; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Save Progress?</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="color: #71717a; font-size: 14px; margin-top: 20px; text-align: center;">Click your preferred options for each category, then confirm in terminal.</p>

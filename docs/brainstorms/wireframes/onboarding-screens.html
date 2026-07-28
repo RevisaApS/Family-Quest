@@ -1,0 +1,204 @@
+<h2>Onboarding Flow: Welcome → Adventure → Characters → Play</h2>
+<p class="subtitle">3 screens to get families from "open app" to "playing" as fast as possible</p>
+
+<div class="section">
+  <h3>Flow Overview</h3>
+  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px; background: rgba(74, 59, 107, 0.1); border-radius: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+    <div style="background: #4A3B6B; color: #F5F0E6; padding: 8px 16px; border-radius: 20px; font-size: 14px;">Welcome</div>
+    <div style="color: #F4A836;">→</div>
+    <div style="background: #4A3B6B; color: #F5F0E6; padding: 8px 16px; border-radius: 20px; font-size: 14px;">Pick Adventure</div>
+    <div style="color: #F4A836;">→</div>
+    <div style="background: #4A3B6B; color: #F5F0E6; padding: 8px 16px; border-radius: 20px; font-size: 14px;">Setup Characters</div>
+    <div style="color: #F4A836;">→</div>
+    <div style="background: #2D5A4A; color: #F5F0E6; padding: 8px 16px; border-radius: 20px; font-size: 14px;">Adventure Play!</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Screen 1: Welcome</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">First impression — magical invitation, minimal friction. Login for returning users, quick start for new.</p>
+  <div class="mockup">
+    <div class="mockup-header">Welcome — First Launch</div>
+    <div class="mockup-body" style="background: linear-gradient(180deg, #1a1425 0%, #0d0a12 100%); padding: 0; min-height: 500px; display: flex; flex-direction: column;">
+      <!-- Hero Area -->
+      <div style="flex: 1; background: linear-gradient(180deg, #2d1f3d 0%, #1a1425 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; text-align: center; position: relative; overflow: hidden;">
+        <!-- Decorative glow -->
+        <div style="position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 200px; height: 200px; background: radial-gradient(circle, rgba(244, 168, 54, 0.15) 0%, transparent 70%); pointer-events: none;"></div>
+
+        <!-- Logo/Icon -->
+        <div style="font-size: 64px; margin-bottom: 16px; filter: drop-shadow(0 0 20px rgba(244, 168, 54, 0.4));">🏰</div>
+
+        <!-- Title -->
+        <h1 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 32px; font-weight: 600; margin: 0 0 8px 0; text-shadow: 0 2px 20px rgba(0,0,0,0.5);">Family Quest</h1>
+
+        <!-- Tagline -->
+        <p style="color: #c4b8a8; font-size: 16px; margin: 0 0 32px 0; max-width: 280px; line-height: 1.5;">Adventures for families.<br/>No experience needed.</p>
+      </div>
+
+      <!-- Action Area -->
+      <div style="padding: 24px; background: linear-gradient(180deg, rgba(45, 31, 61, 0.8) 0%, rgba(26, 20, 37, 1) 100%);">
+        <!-- Primary CTA -->
+        <button style="width: 100%; background: linear-gradient(135deg, #F4A836 0%, #d4922e 100%); color: #1a1425; padding: 18px 24px; border-radius: 12px; border: none; font-size: 18px; font-weight: 600; font-family: Georgia, serif; box-shadow: 0 4px 20px rgba(244, 168, 54, 0.4); margin-bottom: 12px;">Start Your Adventure</button>
+
+        <!-- Secondary -->
+        <button style="width: 100%; background: transparent; border: 1px solid rgba(245, 240, 230, 0.3); color: #F5F0E6; padding: 14px 24px; border-radius: 12px; font-size: 16px;">I have an account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Screen 2: Adventure Selection</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">Pick a quest from the "guild board" — 2-3 starter adventures for MVP.</p>
+  <div class="mockup">
+    <div class="mockup-header">Choose Your Adventure</div>
+    <div class="mockup-body" style="background: linear-gradient(180deg, #1a1425 0%, #0d0a12 100%); padding: 20px; min-height: 520px;">
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 24px; margin: 0 0 8px 0;">Choose Your Quest</h2>
+        <p style="color: #a89888; font-size: 14px; margin: 0;">What adventure awaits your family?</p>
+      </div>
+
+      <!-- Adventure Cards -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+
+        <!-- Adventure 1 -->
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 16px; overflow: hidden; cursor: pointer;">
+          <div style="height: 80px; background: linear-gradient(135deg, #2d5a4a 0%, #1a3d2d 100%); display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 40px;">🐉</span>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+              <h3 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 18px; margin: 0;">The Dragon's Riddle</h3>
+              <span style="background: rgba(74, 222, 128, 0.2); color: #4ade80; font-size: 11px; padding: 4px 8px; border-radius: 12px;">Ages 7+</span>
+            </div>
+            <p style="color: #a89888; font-size: 13px; margin: 0; line-height: 1.4;">A friendly dragon needs help solving an ancient puzzle. Perfect for first-time adventurers!</p>
+          </div>
+        </div>
+
+        <!-- Adventure 2 -->
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 16px; overflow: hidden; cursor: pointer;">
+          <div style="height: 80px; background: linear-gradient(135deg, #4a3b6b 0%, #2d2345 100%); display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 40px;">🏴‍☠️</span>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+              <h3 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 18px; margin: 0;">The Pirate's Treasure</h3>
+              <span style="background: rgba(244, 168, 54, 0.2); color: #F4A836; font-size: 11px; padding: 4px 8px; border-radius: 12px;">Ages 8+</span>
+            </div>
+            <p style="color: #a89888; font-size: 13px; margin: 0; line-height: 1.4;">Follow a mysterious map to find Captain Goldbeard's lost treasure!</p>
+          </div>
+        </div>
+
+        <!-- Adventure 3 -->
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 16px; overflow: hidden; cursor: pointer;">
+          <div style="height: 80px; background: linear-gradient(135deg, #5a3d4a 0%, #3d2a34 100%); display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 40px;">🧙</span>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+              <h3 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 18px; margin: 0;">The Enchanted Forest</h3>
+              <span style="background: rgba(244, 168, 54, 0.2); color: #F4A836; font-size: 11px; padding: 4px 8px; border-radius: 12px;">Ages 8+</span>
+            </div>
+            <p style="color: #a89888; font-size: 13px; margin: 0; line-height: 1.4;">Magical creatures need your help to break an ancient curse.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Screen 3: Character Setup</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">Add players and pick classes — under 30 seconds per kid. Dice preference set here too.</p>
+  <div class="mockup">
+    <div class="mockup-header">Create Your Party</div>
+    <div class="mockup-body" style="background: linear-gradient(180deg, #1a1425 0%, #0d0a12 100%); padding: 20px; min-height: 520px;">
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 22px; margin: 0 0 8px 0;">Who's Playing?</h2>
+        <p style="color: #a89888; font-size: 14px; margin: 0;">Add your adventurers</p>
+      </div>
+
+      <!-- Player Cards -->
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+
+        <!-- Player 1 (filled) -->
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.4); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #F4A836 0%, #d4922e 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px;">⚔️</div>
+          <div style="flex: 1;">
+            <div style="color: #F5F0E6; font-weight: 600;">Luna</div>
+            <div style="color: #a89888; font-size: 13px;">Warrior</div>
+          </div>
+          <button style="background: rgba(245, 240, 230, 0.1); border: none; color: #a89888; padding: 8px; border-radius: 6px; font-size: 12px;">Edit</button>
+        </div>
+
+        <!-- Player 2 (filled) -->
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.4); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #9b6dff 0%, #7b4fd4 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px;">🔮</div>
+          <div style="flex: 1;">
+            <div style="color: #F5F0E6; font-weight: 600;">Max</div>
+            <div style="color: #a89888; font-size: 13px;">Wizard</div>
+          </div>
+          <button style="background: rgba(245, 240, 230, 0.1); border: none; color: #a89888; padding: 8px; border-radius: 6px; font-size: 12px;">Edit</button>
+        </div>
+
+        <!-- Add Player Button -->
+        <button style="background: transparent; border: 2px dashed rgba(244, 168, 54, 0.3); border-radius: 12px; padding: 16px; color: #F4A836; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+          <span style="font-size: 18px;">+</span> Add another player
+        </button>
+      </div>
+
+      <!-- Dice Settings -->
+      <div style="background: rgba(45, 31, 61, 0.5); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="color: #F5F0E6; font-weight: 600; font-size: 14px;">🎲 Dice</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button style="flex: 1; background: linear-gradient(135deg, #F4A836 0%, #d4922e 100%); border: none; color: #1a1425; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600;">We have dice</button>
+          <button style="flex: 1; background: rgba(245, 240, 230, 0.1); border: 1px solid rgba(245, 240, 230, 0.2); color: #c4b8a8; padding: 10px; border-radius: 8px; font-size: 13px;">Roll for us</button>
+        </div>
+        <!-- Dice type selector (shown when "We have dice" selected) -->
+        <div style="margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="background: rgba(244, 168, 54, 0.2); border: 1px solid rgba(244, 168, 54, 0.4); color: #F4A836; padding: 6px 12px; border-radius: 16px; font-size: 12px;">d6 ✓</span>
+          <span style="background: rgba(245, 240, 230, 0.1); border: 1px solid rgba(245, 240, 230, 0.2); color: #a89888; padding: 6px 12px; border-radius: 16px; font-size: 12px;">d8</span>
+          <span style="background: rgba(245, 240, 230, 0.1); border: 1px solid rgba(245, 240, 230, 0.2); color: #a89888; padding: 6px 12px; border-radius: 16px; font-size: 12px;">d10</span>
+          <span style="background: rgba(245, 240, 230, 0.1); border: 1px solid rgba(245, 240, 230, 0.2); color: #a89888; padding: 6px 12px; border-radius: 16px; font-size: 12px;">d12</span>
+          <span style="background: rgba(244, 168, 54, 0.2); border: 1px solid rgba(244, 168, 54, 0.4); color: #F4A836; padding: 6px 12px; border-radius: 16px; font-size: 12px;">d20 ✓</span>
+        </div>
+      </div>
+
+      <!-- Start Button -->
+      <button style="width: 100%; background: linear-gradient(135deg, #F4A836 0%, #d4922e 100%); color: #1a1425; padding: 18px 24px; border-radius: 12px; border: none; font-size: 18px; font-weight: 600; font-family: Georgia, serif; box-shadow: 0 4px 20px rgba(244, 168, 54, 0.4);">Begin Adventure!</button>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background: rgba(45, 90, 74, 0.2); border: 1px solid rgba(45, 90, 74, 0.3); border-radius: 12px; padding: 20px; margin-top: 24px;">
+  <h3 style="color: #4ade80;">Quick Check</h3>
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="welcome-good" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content">
+        <h3>Welcome screen feels inviting</h3>
+        <p>Magical, simple, makes you want to tap "Start"</p>
+      </div>
+    </div>
+    <div class="option" data-choice="adventures-good" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content">
+        <h3>Adventure cards are clear</h3>
+        <p>Easy to scan, age tags helpful, good variety</p>
+      </div>
+    </div>
+    <div class="option" data-choice="setup-good" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content">
+        <h3>Character setup is fast</h3>
+        <p>Dice settings in right place, easy to add players</p>
+      </div>
+    </div>
+  </div>
+  <p style="color: #71717a; font-size: 14px; margin-top: 16px;">Check what's working, then let me know any concerns in the terminal.</p>
+</div>

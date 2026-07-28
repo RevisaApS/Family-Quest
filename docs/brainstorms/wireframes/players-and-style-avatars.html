@@ -1,0 +1,244 @@
+<h2>Player Management & Style-Based Avatars</h2>
+<p class="subtitle">Easy player selection + character visuals that match your chosen style</p>
+
+<div class="section">
+  <h3>Updated Flow</h3>
+  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 16px; background: rgba(74, 59, 107, 0.15); border-radius: 12px; margin-bottom: 8px;">
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 5px 10px; border-radius: 12px; font-size: 12px;">Welcome</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 5px 10px; border-radius: 12px; font-size: 12px;">Players</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 5px 10px; border-radius: 12px; font-size: 12px;">Adventure</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: rgba(244, 168, 54, 0.3); color: #F4A836; padding: 5px 10px; border-radius: 12px; font-size: 12px; border: 1px solid #F4A836;">Settings</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: rgba(244, 168, 54, 0.3); color: #F4A836; padding: 5px 10px; border-radius: 12px; font-size: 12px; border: 1px solid #F4A836;">Characters</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 5px 10px; border-radius: 12px; font-size: 12px;">Save</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #2D5A4A; color: #F5F0E6; padding: 5px 10px; border-radius: 12px; font-size: 12px;">Play!</span>
+  </div>
+  <p style="color: #F4A836; font-size: 12px; margin: 0;">Settings now comes BEFORE Characters — style informs avatar visuals</p>
+</div>
+
+<div class="section">
+  <h3>Player Selection: Returning Users</h3>
+  <p style="color: #71717a; margin-bottom: 12px;">Players persist. Returning users just tap to select who's playing today.</p>
+  <div class="mockup">
+    <div class="mockup-header">Who's Playing Today?</div>
+    <div class="mockup-body" style="background: linear-gradient(180deg, #1a1425 0%, #0d0a12 100%); padding: 20px; min-height: 420px;">
+
+      <h2 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 20px; margin: 0 0 6px 0; text-align: center;">Who's adventuring today?</h2>
+      <p style="color: #a89888; font-size: 13px; margin: 0 0 20px 0; text-align: center;">Tap to select players</p>
+
+      <!-- Existing Players -->
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+
+        <!-- Player 1 - Selected -->
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 2px solid #4ade80; border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+          <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #F4A836 0%, #d4922e 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👧</div>
+          <div style="flex: 1;">
+            <div style="color: #F5F0E6; font-weight: 600;">Luna</div>
+            <div style="color: #a89888; font-size: 12px;">Age 7</div>
+          </div>
+          <div style="width: 24px; height: 24px; background: #4ade80; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0d1a12; font-size: 14px;">✓</div>
+        </div>
+
+        <!-- Player 2 - Selected -->
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 2px solid #4ade80; border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+          <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #9b6dff 0%, #7b4fd4 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👦</div>
+          <div style="flex: 1;">
+            <div style="color: #F5F0E6; font-weight: 600;">Max</div>
+            <div style="color: #a89888; font-size: 12px;">Age 7</div>
+          </div>
+          <div style="width: 24px; height: 24px; background: #4ade80; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0d1a12; font-size: 14px;">✓</div>
+        </div>
+
+        <!-- Player 3 - Not Selected -->
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(245, 240, 230, 0.2); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; opacity: 0.6;">
+          <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #4a7c59 0%, #2d5a4a 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👧</div>
+          <div style="flex: 1;">
+            <div style="color: #F5F0E6; font-weight: 600;">Sofia</div>
+            <div style="color: #a89888; font-size: 12px;">Age 10</div>
+          </div>
+          <div style="width: 24px; height: 24px; background: rgba(245, 240, 230, 0.1); border: 1px solid rgba(245, 240, 230, 0.2); border-radius: 50%;"></div>
+        </div>
+
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+        <button style="flex: 1; background: transparent; border: 2px dashed rgba(244, 168, 54, 0.3); border-radius: 10px; padding: 12px; color: #F4A836; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span>+</span> Add player
+        </button>
+        <button style="background: rgba(245, 240, 230, 0.1); border: 1px solid rgba(245, 240, 230, 0.2); border-radius: 10px; padding: 12px 16px; color: #a89888; font-size: 13px;">
+          Manage
+        </button>
+      </div>
+
+      <!-- Continue -->
+      <button style="width: 100%; background: linear-gradient(135deg, #F4A836 0%, #d4922e 100%); color: #1a1425; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600;">Continue with Luna & Max</button>
+
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Character Avatars by Style</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">Same class, different visual style. Warriors look different in Whimsical vs Dark.</p>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- Whimsical Style -->
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <span style="background: rgba(255, 179, 71, 0.2); color: #ffb347; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">Whimsical</span>
+        <span style="color: #71717a; font-size: 12px;">Ages 5-8</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <div style="background: linear-gradient(135deg, #ffb347 0%, #ff9a56 100%); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🧸</div>
+          <div style="color: #1a1425; font-size: 11px; font-weight: 600;">Warrior</div>
+          <div style="color: rgba(26, 20, 37, 0.7); font-size: 9px;">Cuddly & brave</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🧙‍♀️</div>
+          <div style="color: #fff; font-size: 11px; font-weight: 600;">Wizard</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 9px;">Sparkly magic</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #34d399 0%, #10b981 100%); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🦊</div>
+          <div style="color: #fff; font-size: 11px; font-weight: 600;">Rogue</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 9px;">Sneaky friend</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🐰</div>
+          <div style="color: #fff; font-size: 11px; font-weight: 600;">Ranger</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 9px;">Forest buddy</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Realistic Style -->
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <span style="background: rgba(244, 168, 54, 0.2); color: #F4A836; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">Realistic</span>
+        <span style="color: #71717a; font-size: 12px;">Ages 7-12 • Default</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <div style="background: linear-gradient(135deg, #b45309 0%, #92400e 100%); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(0,0,0,0.2); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">⚔️</div>
+          <div style="color: #fff; font-size: 11px; font-weight: 600;">Warrior</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 9px;">Bold fighter</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(0,0,0,0.2); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🔮</div>
+          <div style="color: #fff; font-size: 11px; font-weight: 600;">Wizard</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 9px;">Arcane master</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #374151 0%, #1f2937 100%); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(0,0,0,0.2); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🗡️</div>
+          <div style="color: #fff; font-size: 11px; font-weight: 600;">Rogue</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 9px;">Shadow blade</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #166534 0%, #14532d 100%); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(0,0,0,0.2); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🏹</div>
+          <div style="color: #fff; font-size: 11px; font-weight: 600;">Ranger</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 9px;">Forest hunter</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dark Style -->
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">Dark</span>
+        <span style="color: #71717a; font-size: 12px;">Ages 13+</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <div style="background: linear-gradient(135deg, #450a0a 0%, #1c0404 100%); border: 1px solid rgba(127, 29, 29, 0.5); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(127, 29, 29, 0.3); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">💀</div>
+          <div style="color: #fca5a5; font-size: 11px; font-weight: 600;">Warrior</div>
+          <div style="color: rgba(252, 165, 165, 0.6); font-size: 9px;">Death knight</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #1e1b4b 0%, #0f0a2e 100%); border: 1px solid rgba(67, 56, 202, 0.5); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(67, 56, 202, 0.3); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🌑</div>
+          <div style="color: #a5b4fc; font-size: 11px; font-weight: 600;">Wizard</div>
+          <div style="color: rgba(165, 180, 252, 0.6); font-size: 9px;">Dark sorcerer</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #0a0a0a 0%, #000000 100%); border: 1px solid rgba(64, 64, 64, 0.5); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(64, 64, 64, 0.3); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🦇</div>
+          <div style="color: #a1a1aa; font-size: 11px; font-weight: 600;">Rogue</div>
+          <div style="color: rgba(161, 161, 170, 0.6); font-size: 9px;">Nightstalker</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #052e16 0%, #022c0e 100%); border: 1px solid rgba(22, 101, 52, 0.5); border-radius: 12px; padding: 12px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(22, 101, 52, 0.3); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🐺</div>
+          <div style="color: #86efac; font-size: 11px; font-weight: 600;">Ranger</div>
+          <div style="color: rgba(134, 239, 172, 0.6); font-size: 9px;">Beast master</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h3>Manage Players (Modal)</h3>
+  <p style="color: #71717a; margin-bottom: 12px;">From the "Manage" button — edit or remove existing players.</p>
+  <div class="mockup">
+    <div class="mockup-header">Manage Players</div>
+    <div class="mockup-body" style="background: linear-gradient(180deg, #1a1425 0%, #0d0a12 100%); padding: 20px; min-height: 300px;">
+
+      <h2 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 18px; margin: 0 0 16px 0; text-align: center;">Your Players</h2>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #F4A836 0%, #d4922e 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">👧</div>
+          <div style="flex: 1;">
+            <div style="color: #F5F0E6; font-weight: 600; font-size: 14px;">Luna</div>
+            <div style="color: #a89888; font-size: 11px;">Age 7</div>
+          </div>
+          <button style="background: rgba(245, 240, 230, 0.1); border: none; color: #a89888; padding: 6px 10px; border-radius: 6px; font-size: 11px;">Edit</button>
+          <button style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; padding: 6px 10px; border-radius: 6px; font-size: 11px;">Remove</button>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #9b6dff 0%, #7b4fd4 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">👦</div>
+          <div style="flex: 1;">
+            <div style="color: #F5F0E6; font-weight: 600; font-size: 14px;">Max</div>
+            <div style="color: #a89888; font-size: 11px;">Age 7</div>
+          </div>
+          <button style="background: rgba(245, 240, 230, 0.1); border: none; color: #a89888; padding: 6px 10px; border-radius: 6px; font-size: 11px;">Edit</button>
+          <button style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; padding: 6px 10px; border-radius: 6px; font-size: 11px;">Remove</button>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #4a7c59 0%, #2d5a4a 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">👧</div>
+          <div style="flex: 1;">
+            <div style="color: #F5F0E6; font-weight: 600; font-size: 14px;">Sofia</div>
+            <div style="color: #a89888; font-size: 11px;">Age 10</div>
+          </div>
+          <button style="background: rgba(245, 240, 230, 0.1); border: none; color: #a89888; padding: 6px 10px; border-radius: 6px; font-size: 11px;">Edit</button>
+          <button style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; padding: 6px 10px; border-radius: 6px; font-size: 11px;">Remove</button>
+        </div>
+
+      </div>
+
+      <button style="width: 100%; background: transparent; border: 1px solid rgba(245, 240, 230, 0.2); color: #a89888; padding: 12px; border-radius: 10px; font-size: 14px; margin-top: 16px;">Done</button>
+
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.2); border-radius: 12px; padding: 20px; margin-top: 16px;">
+  <h3 style="color: #4ade80;">Summary of Changes</h3>
+  <ul style="color: #a8c4b8; font-size: 13px; line-height: 1.8; margin: 0; padding-left: 20px;">
+    <li><strong>Players persist</strong> — created once, tap to select for each adventure</li>
+    <li><strong>Easy management</strong> — "Add player" and "Manage" buttons always visible</li>
+    <li><strong>Settings before Characters</strong> — style choice informs avatar visuals</li>
+    <li><strong>Style-aware avatars</strong> — same class looks different in Whimsical vs Dark</li>
+  </ul>
+</div>
+
+<p style="color: #71717a; font-size: 14px; margin-top: 20px; text-align: center;">Does this player management flow work? Any thoughts on the style-based avatar approach?</p>

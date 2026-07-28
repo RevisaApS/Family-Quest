@@ -1,0 +1,162 @@
+<h2>Adventure Play: The Core Loop</h2>
+<p class="subtitle">4 states that cycle during gameplay — this is where the magic happens</p>
+
+<div class="section">
+  <h3>State Flow</h3>
+  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px; background: rgba(74, 59, 107, 0.1); border-radius: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+    <div style="background: #4A3B6B; color: #F5F0E6; padding: 8px 16px; border-radius: 20px; font-size: 14px;">Scene Display</div>
+    <div style="color: #F4A836;">→</div>
+    <div style="background: #4A3B6B; color: #F5F0E6; padding: 8px 16px; border-radius: 20px; font-size: 14px;">Discussion</div>
+    <div style="color: #F4A836;">→</div>
+    <div style="background: #4A3B6B; color: #F5F0E6; padding: 8px 16px; border-radius: 20px; font-size: 14px; opacity: 0.6;">Dice (if needed)</div>
+    <div style="color: #F4A836;">→</div>
+    <div style="background: #4A3B6B; color: #F5F0E6; padding: 8px 16px; border-radius: 20px; font-size: 14px;">Outcome</div>
+    <div style="color: #F4A836;">↩</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>State A: Scene Display</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">AI-generated image + TTS narration. Family watches and listens together.</p>
+  <div class="mockup">
+    <div class="mockup-header">Scene Display — Immersive Mode</div>
+    <div class="mockup-body" style="background: linear-gradient(180deg, #1a1425 0%, #0d0a12 100%); padding: 0; min-height: 400px; display: flex; flex-direction: column;">
+      <!-- Scene Image Area -->
+      <div style="flex: 1; background: linear-gradient(180deg, #2d4a3a 0%, #1a2d24 100%); display: flex; align-items: center; justify-content: center; position: relative; min-height: 200px;">
+        <div style="color: #4a6b5a; font-size: 14px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 8px;">🏰</div>
+          [AI-Generated Scene Image]<br/>
+          <span style="font-size: 12px; opacity: 0.7;">Forest clearing with ancient ruins</span>
+        </div>
+        <!-- Audio Indicator -->
+        <div style="position: absolute; bottom: 12px; right: 12px; background: rgba(244, 168, 54, 0.2); border: 1px solid rgba(244, 168, 54, 0.4); border-radius: 20px; padding: 6px 12px; display: flex; align-items: center; gap: 6px;">
+          <div style="width: 8px; height: 8px; background: #F4A836; border-radius: 50%; animation: pulse 1.5s infinite;"></div>
+          <span style="color: #F4A836; font-size: 12px;">Playing...</span>
+        </div>
+      </div>
+      <!-- Narration Text -->
+      <div style="padding: 20px; background: linear-gradient(180deg, rgba(45, 31, 61, 0.9) 0%, rgba(26, 20, 37, 0.95) 100%);">
+        <p style="color: #F5F0E6; font-family: Georgia, serif; font-size: 16px; line-height: 1.6; margin: 0;">
+          "As you push through the thick undergrowth, the trees suddenly part to reveal ancient stone ruins covered in moss. A faint glow pulses from within..."
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>State B: Discussion Prompt</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">The KEY moment — screen "steps back" so family talks to each other, not the device.</p>
+  <div class="mockup">
+    <div class="mockup-header">Discussion — Conversation-First Design</div>
+    <div class="mockup-body" style="background: linear-gradient(180deg, #1a1425 0%, #0d0a12 100%); padding: 0; min-height: 400px; display: flex; flex-direction: column;">
+      <!-- Dimmed Scene -->
+      <div style="flex: 1; background: linear-gradient(180deg, #2d4a3a 0%, #1a2d24 100%); display: flex; align-items: center; justify-content: center; position: relative; min-height: 180px; opacity: 0.4;">
+        <div style="color: #4a6b5a; font-size: 14px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 8px;">🏰</div>
+          [Scene fades back]
+        </div>
+      </div>
+      <!-- Discussion Prompt -->
+      <div style="padding: 32px 20px; background: linear-gradient(180deg, rgba(45, 31, 61, 0.95) 0%, rgba(26, 20, 37, 1) 100%); text-align: center;">
+        <div style="color: #F4A836; font-family: Georgia, serif; font-size: 28px; font-weight: 600; margin-bottom: 16px; text-shadow: 0 0 20px rgba(244, 168, 54, 0.3);">
+          What do you do?
+        </div>
+        <p style="color: #c4b8a8; font-size: 14px; margin-bottom: 24px;">Talk it over with your party...</p>
+        <!-- Quick Actions -->
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
+          <button style="background: rgba(244, 168, 54, 0.15); border: 1px solid rgba(244, 168, 54, 0.3); color: #F4A836; padding: 10px 16px; border-radius: 20px; font-size: 14px;">⚔️ Fight</button>
+          <button style="background: rgba(244, 168, 54, 0.15); border: 1px solid rgba(244, 168, 54, 0.3); color: #F4A836; padding: 10px 16px; border-radius: 20px; font-size: 14px;">💬 Talk</button>
+          <button style="background: rgba(244, 168, 54, 0.15); border: 1px solid rgba(244, 168, 54, 0.3); color: #F4A836; padding: 10px 16px; border-radius: 20px; font-size: 14px;">🔍 Explore</button>
+          <button style="background: rgba(244, 168, 54, 0.15); border: 1px solid rgba(244, 168, 54, 0.3); color: #F4A836; padding: 10px 16px; border-radius: 20px; font-size: 14px;">🏃 Run</button>
+        </div>
+        <!-- Text Input -->
+        <div style="display: flex; gap: 8px;">
+          <input type="text" placeholder="Or describe your action..." style="flex: 1; background: rgba(245, 240, 230, 0.1); border: 1px solid rgba(245, 240, 230, 0.2); color: #F5F0E6; padding: 14px 16px; border-radius: 8px; font-size: 16px;" />
+          <button style="background: linear-gradient(135deg, #F4A836 0%, #d4922e 100%); color: #1a1425; padding: 14px 20px; border-radius: 8px; border: none; font-weight: 600;">Go!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>State C: Dice Roll</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">Physical dice OR in-app — respects families who have real dice at the table.</p>
+  <div class="mockup">
+    <div class="mockup-header">Dice Roll — Your Choice</div>
+    <div class="mockup-body" style="background: linear-gradient(180deg, #1a1425 0%, #0d0a12 100%); padding: 32px 20px; min-height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+      <div style="color: #F4A836; font-family: Georgia, serif; font-size: 24px; margin-bottom: 8px;">🎲 Roll for Stealth!</div>
+      <p style="color: #c4b8a8; font-size: 14px; margin-bottom: 32px;">Can you sneak past the sleeping guard?</p>
+
+      <div style="display: flex; gap: 16px; width: 100%; max-width: 320px;">
+        <!-- Physical Dice Option -->
+        <div style="flex: 1; background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 12px; padding: 20px; cursor: pointer;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🎲</div>
+          <div style="color: #F5F0E6; font-weight: 600; margin-bottom: 4px;">Use My Dice</div>
+          <div style="color: #c4b8a8; font-size: 12px;">Roll d20, enter result</div>
+        </div>
+        <!-- Digital Dice Option -->
+        <div style="flex: 1; background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 12px; padding: 20px; cursor: pointer;">
+          <div style="font-size: 32px; margin-bottom: 8px;">✨</div>
+          <div style="color: #F5F0E6; font-weight: 600; margin-bottom: 4px;">Roll for Me</div>
+          <div style="color: #c4b8a8; font-size: 12px;">Animated roll</div>
+        </div>
+      </div>
+
+      <!-- Number Pad (shown after "Use My Dice") -->
+      <div style="margin-top: 24px; color: #71717a; font-size: 12px;">[Number pad appears after selecting "Use My Dice"]</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>State D: Outcome</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">Celebrate success or reframe setbacks as "plot twists" — never feels like failure.</p>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Success!</div>
+      <div class="mockup-body" style="background: linear-gradient(180deg, #1a2d24 0%, #0d1a12 100%); padding: 32px 20px; min-height: 200px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 12px;">✨</div>
+        <div style="color: #4ade80; font-family: Georgia, serif; font-size: 24px; font-weight: 600; margin-bottom: 8px; text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);">You rolled 18!</div>
+        <p style="color: #a8c4b8; font-size: 14px;">"Like shadows in moonlight, you slip past unnoticed..."</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Plot Twist!</div>
+      <div class="mockup-body" style="background: linear-gradient(180deg, #2d1f1f 0%, #1a1212 100%); padding: 32px 20px; min-height: 200px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 12px;">💫</div>
+        <div style="color: #F4A836; font-family: Georgia, serif; font-size: 24px; font-weight: 600; margin-bottom: 8px; text-shadow: 0 0 20px rgba(244, 168, 54, 0.3);">You rolled 5!</div>
+        <p style="color: #c4a8a8; font-size: 14px;">"A loose stone clatters — the guard stirs! What now?"</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background: rgba(74, 59, 107, 0.1); padding: 20px; border-radius: 12px; margin-top: 24px;">
+  <h3>Key Design Questions</h3>
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="flow" onclick="toggleSelect(this)">
+      <div class="letter">?</div>
+      <div class="content">
+        <h3>Does this flow feel right?</h3>
+        <p>Scene → Discussion → Dice (optional) → Outcome → repeat</p>
+      </div>
+    </div>
+    <div class="option" data-choice="discussion" onclick="toggleSelect(this)">
+      <div class="letter">?</div>
+      <div class="content">
+        <h3>Is the Discussion state "stepped back" enough?</h3>
+        <p>Should the screen dim more? Show less? Different approach?</p>
+      </div>
+    </div>
+    <div class="option" data-choice="quickactions" onclick="toggleSelect(this)">
+      <div class="letter">?</div>
+      <div class="content">
+        <h3>Quick action chips: helpful or limiting?</h3>
+        <p>Fight/Talk/Explore/Run — good training wheels or restricts creativity?</p>
+      </div>
+    </div>
+  </div>
+  <p style="color: #71717a; font-size: 14px; margin-top: 16px;">Click any questions you want to discuss, then share your thoughts in the terminal.</p>
+</div>

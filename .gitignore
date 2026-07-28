@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# machine-local Claude settings (permissions differ per machine)
+.claude/settings.local.json
+
+# superpowers brainstorm servers (the wireframes they served live in docs/brainstorms/wireframes/)
+.superpowers/

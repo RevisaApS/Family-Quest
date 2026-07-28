@@ -1,0 +1,188 @@
+<h2>Players, Characters & Visual Styles</h2>
+<p class="subtitle">Parent-controlled experience — because you know your kids best</p>
+
+<div class="section">
+  <h3>Data Model: Players vs Characters</h3>
+  <div style="background: rgba(74, 59, 107, 0.15); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+
+      <!-- Family Account -->
+      <div style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 2px solid rgba(244, 168, 54, 0.4); border-radius: 12px; padding: 16px;">
+        <div style="color: #F4A836; font-weight: 600; margin-bottom: 8px;">👨‍👩‍👧‍👦 Family Account</div>
+        <div style="color: #c4b8a8; font-size: 13px;">Parent email, password, subscription, <strong>visual style preference</strong></div>
+      </div>
+
+      <div style="text-align: center; color: #F4A836;">↓ has many</div>
+
+      <!-- Players -->
+      <div style="background: linear-gradient(135deg, #2d5a4a 0%, #1a3d2d 100%); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 12px; padding: 16px;">
+        <div style="color: #4ade80; font-weight: 600; margin-bottom: 8px;">👤 Players (Your Kids)</div>
+        <div style="color: #a8c4b8; font-size: 13px;">
+          Created <strong>once</strong>, persist forever<br/>
+          • Display name ("Luna", "Max")<br/>
+          • Age (for AI content calibration)<br/>
+          • Avatar/color preference
+        </div>
+      </div>
+
+      <div style="text-align: center; color: #F4A836;">↓ play as</div>
+
+      <!-- Characters -->
+      <div style="background: linear-gradient(135deg, #4a3b6b 0%, #2d2345 100%); border: 1px solid rgba(155, 109, 255, 0.3); border-radius: 12px; padding: 16px;">
+        <div style="color: #9b6dff; font-weight: 600; margin-bottom: 8px;">⚔️ Characters (Per Adventure)</div>
+        <div style="color: #b8a8c8; font-size: 13px;">
+          Created for each campaign, linked to a player<br/>
+          • Character name ("Shadowblade Luna")<br/>
+          • Class (Warrior, Wizard, Rogue, Ranger)<br/>
+          • Story state, items, etc.
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div style="background: rgba(45, 90, 74, 0.2); border: 1px solid rgba(45, 90, 74, 0.3); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #a8c4b8;">
+    <strong>Why this matters:</strong> Add Luna once. She can be "Shadowblade Luna the Warrior" in one campaign and "Luna the Wise Wizard" in another.
+  </div>
+</div>
+
+<div class="section">
+  <h3>Visual Style Options</h3>
+  <p style="color: #71717a; margin-bottom: 16px;">Parent sets this at family level. Affects AI image generation AND narrative tone.</p>
+
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+
+    <!-- Style 1: Whimsical -->
+    <div class="option" data-choice="style-whimsical" onclick="toggleSelect(this)" style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 12px; padding: 0; overflow: hidden; cursor: pointer;">
+      <div style="height: 80px; background: linear-gradient(135deg, #ffb347 0%, #ff9a56 100%); display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <span style="font-size: 36px;">🌈</span>
+        <span style="font-size: 36px;">🐰</span>
+        <span style="font-size: 36px;">✨</span>
+      </div>
+      <div style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 18px; margin: 0;">Whimsical</h3>
+          <span style="background: rgba(74, 222, 128, 0.2); color: #4ade80; font-size: 11px; padding: 4px 10px; border-radius: 12px;">Gentlest</span>
+        </div>
+        <p style="color: #a89888; font-size: 13px; margin: 0 0 12px 0; line-height: 1.4;">Bright colors, friendly creatures, storybook illustrations. No scary moments. Think: children's picture books.</p>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Soft shadows</span>
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Round shapes</span>
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Always sunny</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Style 2: Heroic -->
+    <div class="option" data-choice="style-heroic" onclick="toggleSelect(this)" style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 12px; padding: 0; overflow: hidden; cursor: pointer;">
+      <div style="height: 80px; background: linear-gradient(135deg, #4a7c59 0%, #2d5a4a 100%); display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <span style="font-size: 36px;">⚔️</span>
+        <span style="font-size: 36px;">🐉</span>
+        <span style="font-size: 36px;">🏰</span>
+      </div>
+      <div style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 18px; margin: 0;">Heroic</h3>
+          <span style="background: rgba(244, 168, 54, 0.2); color: #F4A836; font-size: 11px; padding: 4px 10px; border-radius: 12px;">Recommended</span>
+        </div>
+        <p style="color: #a89888; font-size: 13px; margin: 0 0 12px 0; line-height: 1.4;">Cool and exciting! Dynamic poses, epic landscapes, real adventure vibes. Mild tension okay, but heroes always triumph. Think: How to Train Your Dragon, Pixar.</p>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Dynamic action</span>
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Cool creatures</span>
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Exciting not scary</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Style 3: Epic -->
+    <div class="option" data-choice="style-epic" onclick="toggleSelect(this)" style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 12px; padding: 0; overflow: hidden; cursor: pointer;">
+      <div style="height: 80px; background: linear-gradient(135deg, #4a3b6b 0%, #2d2345 100%); display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <span style="font-size: 36px;">🌋</span>
+        <span style="font-size: 36px;">👑</span>
+        <span style="font-size: 36px;">⚡</span>
+      </div>
+      <div style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 18px; margin: 0;">Epic</h3>
+          <span style="background: rgba(155, 109, 255, 0.2); color: #9b6dff; font-size: 11px; padding: 4px 10px; border-radius: 12px;">Intense</span>
+        </div>
+        <p style="color: #a89888; font-size: 13px; margin: 0 0 12px 0; line-height: 1.4;">Dramatic and cinematic. Real stakes, atmospheric tension, detailed realistic characters. Can include mildly scary moments. Think: Lord of the Rings, Avatar.</p>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Cinematic</span>
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Real stakes</span>
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Mild tension</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Style 4: Dark Fantasy -->
+    <div class="option" data-choice="style-dark" onclick="toggleSelect(this)" style="background: linear-gradient(135deg, #3d2a54 0%, #2a1f3d 100%); border: 1px solid rgba(244, 168, 54, 0.3); border-radius: 12px; padding: 0; overflow: hidden; cursor: pointer;">
+      <div style="height: 80px; background: linear-gradient(135deg, #2d1f2d 0%, #1a1220 100%); display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <span style="font-size: 36px;">🌑</span>
+        <span style="font-size: 36px;">💀</span>
+        <span style="font-size: 36px;">🗡️</span>
+      </div>
+      <div style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="color: #F5F0E6; font-family: Georgia, serif; font-size: 18px; margin: 0;">Dark Fantasy</h3>
+          <span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 11px; padding: 4px 10px; border-radius: 12px;">13+</span>
+        </div>
+        <p style="color: #a89888; font-size: 13px; margin: 0 0 12px 0; line-height: 1.4;">Moody, atmospheric, genuinely challenging. Darker themes handled thoughtfully. Real consequences. Think: The Witcher (toned down), Dark Souls aesthetic.</p>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Atmospheric</span>
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Moody lighting</span>
+          <span style="background: rgba(245, 240, 230, 0.1); color: #c4b8a8; padding: 4px 8px; border-radius: 8px; font-size: 11px;">Real stakes</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h3>Where Does Style Get Set?</h3>
+  <div class="options">
+    <div class="option" data-choice="style-onboarding" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>During Onboarding</h3>
+        <p>After adding players, before first adventure: "What vibe fits your family?"</p>
+      </div>
+    </div>
+    <div class="option" data-choice="style-settings" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Default Heroic, Change in Settings</h3>
+        <p>Start with recommended style. Parents can adjust later if needed.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="style-adventure" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>Per-Adventure Choice</h3>
+        <p>Ask each time a new adventure starts. More flexible but more friction.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background: rgba(74, 59, 107, 0.15); border-radius: 12px; padding: 20px; margin-top: 16px;">
+  <h3>Updated Flow with Account</h3>
+  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 16px; background: rgba(45, 31, 61, 0.5); border-radius: 8px;">
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Welcome</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Create Account</span>
+    <span style="color: #71717a; font-size: 12px;">(optional)</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Add Players</span>
+    <span style="color: #71717a; font-size: 12px;">(names + ages)</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Dice + Style</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #4A3B6B; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Characters</span>
+    <span style="color: #F4A836;">→</span>
+    <span style="background: #2D5A4A; color: #F5F0E6; padding: 6px 12px; border-radius: 16px; font-size: 13px;">Play!</span>
+  </div>
+  <p style="color: #71717a; font-size: 13px; margin-top: 12px;">Players (kids) created once. Characters created per adventure. Style set once, changeable in settings.</p>
+</div>
+
+<p style="color: #71717a; font-size: 14px; margin-top: 20px; text-align: center;">Click the styles that make sense, and pick where style should be set. Then confirm in terminal.</p>
