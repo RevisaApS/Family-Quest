@@ -1,0 +1,30 @@
+{
+  "extraKnownMarketplaces": {
+    "mothership": {
+      "source": {
+        "source": "github",
+        "repo": "StevenValentin/Mothership"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "mothership@mothership": true
+  },
+  "permissions": {
+    "allow": [
+      "Read(//Users/stevenvalentinwebb/HQ/**)"
+    ],
+    "deny": [
+      "Edit(//Users/stevenvalentinwebb/HQ/Life/LifeOS/**)",
+      "Edit(//Users/stevenvalentinwebb/HQ/Work/**)",
+      "Edit(//Users/stevenvalentinwebb/HQ/Mothership/**)",
+      "Read(//Users/stevenvalentinwebb/HQ/Life/LifeOS/private/**)",
+      "Read(//Users/stevenvalentinwebb/HQ/Life/LifeOS/**/.env*)",
+      "Read(//Users/stevenvalentinwebb/HQ/Life/LifeOS/**/secrets/**)",
+      "Read(//Users/stevenvalentinwebb/HQ/Work/**/.env*)",
+      "Read(//Users/stevenvalentinwebb/HQ/Work/**/secrets/**)",
+      "Read(//Users/stevenvalentinwebb/HQ/Mothership/**/.env*)",
+      "Read(//Users/stevenvalentinwebb/HQ/Mothership/**/secrets/**)"
+    ]
+  }
+}
