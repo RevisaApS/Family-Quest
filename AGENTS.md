@@ -41,6 +41,7 @@ the branch.
 - Models: text/JSON `gemini-3.5-flash`; images `gemini-3-pro-image-preview` (fallback `gemini-2.5-flash-image`). Persistent store is **localStorage** (zustand persist) — Supabase is wired but unused at runtime.
 - Portrait / scene-image / item-image calls cost **real Gemini credits** — do **not** run playthroughs or smoke tests that burn credits without asking first.
 - `digest.md` at the repo root is the 1-page state summary other repos (LifeOS especially) read first. Refresh it when project state meaningfully changes — `/mothership:publish-digest` drives it. Never put secrets or anything kid-private in it; it crosses the repo boundary by design.
+- Sibling `~/HQ` repos are readable but write-locked from here. If a change is needed in one, don't fight the lock — end the reply with a paste-ready handoff prompt for a session in that repo (the change, the exact files, the context).
 
 ## Architecture
 
