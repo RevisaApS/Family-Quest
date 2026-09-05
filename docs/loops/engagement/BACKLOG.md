@@ -14,35 +14,20 @@ they drifted" outranks everything here.
 
 ## Tier 1 — the turn itself (no dead air, stakes on every roll)
 
-### 1. Keep the story on screen while the next scene loads
-- **Moment:** ~18 times a session, every "Eventyret fortsætter →" tap. The scene
-  text and picture unmount and a bouncing 🏰 with "Gør jeres eventyr klar…" is all
-  the table has for 2–6 s (up to ~40 s on a retry). `src/app/play/page.tsx:1174`
-  shows the castle for both `loading` and `rewards`.
-- **Hypothesis:** If the last scene and picture stay visible (dimmed) with a thin
-  "Fortælleren tænker…" strip, then between turns the twins keep talking about
-  what just happened instead of watching an emoji bounce.
-- **Slice:** change the phase condition so the previous scene stays mounted
-  during `loading`/`rewards`; overlay a small progress strip; keep the castle only
-  for the very first scene.
-- **Verify:** mocked-AI drive with `page.route` delaying `/api/ai/scene` by 4 s;
-  screenshot the between-turn state at 1024×768. Unit-test nothing (UI only).
-- **Merge bar:** meets it.
+### ~~1. Keep the story on screen while the next scene loads~~ — shipped, run 1 (PR #19)
 
 ### 2. Never hold the table hostage to the outcome prose
 - **Moment:** after every roll. Dice, chips and sound land instantly, but the
   Continue button does not exist until the outcome AI call returns
   (`src/components/game/outcome-display.tsx:135`). Second Chance / Rally trigger
-  the same wait again. On failure the fallback text is **English**
-  (`'The story continues...'`, `src/app/play/page.tsx:691`) in a Danish game.
-- **Hypothesis:** If Continue appears after a short grace period even when the
-  prose is late, and the fallback is Danish, then a slow call never stalls the
-  round.
-- **Slice:** (a) move the fallback string into `STRINGS` via `t()`; (b) show
-  Continue after ~6 s of loading with the Danish fallback, and let a late
-  narrative still land in story memory. Do (a) even if (b) waits.
+  the same wait again.
+- **Done in run 1:** (a) the failure fallback is now Danish via `t('storyContinues')`.
+- **Hypothesis (remaining):** If Continue appears after a short grace period even
+  when the prose is late, then a slow call never stalls the round.
+- **Slice:** show Continue after ~6 s of loading with the Danish fallback, and let
+  a late narrative still land in story memory.
 - **Verify:** mocked route that never responds → Continue appears, text is Danish.
-- **Merge bar:** (a) yes. (b) yes if the late narrative is still recorded.
+- **Merge bar:** yes if the late narrative is still recorded.
 
 ### 3. Give the waiting twin a bet on every roll
 - **Moment:** half the session, the kid whose turn it isn't has one optional
@@ -57,8 +42,13 @@ they drifted" outranks everything here.
   from the raw d20 in `resolveTurn`, +1 gold to the guesser, a one-line toast. No
   AI. Pure function `resolvePrediction(guess, roll)` with tests.
 - **Verify:** unit tests; drive a turn with the guess and assert the gold chip.
-- **Merge bar:** meets it (no store version bump needed if the guess lives in
-  component state).
+- **Economy note (run 1):** a coin per correct guess is ~0.5 gold per turn to
+  the guesser, roughly +10 gold per kid per adventure against an economy the
+  simulator tuned. Either make the reward non-monetary (the outcome prompt is
+  told who guessed right and cheers; a streak shown on the party bar), or run
+  `SIM=1 npx vitest run tests/sim` before and after and record the numbers.
+- **Merge bar:** meets it if the reward is non-monetary (no store version bump
+  needed if the guess lives in component state). With gold, PR only.
 
 ### 4. Say whose chest it is
 - **Moment:** the loot chest opens after the turn pointer has moved on; the

@@ -185,6 +185,11 @@ const STRINGS = {
   nameAdventure: { da: 'Giv eventyret et navn', en: 'Name this adventure' },
   continueAdventure: { da: 'Eventyret fortsætter →', en: 'Continue Adventure →' },
   storyUnfolds: { da: 'Historien folder sig ud...', en: 'The story unfolds...' },
+  // Shown while the next scene is being written — the finished page stays on
+  // screen underneath, so the table keeps talking about what just happened.
+  nextPage: { da: 'Fortælleren skriver næste side...', en: 'The storyteller is writing the next page...' },
+  // Outcome prose when the storyteller could not be reached
+  storyContinues: { da: 'Historien fortsætter...', en: 'The story continues...' },
   outcomeSuccess: { da: 'Sejr!', en: 'Success!' },
   outcomePartial: { da: 'Delvis sejr', en: 'Partial Success' },
   outcomeTwist: { da: 'Uventet drejning!', en: 'Plot Twist!' },

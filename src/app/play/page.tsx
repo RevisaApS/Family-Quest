@@ -115,6 +115,14 @@ export default function PlayPage() {
   const [diceResult, setDiceResult] = useState<number | null>(null)
   const [outcomeType, setOutcomeType] = useState<OutcomeType | null>(null)
   const [outcomeNarrative, setOutcomeNarrative] = useState('')
+  // The page the family just finished — scene, picture and what happened —
+  // stays on screen (dimmed) while the storyteller writes the next one, so
+  // the wait between turns is never a blank castle.
+  const [lastBeat, setLastBeat] = useState<{
+    narration: string
+    imageUrl: string | null
+    outcome: string
+  } | null>(null)
   const [turnCounter, setTurnCounter] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [saveName, setSaveName] = useState('')
@@ -688,7 +696,7 @@ export default function PlayPage() {
       encDamage,
       resolved.crit,
     )
-    setOutcomeNarrative(narrative || 'The story continues...')
+    setOutcomeNarrative(narrative || t('storyContinues', language))
   }
 
   const handleDiceRoll = async (result: number) => {
@@ -790,6 +798,9 @@ export default function PlayPage() {
     }]
 
     const nextPlayerIndex = (currentPlayerIndex + 1) % selectedPlayers.length
+
+    // Keep this beat visible under the reward cards and the next scene's wait
+    setLastBeat({ narration, imageUrl: sceneImageUrl, outcome: outcomeNarrative })
 
     updateAdventureState({
       currentScene: currentSceneText,
@@ -1171,7 +1182,39 @@ export default function PlayPage() {
 
         <AnimatePresence mode="wait">
           {/* Loading state for initial scene */}
-          {(gamePhase === 'loading' || gamePhase === 'rewards') && !error && (
+          {(gamePhase === 'loading' || gamePhase === 'rewards') && !error && lastBeat && (
+            <motion.div
+              key="between"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-3"
+              data-testid="between-turns"
+            >
+              <p className="text-center text-primary font-serif text-base animate-pulse">
+                ✍️ {t('nextPage', language)}
+              </p>
+              {/* The finished page, dimmed: still readable, clearly over */}
+              <div className="opacity-60 space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+                <SceneDisplay
+                  narration={lastBeat.narration}
+                  isLoadingNarration={false}
+                  imageUrl={lastBeat.imageUrl ?? undefined}
+                  isLoadingImage={false}
+                  animateIn={false}
+                />
+                {lastBeat.outcome && (
+                  <div className="page-parchment p-4">
+                    <p className="drop-cap text-lg leading-relaxed">{lastBeat.outcome}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* The very first page of an adventure has nothing to show yet */}
+          {(gamePhase === 'loading' || gamePhase === 'rewards') && !error && !lastBeat && (
             <motion.div
               key="loading"
               initial={{ opacity: 0, scale: 0.8 }}

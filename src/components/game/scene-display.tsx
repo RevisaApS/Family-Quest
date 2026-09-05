@@ -8,11 +8,13 @@ interface SceneDisplayProps {
   isLoadingImage: boolean
   narration: string
   isLoadingNarration: boolean
+  // False when re-showing a page the family has already seen — no fade-in
+  animateIn?: boolean
 }
 
 // The signature element of the whole app: a page of the storybook.
 // Illustration plate on top, narration in ink below — one piece of paper.
-export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNarration }: SceneDisplayProps) {
+export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNarration, animateIn = true }: SceneDisplayProps) {
   const showNarrationBox = isLoadingNarration || !!narration
 
   return (
@@ -21,7 +23,7 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
         {imageUrl ? (
           <motion.img
             key={imageUrl}
-            initial={{ opacity: 0, scale: 1.05 }}
+            initial={animateIn ? { opacity: 0, scale: 1.05 } : false}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.2, ease: 'easeOut' }}
             src={imageUrl}
@@ -63,7 +65,7 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
             ) : (
               <motion.p
                 key={narration}
-                initial={{ opacity: 0 }}
+                initial={animateIn ? { opacity: 0 } : false}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8 }}
                 className="drop-cap text-lg leading-relaxed"
