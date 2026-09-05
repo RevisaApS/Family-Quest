@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PageContainer } from '@/components/layout/page-container'
 import { SceneDisplay } from '@/components/game/scene-display'
+import { RollGuess, GuessResults } from '@/components/game/roll-guess'
+import { nextGuessStreak, type RollGuess as RollGuessKind } from '@/lib/game/prediction'
 import { PlayerTurn } from '@/components/game/player-turn'
 import { PartyBar, type PartyMember } from '@/components/game/party-bar'
 import { ActionPicker } from '@/components/game/action-picker'
@@ -147,6 +149,12 @@ export default function PlayPage() {
   const [luckyArmedFor, setLuckyArmedFor] = useState<string | null>(null)
   // Teamwork: which teammate is lending +1 to this roll
   const [assistPlayerId, setAssistPlayerId] = useState<string | null>(null)
+  // The off-turn kid's bet on the d20 (high/low), and each kid's running
+  // streak of right guesses this sitting. A cheer, never a reward — see
+  // src/lib/game/prediction.ts. Streaks live here, not in the store: they are
+  // table talk for one evening, not progression.
+  const [rollGuesses, setRollGuesses] = useState<Record<string, RollGuessKind>>({})
+  const [guessStreaks, setGuessStreaks] = useState<Record<string, number>>({})
   // A drunk luck potion rides on this turn's roll (rerolls included)
   const [luckActive, setLuckActive] = useState(false)
   // The storybook epilogue written when the boss falls
@@ -314,6 +322,7 @@ export default function PlayPage() {
     setTurnCrit(null)
     setRescueMessage(null)
     setAssistPlayerId(null)
+    setRollGuesses({})
     setLuckActive(false)
     preRollRef.current = null
 
@@ -802,6 +811,15 @@ export default function PlayPage() {
     // Keep this beat visible under the reward cards and the next scene's wait
     setLastBeat({ narration, imageUrl: sceneImageUrl, outcome: outcomeNarrative })
 
+    // Settle the spectators' bets against the die that actually counted
+    if (diceResult !== null) {
+      setGuessStreaks(prev => {
+        const next = { ...prev }
+        for (const s of spectators) next[s.playerId] = nextGuessStreak(prev[s.playerId] ?? 0, rollGuesses[s.playerId], diceResult)
+        return next
+      })
+    }
+
     updateAdventureState({
       currentScene: currentSceneText,
       storyHistory: newStoryHistory,
@@ -945,6 +963,12 @@ export default function PlayPage() {
   const canArmLucky = currentHero && canUsePower(currentHero, 'lucky') && luckyArmedFor !== currentPlayer.id
   const canDrinkHeal = currentHero && potionCount(currentHero, 'heal') > 0 && currentHero.hp < currentHero.maxHp
   const canDrinkLuck = currentHero && potionCount(currentHero, 'luck') > 0 && !luckActive
+
+  // Everyone who isn't rolling gets to guess the die — a knocked-out hero too;
+  // cheering from the sidelines is exactly what they are there for.
+  const spectators = selectedPlayers
+    .filter(p => p.id !== currentPlayer.id)
+    .map(p => ({ playerId: p.id, name: characters.find(c => c.playerId === p.id)?.name ?? p.name }))
 
   // Teammates who can lend +1 to this roll — knocked-out heroes cheer from
   // the sidelines (📣), so being down never means sitting out
@@ -1298,6 +1322,18 @@ export default function PlayPage() {
                     </Button>
                   )}
 
+                  {/* The sibling's bet: high or low? Settled the moment the die lands */}
+                  <RollGuess
+                    spectators={spectators}
+                    guesses={rollGuesses}
+                    onGuess={(pid, g) => setRollGuesses(prev => {
+                      const next = { ...prev }
+                      if (g) next[pid] = g; else delete next[pid]
+                      return next
+                    })}
+                    language={language}
+                  />
+
                   {/* Teamwork: a sibling lends +1 before the dice hit the table */}
                   {helpers.length > 0 && (
                     <div className="rounded-lg border border-border bg-card p-3 space-y-2">
@@ -1356,21 +1392,30 @@ export default function PlayPage() {
                   isLoadingImage={false}
                 />
               </div>
-              <OutcomeDisplay
-                outcome={outcomeType}
-                diceRoll={diceResult}
-                crit={turnCrit}
-                narrative={outcomeNarrative}
-                isLoading={loadingOutcome || !outcomeNarrative}
-                xpGained={turnXp}
-                goldGained={turnGold}
-                damageTaken={turnDamage}
-                bossDamage={turnEncounterDamage}
-                bossName={encounter?.name}
-                language={language}
-                powerActions={outcomePowerActions()}
-                onContinue={handleContinue}
-              />
+              <div className="space-y-3">
+                <GuessResults
+                  spectators={spectators}
+                  guesses={rollGuesses}
+                  streaks={guessStreaks}
+                  roll={diceResult}
+                  language={language}
+                />
+                <OutcomeDisplay
+                  outcome={outcomeType}
+                  diceRoll={diceResult}
+                  crit={turnCrit}
+                  narrative={outcomeNarrative}
+                  isLoading={loadingOutcome || !outcomeNarrative}
+                  xpGained={turnXp}
+                  goldGained={turnGold}
+                  damageTaken={turnDamage}
+                  bossDamage={turnEncounterDamage}
+                  bossName={encounter?.name}
+                  language={language}
+                  powerActions={outcomePowerActions()}
+                  onContinue={handleContinue}
+                />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

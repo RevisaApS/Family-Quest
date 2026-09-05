@@ -19,6 +19,39 @@ Entry template:
 
 ---
 
+## 2026-09-05 · run 2 · PR #20
+**Read:** ledger runs 0–1, `BACKLOG.md` (still no play notes). Run by hand in
+the same session as run 1; branch as in run 1.
+**Hypothesis:** If the twin who isn't rolling can bet on the d20 before it
+lands, then during their sibling's turn they watch the die instead of
+drifting.
+**Shipped:** backlog #3. In the dice phase the off-turn kid sees
+*"🔮 Mason Måneskin, gæt terningen!"* with two big buttons, *Højt (11–20)* and
+*Lavt (1–10)*; tapping again takes the guess back. When the die lands, the
+outcome card gets a line: *"🔮 Mason Måneskin gættede rigtigt!"* (green) or
+*"…ikke denne gang!"*, and from the second right guess in a row *"i træk ×2"*.
+Knocked-out heroes can guess too. The reward is the cheer and the streak
+only: no gold, no XP, no roll bonus, so the economy the simulator tuned is
+untouched. Streaks live in component state for one sitting and are not
+persisted. Merged.
+**Verified:** vitest 211/211 (3 new, `tests/lib/game/prediction.test.ts`) ·
+tsc clean · eslint 16, unchanged · drove three turns at 1024×768 with mocked
+AI: the prompt shows only for the non-acting kid and swaps with the turn; a
+wrong guess, a right guess and a right-after-wrong all read correctly; gold
+stayed at 1 for both heroes. Screenshots in `shots/run-2/`.
+**Watch for at the table:** does the off-turn twin actually tap a guess most
+turns, and does he look at the die when it lands? If they start guessing on
+their own roll's odds instead ("kan jeg klare 12?"), that is a sign to try
+the "Klarer han det? Ja/Nej" variant.
+**Left out / next:** the guess is not told to the outcome prompt (a cheer in
+the narration would be nice and is one prompt line). Streaks reset on reload.
+Next run: #4 (name the chest owner) is tiny; #6 (the "Sidst…" recap on
+resume) is the first between-session hook. Prefer #6 unless a play note says
+otherwise.
+**Open question for Steven:** none.
+
+---
+
 ## 2026-09-05 · run 1 · PR #19
 **Read:** ledger run 0, `BACKLOG.md` (no play notes exist yet). Run by hand in
 the session that built the loop, on the session's branch rather than

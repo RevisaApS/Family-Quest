@@ -29,26 +29,8 @@ they drifted" outranks everything here.
 - **Verify:** mocked route that never responds → Continue appears, text is Danish.
 - **Merge bar:** yes if the late narrative is still recorded.
 
-### 3. Give the waiting twin a bet on every roll
-- **Moment:** half the session, the kid whose turn it isn't has one optional
-  +1 chip (`Hvem hjælper til?`, `src/app/play/page.tsx:1259`) among four small
-  buttons. +1 on a d20 is a 5 % swing; nothing invites them to look. The unused
-  string `cheerHint` ("hepper!") in `src/lib/i18n.ts` shows this was meant to be
-  more.
-- **Hypothesis:** If the off-turn twin can predict the roll ("Over eller under
-  12?") and win a coin for a right guess, then during their sibling's turn they
-  will watch the d20 instead of drifting.
-- **Slice:** a prediction chip in the dice phase for the non-acting hero, resolved
-  from the raw d20 in `resolveTurn`, +1 gold to the guesser, a one-line toast. No
-  AI. Pure function `resolvePrediction(guess, roll)` with tests.
-- **Verify:** unit tests; drive a turn with the guess and assert the gold chip.
-- **Economy note (run 1):** a coin per correct guess is ~0.5 gold per turn to
-  the guesser, roughly +10 gold per kid per adventure against an economy the
-  simulator tuned. Either make the reward non-monetary (the outcome prompt is
-  told who guessed right and cheers; a streak shown on the party bar), or run
-  `SIM=1 npx vitest run tests/sim` before and after and record the numbers.
-- **Merge bar:** meets it if the reward is non-monetary (no store version bump
-  needed if the guess lives in component state). With gold, PR only.
+### ~~3. Give the waiting twin a bet on every roll~~ — shipped, run 2 (PR #20)
+Reward is a cheer line and a per-sitting streak, no gold. Follow-ups if it lands: tell the outcome prompt who guessed right; persist the streak per adventure.
 
 ### 4. Say whose chest it is
 - **Moment:** the loot chest opens after the turn pointer has moved on; the

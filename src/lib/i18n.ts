@@ -59,6 +59,13 @@ const STRINGS = {
   ownIdeaGo: { da: 'Gør det!', en: 'Do it!' },
   ownIdeaThinking: { da: 'Fortælleren tænker over din idé...', en: 'The storyteller is judging your idea...' },
   assistTitle: { da: 'Hvem hjælper til?', en: 'Who helps?' },
+  // The off-turn kid's bet on the d20 — a cheer and a streak, never gold
+  guessPrompt: { da: 'gæt terningen!', en: 'guess the roll!' },
+  guessHigh: { da: 'Højt (11–20)', en: 'High (11–20)' },
+  guessLow: { da: 'Lavt (1–10)', en: 'Low (1–10)' },
+  guessRight: { da: 'gættede rigtigt!', en: 'guessed right!' },
+  guessMiss: { da: 'ikke denne gang!', en: 'not this time!' },
+  guessStreak: { da: 'i træk', en: 'in a row' },
   determination: { da: 'Kampvilje', en: 'Determination' },
   weakSpot: { da: 'Svagt punkt', en: 'Weak spot' },
   enraged: { da: 'RASENDE!', en: 'ENRAGED!' },
