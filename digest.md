@@ -1,5 +1,5 @@
 ---
-updated: "2026-07-30"
+updated: "2026-09-05"
 ---
 # Digest
 
@@ -7,7 +7,7 @@ updated: "2026-07-30"
 
 ## Current focus
 
-The app is live in production (Vercel, auto-deploy from `main`, ~30s to Ready); development happens via claude.ai cloud sessions that open PRs. The last feature work landed 2026-07-27 (values layer, XP/gold economy, hero-portrait memory, visible inventory); since 2026-07-28 the repo has been in a housekeeping pass — discovery/specs/plans brought into `docs/`, project rules written into `AGENTS.md`. No feature branch is currently in flight.
+The app is live in production (Vercel, auto-deploy from `main`, ~30s to Ready); development happens via claude.ai cloud sessions that open PRs. The last feature work landed 2026-07-27 (values layer, XP/gold economy, hero-portrait memory, visible inventory). Since then: housekeeping (docs into `docs/`, rules into `AGENTS.md`), and on 2026-09-05 a standing **engagement loop** — a brief (`/engagement-loop` skill), a ranked backlog and a run ledger under `docs/loops/engagement/`, fed by Steven's play notes in `docs/playtests/`. Each run ships one small verified change toward "the twins ask to play again". Not yet scheduled as a routine; runs by hand until Steven turns it on. No feature branch is in flight.
 
 ## Active
 
@@ -24,7 +24,7 @@ The app is live in production (Vercel, auto-deploy from `main`, ~30s to Ready); 
 
 ## Next milestone
 
-Play-test what's live: real sessions with the twins to validate the values layer and the new economy before building more. Then decide between Phase 3 (the "Noget andet…" custom action) and the post-vacation backlog.
+Write the first play note after a real session, then let the engagement loop run weekly from it. (The old "Phase 3" custom action already shipped 2026-07-06 as "Min egen idé!" — the loop's backlog is the live to-do list now, not the 2026-07-03 spec.)
 
 ## Where things live
 
