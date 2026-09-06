@@ -19,6 +19,38 @@ Entry template:
 
 ---
 
+## 2026-09-06 · run 3 · PR #21
+**Read:** ledger runs 0–2, `BACKLOG.md` (no play notes yet). Run by hand in
+the same session; branch as before.
+**Hypothesis:** If resuming a saved adventure opens with "Sidst i eventyret…"
+and the last three things that happened, then the twins are back in the story
+(and remember the villain's name) before the first roll.
+**Shipped:** backlog #6. Opening a saved slot, or reloading the iPad
+mid-story, now shows a parchment page: *"📖 Sidst i eventyret..."*, the quest
+title and goal, *"Skurken: Skyggekongen"*, the last three beats as
+*"Hero: what happened"* with 🎉 / ⚡ / 🔄 for how the roll went, *"Næste tur:
+Mason Måneskin"*, and a *"Videre! →"* button. It is built from the story
+memory the game already keeps, so there is no AI call and no wait; the next
+scene is written underneath while Far reads, and appears the instant Videre
+is tapped. A brand-new adventure skips it. Merged.
+**Verified:** vitest 215/215 (4 new, `tests/lib/game/recap.test.ts`) · tsc
+clean · eslint 16, unchanged · drove a resumed slot at 1024×768 with mocked
+AI: recap shows the right three beats (not the fourth), quest, villain and
+next hero; no castle and no new scene leak through while it is up; Videre
+reveals the already-loaded scene in under 100 ms; a fresh adventure shows no
+recap. Screenshots in `shots/run-3/`.
+**Watch for at the table:** does Far actually read it aloud, and do the twins
+correct or add to it ("nej, det var MIG der…")? That back-and-forth is the
+point. If they skip past it every time, shorten to two beats.
+**Left out / next:** the recap knows only outcome lines, not scene text (the
+memory does not keep scenes). No cliffhanger yet on "Gem og afslut" (#7) —
+that is the natural pair to this and the next between-session hook. Runs 1–3
+have all shipped without a play note; the next run should be the first one
+after a real session.
+**Open question for Steven:** none.
+
+---
+
 ## 2026-09-05 · run 2 · PR #20
 **Read:** ledger runs 0–1, `BACKLOG.md` (still no play notes). Run by hand in
 the same session as run 1; branch as in run 1.

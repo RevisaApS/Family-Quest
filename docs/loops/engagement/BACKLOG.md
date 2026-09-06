@@ -57,16 +57,8 @@ Reward is a cheer line and a per-sitting streak, no gold. Follow-ups if it lands
 
 ## Tier 2 — a world that remembers them, reasons to come back
 
-### 6. "Sidst…" when a saved adventure is resumed
-- **Moment:** session start. A resumed slot drops straight into a new scene; the
-  story memory (`storyHistory`, up to 16 lines) is never shown to the family.
-- **Hypothesis:** If resuming opens with three lines of "Sidst i eventyret…",
-  then the twins are back in the story (and remember their pet's name) before
-  the first roll.
-- **Slice:** a card built locally from the last three `storyHistory` lines with
-  the bracketed meta stripped; no AI call. Tap to start.
-- **Verify:** seed a saved slot with history, resume, screenshot.
-- **Merge bar:** meets it.
+### ~~6. "Sidst…" when a saved adventure is resumed~~ — shipped, run 3 (PR #21)
+Local recap from the last three story-memory lines, no AI. Pairs with #7.
 
 ### 7. End on a hook
 - **Moment:** "Gem og afslut". Today the slot card shows a name and a date.

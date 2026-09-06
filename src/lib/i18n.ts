@@ -197,6 +197,11 @@ const STRINGS = {
   nextPage: { da: 'Fortælleren skriver næste side...', en: 'The storyteller is writing the next page...' },
   // Outcome prose when the storyteller could not be reached
   storyContinues: { da: 'Historien fortsætter...', en: 'The story continues...' },
+  // The recap page read aloud when a saved adventure is resumed
+  recapTitle: { da: 'Sidst i eventyret...', en: 'Last time in the adventure...' },
+  recapGo: { da: 'Videre! →', en: 'Onward! →' },
+  nextUpLabel: { da: 'Næste tur', en: 'Next turn' },
+  villainLabel: { da: 'Skurken', en: 'The villain' },
   outcomeSuccess: { da: 'Sejr!', en: 'Success!' },
   outcomePartial: { da: 'Delvis sejr', en: 'Partial Success' },
   outcomeTwist: { da: 'Uventet drejning!', en: 'Plot Twist!' },

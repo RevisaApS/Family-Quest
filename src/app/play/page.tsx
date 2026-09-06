@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { PageContainer } from '@/components/layout/page-container'
 import { SceneDisplay } from '@/components/game/scene-display'
 import { RollGuess, GuessResults } from '@/components/game/roll-guess'
+import { RecapCard } from '@/components/game/recap-card'
+import { buildRecap, shouldShowRecap } from '@/lib/game/recap'
 import { nextGuessStreak, type RollGuess as RollGuessKind } from '@/lib/game/prediction'
 import { PlayerTurn } from '@/components/game/player-turn'
 import { PartyBar, type PartyMember } from '@/components/game/party-bar'
@@ -155,6 +157,10 @@ export default function PlayPage() {
   // table talk for one evening, not progression.
   const [rollGuesses, setRollGuesses] = useState<Record<string, RollGuessKind>>({})
   const [guessStreaks, setGuessStreaks] = useState<Record<string, number>>({})
+  // "Sidst i eventyret…": decided once, when the page first sees the story.
+  // null = not decided yet; true = the recap is up and the next scene is
+  // quietly loading underneath; false = play as normal.
+  const [recapOpen, setRecapOpen] = useState<boolean | null>(null)
   // A drunk luck potion rides on this turn's roll (rerolls included)
   const [luckActive, setLuckActive] = useState(false)
   // The storybook epilogue written when the boss falls
@@ -442,6 +448,14 @@ export default function PlayPage() {
 
   // Clear retryFn when error clears
   useEffect(() => { if (!error) setRetryFn(null) }, [error])
+
+  // A resumed adventure (or a reload mid-story) opens on a recap of the last
+  // few beats, read aloud while the next scene is written underneath. A brand
+  // new adventure has nothing to recap and goes straight to the first page.
+  useEffect(() => {
+    if (!_hasHydrated || recapOpen !== null) return
+    setRecapOpen(shouldShowRecap(storyHistory))
+  }, [_hasHydrated, recapOpen, storyHistory])
 
   // Load first scene on mount, and new scene on player rotation
   useEffect(() => {
@@ -1181,9 +1195,11 @@ export default function PlayPage() {
           />
         )}
 
-        {encounter && !encounter.defeated && <EncounterBanner encounter={encounter} language={language} />}
+        {/* Both hold back while the recap is up — a monster banner over
+            "Sidst i eventyret…" would give the new page away */}
+        {recapOpen === false && encounter && !encounter.defeated && <EncounterBanner encounter={encounter} language={language} />}
 
-        {rescueMessage && (
+        {recapOpen === false && rescueMessage && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1204,9 +1220,23 @@ export default function PlayPage() {
           <ErrorMessage message={error} onRetry={retryFn} />
         )}
 
+        {recapOpen && (
+          <RecapCard
+            questTitle={quest?.title}
+            questGoal={quest?.goal}
+            villain={quest?.villain}
+            beats={buildRecap(storyHistory)}
+            nextHeroName={currentCharacter.name}
+            language={language}
+            onContinue={() => setRecapOpen(false)}
+          />
+        )}
+
+        {/* Nothing below renders until the recap question is settled, so a
+            resumed story never flashes the castle before its recap. */}
         <AnimatePresence mode="wait">
           {/* Loading state for initial scene */}
-          {(gamePhase === 'loading' || gamePhase === 'rewards') && !error && lastBeat && (
+          {recapOpen === false && (gamePhase === 'loading' || gamePhase === 'rewards') && !error && lastBeat && (
             <motion.div
               key="between"
               initial={{ opacity: 0 }}
@@ -1238,7 +1268,7 @@ export default function PlayPage() {
           )}
 
           {/* The very first page of an adventure has nothing to show yet */}
-          {(gamePhase === 'loading' || gamePhase === 'rewards') && !error && !lastBeat && (
+          {recapOpen === false && (gamePhase === 'loading' || gamePhase === 'rewards') && !error && !lastBeat && (
             <motion.div
               key="loading"
               initial={{ opacity: 0, scale: 0.8 }}
@@ -1252,7 +1282,7 @@ export default function PlayPage() {
             </motion.div>
           )}
 
-          {(gamePhase === 'scene' || gamePhase === 'dice') && (
+          {recapOpen === false && (gamePhase === 'scene' || gamePhase === 'dice') && (
             <motion.div
               key="scene"
               {...phaseTransition}
@@ -1378,7 +1408,7 @@ export default function PlayPage() {
             </motion.div>
           )}
 
-          {gamePhase === 'outcome' && outcomeType && diceResult !== null && (
+          {recapOpen === false && gamePhase === 'outcome' && outcomeType && diceResult !== null && (
             <motion.div
               key="outcome"
               {...phaseTransition}
