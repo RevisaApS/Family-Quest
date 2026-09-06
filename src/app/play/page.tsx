@@ -8,6 +8,7 @@ import { SceneDisplay } from '@/components/game/scene-display'
 import { RollGuess, GuessResults } from '@/components/game/roll-guess'
 import { RecapCard } from '@/components/game/recap-card'
 import { buildRecap, shouldShowRecap } from '@/lib/game/recap'
+import { fallbackHook, tidyHook } from '@/lib/game/cliffhanger'
 import { nextGuessStreak, type RollGuess as RollGuessKind } from '@/lib/game/prediction'
 import { PlayerTurn } from '@/components/game/player-turn'
 import { PartyBar, type PartyMember } from '@/components/game/party-bar'
@@ -98,7 +99,7 @@ export default function PlayPage() {
   const {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
     error, fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName,
-    fetchEpilogue, fetchPortrait,
+    fetchEpilogue, fetchPortrait, fetchCliffhanger,
   } = useGameAI()
 
   const selectedPlayers = useMemo(
@@ -130,6 +131,9 @@ export default function PlayPage() {
   const [turnCounter, setTurnCounter] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [saveName, setSaveName] = useState('')
+  // "Gem og afslut" is writing its closing line — the button waits a few
+  // seconds at most, then saves with a canned line instead
+  const [writingHook, setWritingHook] = useState(false)
   const [retryFn, setRetryFn] = useState<(() => void) | null>(null)
 
   // RPG per-turn results
@@ -801,6 +805,25 @@ export default function PlayPage() {
     return list
   }
 
+  // Close the book on a hook. The storyteller gets a few seconds to write the
+  // line the twins will ask about next time; if it doesn't come, a canned line
+  // that still names the villain does the job. Saving never waits longer.
+  const HOOK_WAIT_MS = 5000
+  const handleSaveAndQuit = async () => {
+    setWritingHook(true)
+    const canned = fallbackHook(language, quest?.villain)
+    let hook = canned
+    if (storyHistory.length > 0) {
+      const written = await Promise.race([
+        fetchCliffhanger(buildStoryContext(), currentSceneText),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), HOOK_WAIT_MS)),
+      ])
+      hook = tidyHook(written) ?? canned
+    }
+    saveAdventure(saveName || undefined, hook)
+    router.push('/')
+  }
+
   const handleContinue = () => {
     // One line of story memory per turn. The meta sits in brackets and the
     // prose stays purely in the story language — the old format wrapped Danish
@@ -1089,12 +1112,10 @@ export default function PlayPage() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => {
-                    saveAdventure(saveName || undefined)
-                    router.push('/')
-                  }}
+                  disabled={writingHook}
+                  onClick={handleSaveAndQuit}
                 >
-                  {t('saveQuit', language)}
+                  {writingHook ? `✍️ ${t('writingHook', language)}` : t('saveQuit', language)}
                 </Button>
               </div>
             </div>
@@ -1226,6 +1247,7 @@ export default function PlayPage() {
             questGoal={quest?.goal}
             villain={quest?.villain}
             beats={buildRecap(storyHistory)}
+            hook={savedAdventures.find(a => a.id === activeAdventureId)?.hook}
             nextHeroName={currentCharacter.name}
             language={language}
             onContinue={() => setRecapOpen(false)}

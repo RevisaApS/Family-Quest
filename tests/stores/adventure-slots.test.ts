@@ -105,3 +105,39 @@ describe('adventure save slots', () => {
     expect(state.activeAdventureId).toBeNull()
   })
 })
+
+describe('the closing line ("Gem og afslut" hook)', () => {
+  it('saveAdventure stores the hook on the slot', () => {
+    seedStory()
+    useGameStore.getState().saveAdventure('Lunas eventyr', 'Men noget rører sig i mørket...')
+    expect(useGameStore.getState().savedAdventures[0].hook).toBe('Men noget rører sig i mørket...')
+  })
+
+  it('a save without a hook clears a stale one, so the recap never repeats an old line', () => {
+    seedStory()
+    useGameStore.getState().saveAdventure('Lunas eventyr', 'Men noget rører sig i mørket...')
+    useGameStore.setState({ storyHistory: ['Scene 1: A cave', 'Scene 2: Deeper'] })
+    useGameStore.getState().saveAdventure()
+    const [slot] = useGameStore.getState().savedAdventures
+    expect(slot.snapshot.storyHistory).toHaveLength(2)
+    expect(slot.hook).toBeUndefined()
+  })
+
+  it('re-saving with no progress keeps the hook (resuming a slot auto-saves it first)', () => {
+    seedStory()
+    useGameStore.getState().saveAdventure('Lunas eventyr', 'Men noget rører sig i mørket...')
+    const id = useGameStore.getState().savedAdventures[0].id
+    useGameStore.getState().loadAdventure(id)
+    expect(useGameStore.getState().savedAdventures[0].hook).toBe('Men noget rører sig i mørket...')
+  })
+
+  it('old slots without a hook still load', () => {
+    seedStory()
+    useGameStore.getState().saveAdventure('Gammelt eventyr')
+    const id = useGameStore.getState().savedAdventures[0].id
+    useGameStore.getState().startNewAdventure()
+    useGameStore.getState().loadAdventure(id)
+    expect(useGameStore.getState().storyHistory).toEqual(['Scene 1: A cave'])
+    expect(useGameStore.getState().savedAdventures[0].hook).toBeUndefined()
+  })
+})

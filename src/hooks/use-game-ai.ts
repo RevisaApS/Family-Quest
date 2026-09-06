@@ -158,6 +158,26 @@ export function useGameAI() {
     }
   }, [])
 
+  // The session's closing line is decorative — a failure means a canned line,
+  // never an error and never a wait the caller can't cap.
+  const fetchCliffhanger = useCallback(async (
+    context: StoryContext,
+    currentScene: string
+  ): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/ai/cliffhanger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ context, currentScene }),
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      return typeof data.hook === 'string' ? data.hook : null
+    } catch {
+      return null
+    }
+  }, [])
+
   // Loot naming is decorative — failures fall back to canned names, no error state.
   const fetchLootName = useCallback(async (
     slot: EquipSlot,
@@ -183,7 +203,7 @@ export function useGameAI() {
   return {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
     error,
-    fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName, fetchPortrait,
+    fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName, fetchCliffhanger, fetchPortrait,
     fetchEpilogue,
   }
 }

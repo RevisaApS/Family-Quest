@@ -118,6 +118,11 @@ export default function WelcomePage() {
                       }}
                     >
                       <span className="font-medium block truncate">📖 {adventure.name}</span>
+                      {adventure.hook && (
+                        <span className="block text-sm italic text-foreground/80 line-clamp-2" data-testid="slot-hook">
+                          {adventure.hook}
+                        </span>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {new Date(adventure.savedAt).toLocaleDateString()}
                       </span>
