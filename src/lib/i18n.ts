@@ -202,6 +202,8 @@ const STRINGS = {
   recapGo: { da: 'Videre! →', en: 'Onward! →' },
   nextUpLabel: { da: 'Næste tur', en: 'Next turn' },
   villainLabel: { da: 'Skurken', en: 'The villain' },
+  // Shown on the Save & quit button while the storyteller writes the closing line
+  writingHook: { da: 'Fortælleren skriver en sidste linje...', en: 'The storyteller writes one last line...' },
   outcomeSuccess: { da: 'Sejr!', en: 'Success!' },
   outcomePartial: { da: 'Delvis sejr', en: 'Partial Success' },
   outcomeTwist: { da: 'Uventet drejning!', en: 'Plot Twist!' },

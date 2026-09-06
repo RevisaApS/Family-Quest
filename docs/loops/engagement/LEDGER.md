@@ -19,6 +19,43 @@ Entry template:
 
 ---
 
+## 2026-09-06 · run 4 · PR #22
+**Read:** ledger runs 0–3, `BACKLOG.md` (no play notes yet). Run by hand in
+the same session; branch as before.
+**Hypothesis:** If "Gem og afslut" leaves one hanging sentence that the twins
+see on the home card and hear again at resume, then the next session gets
+asked for.
+**Shipped:** backlog #7. Tapping *Gem og afslut* now shows *"✍️ Fortælleren
+skriver en sidste linje..."* for a moment while a new prompt writes one
+sentence in the story's language that teases the very next moment ("Men under
+broen åbner et gult øje sig..."). The line is tidied to one sentence that
+trails off, saved on the slot, shown in italics on the home card, and read
+again at the bottom of *"Sidst i eventyret..."* (🌙). If the storyteller fails
+or takes more than five seconds, a canned Danish line naming the villain is
+used instead (*"Men et sted i mørket venter Skyggekongen stadig..."*), so the
+save never waits longer. A re-save with no progress keeps the line; a save
+after the story has moved on drops it, so a stale hook is never read. Old
+slots without a line render as before. **One new text-AI call per save**, off
+the turn path, with a hard cap and a fallback. Merged.
+**Verified:** vitest 222/222 (7 new: `tests/lib/game/cliffhanger.test.ts`,
+four slot tests) · tsc clean · eslint 16, unchanged · drove three save paths
+at 1024×768 with mocked AI: a quoted two-sentence answer became one tidied
+line on the home card and on the recap after resume; a 500 gave the canned
+villain line; a hung call saved in ~5.2 s with the canned line. The real
+prompt could not be exercised (no key); the tidier makes any one-sentence
+answer safe to show. Screenshots in `shots/run-4/`.
+**Watch for at the table:** do the twins read the line on the home card and
+ask about it ("hvad var det gule øje?!"), and does the AI's line actually
+point at something from their story rather than a generic omen? If it reads
+generic, tighten the prompt with the last scene's nouns.
+**Left out / next:** nothing entertains the *first* scene's wait (castle);
+the Continue gate on outcome prose (#2b) is still open; #4 (name the chest
+owner) is tiny. **Four runs have shipped without a play note.** Stop here
+until one exists: the next run should be built from what the table said.
+**Open question for Steven:** none.
+
+---
+
 ## 2026-09-06 · run 3 · PR #21
 **Read:** ledger runs 0–2, `BACKLOG.md` (no play notes yet). Run by hand in
 the same session; branch as before.

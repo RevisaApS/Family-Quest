@@ -60,16 +60,8 @@ Reward is a cheer line and a per-sitting streak, no gold. Follow-ups if it lands
 ### ~~6. "Sidst…" when a saved adventure is resumed~~ — shipped, run 3 (PR #21)
 Local recap from the last three story-memory lines, no AI. Pairs with #7.
 
-### 7. End on a hook
-- **Moment:** "Gem og afslut". Today the slot card shows a name and a date.
-- **Hypothesis:** If quitting produces one cliffhanger line ("Men oppe på
-  klippen så noget jer gå…") shown on the slot card and read again at resume,
-  then the next session gets asked for.
-- **Slice:** one small AI call on quit with a local fallback line; store it on
-  the `SavedAdventure` (no version bump if optional). Show on the home card.
-- **Verify:** mocked call; fallback path; screenshot the card.
-- **Merge bar:** meets it only if the field is optional and old slots render
-  unchanged.
+### ~~7. End on a hook~~ — shipped, run 4 (PR #22)
+One text-AI call on "Gem og afslut" with a 5 s cap and a canned villain line as fallback; shown on the home card and on the recap.
 
 ### 8. Let something they earned survive the adventure
 - **Moment:** "Nyt eventyr" resets heroes to level 1 with 1 gold, no gear, no

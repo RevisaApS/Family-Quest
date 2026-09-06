@@ -27,6 +27,10 @@ export interface SavedAdventure {
   id: string
   name: string
   savedAt: number
+  // The storyteller's closing line from the last "Gem og afslut" — shown on
+  // the home card and read again on the recap. Optional: older slots have
+  // none, and an automatic save (switching stories) clears a stale one.
+  hook?: string
   snapshot: {
     selectedPlayerIds: string[]
     characters: Character[]
@@ -113,7 +117,7 @@ interface GameStore {
 
   savedAdventures: SavedAdventure[]
   activeAdventureId: string | null
-  saveAdventure: (name?: string) => void
+  saveAdventure: (name?: string, hook?: string) => void
   loadAdventure: (id: string) => void
   deleteAdventure: (id: string) => void
   startNewAdventure: () => void
@@ -143,7 +147,8 @@ const DEFAULT_DICE: DiceInventory = { d4: 0, d6: 2, d8: 0, d10: 0, d12: 0, d20: 
 // switching adventures can never lose a story. No-op when nothing is in progress.
 const upsertCurrent = (
   state: GameStore,
-  name?: string
+  name?: string,
+  hook?: string
 ): Pick<GameStore, 'savedAdventures' | 'activeAdventureId'> => {
   if (state.storyHistory.length === 0) {
     return { savedAdventures: state.savedAdventures, activeAdventureId: state.activeAdventureId }
@@ -153,7 +158,17 @@ const upsertCurrent = (
     return {
       savedAdventures: state.savedAdventures.map(a =>
         a.id === state.activeAdventureId
-          ? { ...a, name: name?.trim() || a.name, savedAt: Date.now(), snapshot }
+          ? {
+              ...a,
+              name: name?.trim() || a.name,
+              savedAt: Date.now(),
+              snapshot,
+              // A new closing line replaces the old one. Without one, the old
+              // line stays only while the story hasn't moved on (resuming the
+              // same slot re-saves it untouched); once the story has advanced
+              // past the save it belongs to, it would be stale — drop it.
+              hook: hook ?? (snapshot.storyHistory.length === a.snapshot.storyHistory.length ? a.hook : undefined),
+            }
           : a
       ),
       activeAdventureId: state.activeAdventureId,
@@ -166,6 +181,7 @@ const upsertCurrent = (
       name: name?.trim() || `Adventure ${state.savedAdventures.length + 1}`,
       savedAt: Date.now(),
       snapshot,
+      hook,
     }],
     activeAdventureId: id,
   }
@@ -263,7 +279,7 @@ export const useGameStore = create<GameStore>()(
 
       savedAdventures: [],
       activeAdventureId: null,
-      saveAdventure: (name) => set((state) => upsertCurrent(state, name)),
+      saveAdventure: (name, hook) => set((state) => upsertCurrent(state, name, hook)),
       loadAdventure: (id) => set((state) => {
         if (!state.savedAdventures.some(a => a.id === id)) return state
         const saved = upsertCurrent(state)

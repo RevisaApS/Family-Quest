@@ -11,6 +11,8 @@ interface RecapCardProps {
   questGoal?: string
   villain?: string
   beats: RecapBeat[]
+  // The storyteller's closing line from last time, if there was one
+  hook?: string
   nextHeroName: string
   language: Language
   onContinue: () => void
@@ -21,7 +23,7 @@ const TAG_EMOJI: Record<NonNullable<RecapBeat['tag']>, string> = { '✓': '🎉'
 // The page Far reads aloud before a resumed adventure goes on: what the quest
 // is, the last few things that happened, and whose turn it is. Nothing here
 // waits on the network — the next scene is already being written underneath.
-export function RecapCard({ questTitle, questGoal, villain, beats, nextHeroName, language, onContinue }: RecapCardProps) {
+export function RecapCard({ questTitle, questGoal, villain, beats, hook, nextHeroName, language, onContinue }: RecapCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -58,6 +60,12 @@ export function RecapCard({ questTitle, questGoal, villain, beats, nextHeroName,
           </li>
         ))}
       </ol>
+
+      {hook && (
+        <p className="text-center italic text-lg leading-relaxed" data-testid="recap-hook">
+          🌙 {hook}
+        </p>
+      )}
 
       <p className="text-center text-sm" style={{ color: 'var(--ink-soft)' }}>
         {t('nextUpLabel', language)}: <span className="font-medium">{nextHeroName}</span>
