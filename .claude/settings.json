@@ -1,12 +1,4 @@
 {
-  "extraKnownMarketplaces": {
-    "mothership": {
-      "source": {
-        "source": "github",
-        "repo": "StevenValentin/Mothership"
-      }
-    }
-  },
   "enabledPlugins": {
     "mothership@mothership": true
   },
