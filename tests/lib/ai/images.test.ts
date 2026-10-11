@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('@google/generative-ai', () => ({
-  GoogleGenerativeAI: vi.fn().mockImplementation(function () {
-    return { getGenerativeModel: vi.fn() }
+vi.mock('@google/genai', () => ({
+  GoogleGenAI: vi.fn().mockImplementation(function () {
+    return { models: { generateContent: vi.fn() } }
   }),
+  Modality: { TEXT: 'TEXT', IMAGE: 'IMAGE' },
+  ThinkingLevel: { MINIMAL: 'MINIMAL' },
 }))
 
 const { buildImagePrompt, buildItemImagePrompt } = await import('@/lib/ai/images')

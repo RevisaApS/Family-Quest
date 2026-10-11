@@ -1,7 +1,6 @@
-import { GoogleGenerativeAI, type GenerationConfig, type Part } from '@google/generative-ai'
+import { Modality, type GenerateContentConfig, type Part } from '@google/genai'
+import { genai } from './gemini'
 import type { AdventureStyle } from '@/types/game'
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
 
 // Nano Banana 2.1 first: it won Steven's blind portrait test 4.67 to 3.00 on
 // 2026-10-11 and costs about a quarter of Pro per image. Nano Banana Pro is the
@@ -32,13 +31,11 @@ const STYLE_TONES: Record<AdventureStyle, string> = {
 
 const imageCache = new Map<string, string>()
 
-// The image API needs response modalities + aspect ratio, which the older
-// SDK's GenerationConfig type doesn't know about — the API accepts them.
-function imageGenerationConfig(aspectRatio: '16:9' | '1:1'): GenerationConfig {
+function imageGenerationConfig(aspectRatio: '16:9' | '1:1'): GenerateContentConfig {
   return {
-    responseModalities: ['TEXT', 'IMAGE'],
+    responseModalities: [Modality.TEXT, Modality.IMAGE],
     imageConfig: { aspectRatio },
-  } as GenerationConfig
+  }
 }
 
 async function generateImage(
@@ -47,19 +44,17 @@ async function generateImage(
 ): Promise<string | null> {
   for (let i = workingModelIndex; i < IMAGE_MODEL_CANDIDATES.length; i++) {
     try {
-      const model = genAI.getGenerativeModel({
+      const response = await genai().models.generateContent({
         model: IMAGE_MODEL_CANDIDATES[i],
-        generationConfig: imageGenerationConfig(aspectRatio),
+        contents: [{ role: 'user', parts }],
+        config: imageGenerationConfig(aspectRatio),
       })
-      const result = await model.generateContent(parts)
 
-      const imagePart = result.response.candidates?.[0]?.content?.parts?.find(
-        (p) => 'inlineData' in p && p.inlineData
-      )
+      const image = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData?.data)?.inlineData
 
-      if (imagePart && 'inlineData' in imagePart && imagePart.inlineData) {
+      if (image?.data) {
         workingModelIndex = i
-        return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`
+        return `data:${image.mimeType ?? 'image/png'};base64,${image.data}`
       }
       console.error(`Image model ${IMAGE_MODEL_CANDIDATES[i]} returned no image part`)
     } catch (error) {
