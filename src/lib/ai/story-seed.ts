@@ -148,14 +148,19 @@ const OVERUSED_VILLAIN_NAMES = [
 ]
 
 export function seedInstruction(seed: StorySeed, pastVillains: string[] = []): string {
-  const banned = [...OVERUSED_VILLAIN_NAMES, ...pastVillains].join(', ')
+  // Past villains get their own line. Lumped in with the worn-out names, the
+  // model read "never use" as "never mention" and dropped the family's legend
+  // from the opening scene.
+  const beaten = pastVillains.length
+    ? `\n- The family already defeated ${pastVillains.join(', ')}. The new villain is someone else and must not be named after them, but the old ones may be mentioned as history.`
+    : ''
   return `THIS ADVENTURE'S INGREDIENTS — build the opening from these, and do not drift back to a generic fantasy village-and-dark-lord story:
 - Where it starts: ${seed.opening}
 - What is at stake: ${seed.stake}
 - Who is behind it: ${seed.villain}
 - How to open the scene: ${seed.hook}
 - Who brings the family in: ${seed.questGiver}
-- The villain's NAME must be ${seed.villainNaming}. Never use any of these worn-out names: ${banned}.
+- The villain's NAME must be ${seed.villainNaming}. Never use any of these worn-out names: ${OVERUSED_VILLAIN_NAMES.join(', ')}.${beaten}
 
 These ingredients are the raw material, not a checklist to recite — the quest, the villain and the opening scene must all grow out of them, and the villain must fit the description above rather than being a generic evil overlord.`
 }

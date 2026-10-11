@@ -58,6 +58,19 @@ describe('seedInstruction', () => {
     expect(text).toContain('The Quiet Aunt')
   })
 
+  it('bans past villains as the new name without forbidding a mention', () => {
+    // On the worn-out list, "never use" read as "never mention", and the model
+    // dropped the family's legend from the opening scene.
+    const text = seedInstruction(seed, ['Fru Tang'])
+    const wornOut = text.split('\n').find(line => line.includes('worn-out names'))!
+    expect(wornOut).not.toContain('Fru Tang')
+    expect(text).toMatch(/already defeated Fru Tang[^\n]*must not be named after them[^\n]*may be mentioned/)
+  })
+
+  it('adds no past-villain line for a new family', () => {
+    expect(seedInstruction(seed)).not.toContain('already defeated')
+  })
+
   it('steers away from the generic default story', () => {
     expect(seedInstruction(seed)).toMatch(/do not drift back to a generic fantasy/i)
   })
