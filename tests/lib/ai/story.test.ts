@@ -64,9 +64,18 @@ describe('generateScene — opening variety', () => {
     })
     const prompt = promptFrom(0)
     expect(prompt).toContain('Four extra jobs')
-    expect(prompt).toMatch(/4\. THE FAMILY'S LEGEND[^\n]*Fru Tang \(in "Den Tabte Lygte"\)[^\n]*MUST name exactly ONE/)
+    expect(prompt).toMatch(/4\. THE FAMILY'S LEGEND[^\n]*Fru Tang \(in "Den Tabte Lygte"\)[^\n]*MUST name Fru Tang[^\n]*shown this way: /)
     // One job, not two: the optional later-scene wording stays out.
     expect(prompt).not.toContain('Nod to that history when it fits')
+  })
+
+  it('asks for the nod in a different shape across openings', async () => {
+    const past = [{ questTitle: 'Den Tabte Lygte', villain: 'Fru Tang' }]
+    for (let i = 0; i < 10; i++) await generateScene({ ...CONTEXT, pastAdventures: past })
+    const legendLines = new Set(
+      generateJSON.mock.calls.map(c => (c[0] as string).split('\n').find(l => l.startsWith('4. THE FAMILY')))
+    )
+    expect(legendLines.size).toBeGreaterThan(4)
   })
 
   it('leaves the legend job out for a family with no past adventures', async () => {
@@ -85,7 +94,7 @@ describe('generateScene — opening variety', () => {
     })
     const prompt = promptFrom(0)
     expect(prompt).toContain('Nod to that history when it fits')
-    expect(prompt).not.toContain('MUST name exactly ONE')
+    expect(prompt).not.toContain('shown this way')
   })
 
   it('runs scenes hotter than the default', async () => {

@@ -164,3 +164,41 @@ export function seedInstruction(seed: StorySeed, pastVillains: string[] = []): s
 
 These ingredients are the raw material, not a checklist to recite — the quest, the villain and the opening scene must all grow out of them, and the villain must fit the description above rather than being a generic evil overlord.`
 }
+
+// How a returning family hears that the game remembers them. A single fixed
+// instruction made the nod "you defeated X" in 19 openings out of 20, so the
+// nod's shape is drawn per adventure, the same way the opening is.
+const LEGEND_NODS = [
+  'children in the street are playing a game of being the heroes in that old adventure',
+  'someone at the inn is singing a song about that adventure and gets the words wrong',
+  'a villager still keeps a souvenir from that adventure and shows it off',
+  'the new villain\'s servants have been warned about the heroes because of it',
+  'someone doubts that heroes this small could really be the ones from that story',
+  'a painted sign, a carving or an old poster in town shows that adventure',
+  'the quest-giver expected much taller heroes, because the stories about it made them sound huge',
+  // The name has to sit inside the nickname: left free, the model invented
+  // "Isbjergets Helte" and dropped the name altogether.
+  'people greet the heroes with a nickname that has that exact name in it, like a title they earned',
+  'a traveller tells the story of it all wrong, and only the heroes know what really happened',
+  'everyone the quest-giver asked for help said the same thing: get the ones from that story',
+  'the baker is selling cakes shaped like the heroes from that adventure',
+  'a guard at the gate waves them through the moment he hears they are the ones from that story',
+]
+
+export interface LegendNod {
+  // Exactly what the narration must say: the villain's name, or the quest
+  // title in quotes when that adventure had no named villain.
+  name: string
+  shape: string
+}
+
+export function pickLegendNod(
+  past: ReadonlyArray<{ questTitle: string; villain?: string }>,
+  random: () => number = Math.random
+): LegendNod {
+  const adventure = pick(past, random)
+  return {
+    name: adventure.villain ?? `"${adventure.questTitle}"`,
+    shape: pick(LEGEND_NODS, random),
+  }
+}
