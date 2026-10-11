@@ -55,6 +55,39 @@ describe('generateScene — opening variety', () => {
     expect(promptFrom(0)).toContain('Fru Tang')
   })
 
+  it('makes the nod to a past adventure a job of the opening scene', async () => {
+    // As an optional hook the nod landed in about 1 opening in 3; the kids
+    // notice when the game forgets what they did.
+    await generateScene({
+      ...CONTEXT,
+      pastAdventures: [{ questTitle: 'Den Tabte Lygte', villain: 'Fru Tang' }],
+    })
+    const prompt = promptFrom(0)
+    expect(prompt).toContain('Four extra jobs')
+    expect(prompt).toMatch(/4\. THE FAMILY'S LEGEND[^\n]*Fru Tang \(in "Den Tabte Lygte"\)[^\n]*MUST name exactly ONE/)
+    // One job, not two: the optional later-scene wording stays out.
+    expect(prompt).not.toContain('Nod to that history when it fits')
+  })
+
+  it('leaves the legend job out for a family with no past adventures', async () => {
+    await generateScene(CONTEXT)
+    const prompt = promptFrom(0)
+    expect(prompt).toContain('Three extra jobs')
+    expect(prompt).not.toContain("THE FAMILY'S LEGEND")
+  })
+
+  it('keeps the legend optional once the quest is under way', async () => {
+    await generateScene({
+      ...CONTEXT,
+      isFirstScene: false,
+      quest: { title: 'Den Tabte Lygte', goal: 'Find lygten', villain: 'Fru Tang', milestonesDone: 1 },
+      pastAdventures: [{ questTitle: 'Solstenens Vogtere', villain: 'Malakor' }],
+    })
+    const prompt = promptFrom(0)
+    expect(prompt).toContain('Nod to that history when it fits')
+    expect(prompt).not.toContain('MUST name exactly ONE')
+  })
+
   it('runs scenes hotter than the default', async () => {
     await generateScene(CONTEXT)
     expect(generateJSON.mock.calls[0][2]).toBeGreaterThan(1)

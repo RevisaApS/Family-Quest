@@ -89,23 +89,27 @@ describe.skipIf(!hasKey)('live Gemini calls', () => {
   }, 60_000)
 
   it('calls back to villains the family already beat', async () => {
+    const pastAdventures = [
+      { questTitle: 'Solstenens Vogtere', villain: 'Skyggeherren Malakor' },
+      { questTitle: 'Frostkongens Fald', villain: 'Frostkongen' },
+    ]
     const scene = await generateScene({
       ...context,
       isFirstScene: true,
       storyHistory: [],
       quest: null,
-      pastAdventures: [
-        { questTitle: 'Solstenens Vogtere', villain: 'Skyggeherren Malakor' },
-        { questTitle: 'Frostkongens Fald', villain: 'Frostkongen' },
-      ],
+      pastAdventures,
     })
     console.log('\n--- opening scene for returning heroes ---\n' + scene.narration + '\n')
-    // The legend is a hook, not a mandate, so assert it landed somewhere:
-    // either an old villain is named, or the heroes are greeted as known.
-    const text = scene.narration.toLowerCase()
-    const nodsToThePast = ['malakor', 'frostkongen', 'helt', 'kender', 'ry', 'legend', 'igen']
-      .some(marker => text.includes(marker))
-    expect(nodsToThePast).toBe(true)
+    // A returning family's opening must name one past villain or quest. Whole
+    // names only, with an optional Danish genitive "s": the old substring
+    // markers passed on "helt galt", "ryster" and "Pigen" without any nod.
+    const names = pastAdventures.flatMap(a => [a.questTitle, ...a.villain.split(' ')])
+    const said = (text: string) =>
+      names.filter(name => new RegExp(`(?<!\\p{L})${name}s?(?!\\p{L})`, 'iu').test(text))
+    expect(said(scene.narration), scene.narration).not.toHaveLength(0)
+    // The nod is history: the new quest still gets a villain of its own.
+    expect(said(scene.villainName ?? ''), scene.villainName).toHaveLength(0)
   }, 60_000)
 
   it('narrates an outcome as plain prose', async () => {

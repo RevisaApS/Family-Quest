@@ -47,15 +47,19 @@ const CHAPTER_BEATS = [
   `CHAPTER 3 — THE CONFRONTATION: the villain's lair is near. Scenes grow tenser and darker; everything builds toward the final showdown.`,
 ]
 
-// The family's own history, so a new quest can open by acknowledging the last
-// one. Nothing here is required reading for the model — it's a hook to pull on.
-function legendInstruction(context: StoryContext): string {
+function pastQuestsWon(context: StoryContext): string {
   const past = context.pastAdventures ?? []
-  if (past.length === 0) return ''
   const beaten = past
     .map(a => (a.villain ? `${a.villain} (in "${a.questTitle}")` : `"${a.questTitle}"`))
     .join(', ')
-  return `THE FAMILY'S LEGEND: these heroes have already won ${past.length} quest${past.length > 1 ? 's' : ''} — they defeated ${beaten}. They are known for it. Nod to that history when it fits: a villager recognises them, the new villain has heard the name of the one they felled, an old enemy's servant bears a grudge. Never contradict it, and never re-run an old quest.`
+  return `${past.length} quest${past.length > 1 ? 's' : ''} and defeated ${beaten}`
+}
+
+// The family's own history during a quest. Optional here, a hook to pull on:
+// the opening scene is where the nod is required (see questInstruction).
+function legendInstruction(context: StoryContext): string {
+  if (context.isFirstScene || !context.pastAdventures?.length) return ''
+  return `THE FAMILY'S LEGEND: these heroes have already won ${pastQuestsWon(context)}. They are known for it. Nod to that history when it fits: a villager recognises them, the new villain has heard the name of the one they felled, an old enemy's servant bears a grudge. Never contradict it, and never re-run an old quest.`
 }
 
 function questInstruction(context: StoryContext): string {
@@ -66,10 +70,16 @@ function questInstruction(context: StoryContext): string {
       pickStorySeed(),
       (context.pastAdventures ?? []).map(a => a.villain).filter((v): v is string => !!v)
     )
-    return `THIS IS THE OPENING SCENE — the call to adventure. Three extra jobs:
+    // A returning family must hear that the game remembers them. As an
+    // optional hook this landed in about 1 opening in 3, so it is a numbered
+    // job like the others, held to one clause so the new quest stays the story.
+    const legend = context.pastAdventures?.length
+      ? `\n4. THE FAMILY'S LEGEND: these heroes are not new. They already won ${pastQuestsWon(context)}. The narration MUST name exactly ONE of those villains or quests, spelled as written here, in one short clause: the quest-giver sought them out because of it, a villager recognises them by it, or the new villain's servants have heard of it. Mention it once, then let it go. The old villain is defeated and gone, has nothing to do with this new quest, and does not come up again.`
+      : ''
+    return `THIS IS THE OPENING SCENE — the call to adventure. ${legend ? 'Four' : 'Three'} extra jobs:
 1. Introduce the QUEST-GIVER named below, who hands the family their mission and makes clear what is at stake. NO combat in this scene: the heroes' first choice is about the story, not a fight.
 2. Invent a clear, exciting QUEST the family pursues this whole adventure. Return "questTitle" (2-5 words) and "questGoal" (one kid-friendly sentence) in the story language.
-3. Invent the VILLAIN behind it all and have the quest-giver speak their name with dread. Return "villainName" in the story language. The villain must NOT appear in person yet — only their shadow: rumors, traces, fear.
+3. Invent the VILLAIN behind it all and have the quest-giver speak their name with dread. Return "villainName" in the story language. The villain must NOT appear in person yet — only their shadow: rumors, traces, fear.${legend}
 
 ${seed}`
   }
