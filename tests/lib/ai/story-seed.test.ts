@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickStorySeed, seedInstruction } from '@/lib/ai/story-seed'
+import { pickLegendNod, pickStorySeed, seedInstruction } from '@/lib/ai/story-seed'
 
 describe('pickStorySeed', () => {
   it('fills every ingredient', () => {
@@ -73,5 +73,33 @@ describe('seedInstruction', () => {
 
   it('steers away from the generic default story', () => {
     expect(seedInstruction(seed)).toMatch(/do not drift back to a generic fantasy/i)
+  })
+})
+
+describe('pickLegendNod', () => {
+  const past = [
+    { questTitle: 'Solstenens Vogtere', villain: 'Skyggeherren Malakor' },
+    { questTitle: 'Frostkongens Fald', villain: 'Frostkongen' },
+  ]
+
+  it('names the villain of the adventure it picks', () => {
+    expect(pickLegendNod(past, () => 0).name).toBe('Skyggeherren Malakor')
+    expect(pickLegendNod(past, () => 0.999999).name).toBe('Frostkongen')
+  })
+
+  it('falls back to the quest title when there was no villain', () => {
+    expect(pickLegendNod([{ questTitle: 'Den Tabte Lygte' }], () => 0).name).toBe('"Den Tabte Lygte"')
+  })
+
+  it('stays in range even if the generator returns exactly 1', () => {
+    const nod = pickLegendNod(past, () => 1)
+    expect(nod.name).toBeTruthy()
+    expect(nod.shape).toBeTruthy()
+  })
+
+  it('draws different nod shapes across adventures', () => {
+    // One fixed instruction gave "you defeated X" in 19 openings out of 20.
+    const shapes = new Set(Array.from({ length: 40 }, () => pickLegendNod(past).shape))
+    expect(shapes.size).toBeGreaterThan(6)
   })
 })
