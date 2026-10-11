@@ -38,7 +38,7 @@ the branch.
 
 - Kid-facing text is **Danish**, via the i18n layer — use `t()` / `classLabel()` from `@/lib/i18n`; never hardcode user-visible strings. UI chrome may stay English.
 - Image prompts are always **English** regardless of story language (see `@/lib/game/appearance.ts`).
-- Models: text/JSON `gemini-3.6-flash` (thinking level `minimal`); images `gemini-3-pro-image` (fallback `gemini-nano-banana-2.1`). Google retires model ids often; check https://ai.google.dev/gemini-api/docs/deprecations when calls start failing. Persistent store is **localStorage** (zustand persist) — Supabase is wired but unused at runtime.
+- Models: text/JSON `gemini-3.6-flash` (thinking level `minimal`); images `gemini-nano-banana-2.1` (fallback `gemini-3-pro-image`; 2.1 won a blind portrait test on 2026-10-11). Google retires model ids often; check https://ai.google.dev/gemini-api/docs/deprecations when calls start failing. Persistent store is **localStorage** (zustand persist) — Supabase is wired but unused at runtime.
 - Portrait / scene-image / item-image calls cost **real Gemini credits** — do **not** run playthroughs or smoke tests that burn credits without asking first.
 - `digest.md` at the repo root is the 1-page state summary other repos (LifeOS especially) read first. Refresh it when project state meaningfully changes — `/mothership:publish-digest` drives it. Never put secrets or anything kid-private in it; it crosses the repo boundary by design.
 - Sibling `~/HQ` repos are readable but write-locked from here. If a change is needed in one, don't fight the lock — end the reply with a paste-ready handoff prompt for a session in that repo (the change, the exact files, the context).

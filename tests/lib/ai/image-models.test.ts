@@ -20,13 +20,14 @@ const IMAGE_RESPONSE = {
 describe('image model chain', () => {
   // gemini-3-pro-image-preview was shut down on 2026-06-25, and every portrait
   // then failed before the kids could start an adventure.
-  it('tries the GA Nano Banana Pro first, then Nano Banana 2.1, and never a shut-down preview', async () => {
+  // Nano Banana 2.1 won Steven's blind portrait test 4.67 to 3.00 on 2026-10-11.
+  it('tries Nano Banana 2.1 first, then the GA Nano Banana Pro, and never a shut-down preview', async () => {
     generateContent.mockRejectedValueOnce(new Error('503')).mockResolvedValueOnce(IMAGE_RESPONSE)
 
     const portrait = await generateHeroPortrait('Mason, a young boy wizard')
 
     const tried = getGenerativeModel.mock.calls.map(([params]) => params.model)
-    expect(tried).toEqual(['gemini-3-pro-image', 'gemini-nano-banana-2.1'])
+    expect(tried).toEqual(['gemini-nano-banana-2.1', 'gemini-3-pro-image'])
     expect(portrait).toBe('data:image/png;base64,AAAA')
   })
 })
