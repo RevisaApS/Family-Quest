@@ -16,17 +16,19 @@ describe('gemini client', () => {
     generateContent.mockReset()
   })
 
-  it('asks for gemini-3.5-flash with thinking off and a timeout', async () => {
+  it('asks for gemini-3.6-flash with minimal thinking and a timeout', async () => {
     const { generateText } = await import('@/lib/ai/gemini')
     generateContent.mockResolvedValue({ response: { text: () => 'en historie' } })
 
     await generateText('prompt')
 
     const [modelParams, requestOptions] = getGenerativeModel.mock.calls[0]
-    expect(modelParams.model).toBe('gemini-3.5-flash')
+    // gemini-3.5-flash is deprecated and silently routed to 3.6, which
+    // ignores thinkingBudget and thinks at "medium" unless told otherwise.
+    expect(modelParams.model).toBe('gemini-3.6-flash')
     // Three of these run back to back per turn; thinking tripled the wait
     // without making the story better.
-    expect(modelParams.generationConfig.thinkingConfig.thinkingBudget).toBe(0)
+    expect(modelParams.generationConfig.thinkingConfig).toEqual({ thinkingLevel: 'minimal' })
     // A call that never settles must not strand the table on a spinner.
     expect(requestOptions.timeout).toBeGreaterThan(0)
   })

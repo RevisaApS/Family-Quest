@@ -2,13 +2,15 @@ import { GoogleGenerativeAI, type GenerationConfig, type ResponseSchema } from '
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
 
-const MODEL = 'gemini-3.5-flash'
+// gemini-3.5-flash is deprecated and its requests are routed here anyway.
+const MODEL = 'gemini-3.6-flash'
 
 // Three of these calls run back to back on every turn (scene → actions →
 // outcome) before a kid sees what happened, so this latency IS the game's
 // pacing. The model was spending ~1000 thinking tokens to write ~200 tokens of
 // story, which tripled the wait without making the story any better.
-const THINKING_OFF = { thinkingConfig: { thinkingBudget: 0 } }
+// 3.6 ignores the old thinkingBudget and has no "off", so ask for the least.
+const THINKING_OFF = { thinkingConfig: { thinkingLevel: 'minimal' } }
 
 // A call that never settles used to strand the table on a spinner with no
 // button to press. Failing fast hands control back to the UI, which already

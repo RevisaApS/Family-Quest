@@ -3,9 +3,11 @@ import type { AdventureStyle } from '@/types/game'
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
 
-// Nano Banana Pro first (best quality), plain Nano Banana as fallback for
-// accounts/regions where the Pro model is unavailable.
-const IMAGE_MODEL_CANDIDATES = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image']
+// Nano Banana Pro first (best quality), Nano Banana 2.1 as fallback for
+// accounts/regions where the Pro model is unavailable. The Pro preview id was
+// shut down on 2026-06-25 and plain Nano Banana is legacy, so both old ids
+// failed every portrait before an adventure could start.
+const IMAGE_MODEL_CANDIDATES = ['gemini-3-pro-image', 'gemini-nano-banana-2.1']
 let workingModelIndex = 0
 
 export interface ReferenceImage {
