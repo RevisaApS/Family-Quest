@@ -1,6 +1,12 @@
-import { GoogleGenerativeAI, type GenerationConfig, type ResponseSchema } from '@google/generative-ai'
+import { GoogleGenAI, ThinkingLevel, type GenerateContentConfig, type Schema } from '@google/genai'
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
+// Built on first use rather than at import: the client warns on every import
+// when the key is absent, which is every test run and every keyless build.
+let client: GoogleGenAI | null = null
+export function genai(): GoogleGenAI {
+  client ??= new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
+  return client
+}
 
 // gemini-3.5-flash is deprecated and its requests are routed here anyway.
 const MODEL = 'gemini-3.6-flash'
@@ -10,28 +16,27 @@ const MODEL = 'gemini-3.6-flash'
 // pacing. The model was spending ~1000 thinking tokens to write ~200 tokens of
 // story, which tripled the wait without making the story any better.
 // 3.6 ignores the old thinkingBudget and has no "off", so ask for the least.
-const THINKING_OFF = { thinkingConfig: { thinkingLevel: 'minimal' } }
+const THINKING_OFF = { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } }
 
 // A call that never settles used to strand the table on a spinner with no
 // button to press. Failing fast hands control back to the UI, which already
 // knows how to retry a scene and how to carry on without an outcome.
 const TIMEOUT_MS = 20_000
 
-function buildModel(generationConfig: GenerationConfig) {
-  return genAI.getGenerativeModel(
-    {
-      model: MODEL,
-      // thinkingConfig is newer than these SDK types, same as the image config
-      // in ./images.ts
-      generationConfig: { ...THINKING_OFF, ...generationConfig } as GenerationConfig,
-    },
-    { timeout: TIMEOUT_MS }
-  )
+async function generate(prompt: string, config: GenerateContentConfig = {}): Promise<string> {
+  const response = await genai().models.generateContent({
+    model: MODEL,
+    contents: prompt,
+    config: { ...THINKING_OFF, httpOptions: { timeout: TIMEOUT_MS }, ...config },
+  })
+  // The old SDK threw on a blocked or empty answer; the UI's retry and
+  // carry-on paths are built around that throw, so keep it.
+  if (!response.text) throw new Error('AI response contained no text')
+  return response.text
 }
 
 export async function generateText(prompt: string): Promise<string> {
-  const result = await buildModel({}).generateContent(prompt)
-  return result.response.text()
+  return generate(prompt)
 }
 
 // Pass a responseSchema wherever possible: left to its own devices the model
@@ -40,23 +45,22 @@ export async function generateText(prompt: string): Promise<string> {
 // that surfaced as an error in the kids' faces.
 export async function generateJSON<T>(
   prompt: string,
-  responseSchema?: ResponseSchema,
+  responseSchema?: Schema,
   // Storytelling calls pass a higher temperature: with thinking off, the
   // default settles onto the same safe phrasing (and the same villain name)
   // every adventure. The response schema keeps the shape valid regardless.
   temperature?: number
 ): Promise<T> {
-  const model = buildModel({
+  const config: GenerateContentConfig = {
     responseMimeType: 'application/json',
     ...(responseSchema ? { responseSchema } : {}),
     ...(temperature === undefined ? {} : { temperature }),
-  })
+  }
 
   let lastError: unknown
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const result = await model.generateContent(prompt)
-      return parseJsonLoosely<T>(result.response.text())
+      return parseJsonLoosely<T>(await generate(prompt, config))
     } catch (error) {
       lastError = error
     }

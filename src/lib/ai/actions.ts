@@ -1,4 +1,4 @@
-import { SchemaType, type ResponseSchema, type Schema } from '@google/generative-ai'
+import { Type, type Schema } from '@google/genai'
 import { generateJSON } from './gemini'
 import { languageInstruction } from './language'
 import { themeById } from '@/lib/game/values'
@@ -8,37 +8,37 @@ import type { SceneFit, Stat } from '@/types/game'
 // Pinning stat and sceneFit to enums keeps the UI honest: an off-list value
 // used to sail through and render a blank icon instead of failing loudly.
 const STAT_SCHEMA: Schema = {
-  type: SchemaType.STRING,
+  type: Type.STRING,
   format: 'enum',
   enum: ['strength', 'magic', 'agility', 'heart'],
 }
 const SCENE_FIT_SCHEMA: Schema = {
-  type: SchemaType.STRING,
+  type: Type.STRING,
   format: 'enum',
   enum: ['good', 'okay', 'risky'],
 }
 
-const ACTIONS_SCHEMA: ResponseSchema = {
-  type: SchemaType.ARRAY,
+const ACTIONS_SCHEMA: Schema = {
+  type: Type.ARRAY,
   items: {
-    type: SchemaType.OBJECT,
+    type: Type.OBJECT,
     properties: {
-      id: { type: SchemaType.STRING },
-      text: { type: SchemaType.STRING },
+      id: { type: Type.STRING },
+      text: { type: Type.STRING },
       stat: STAT_SCHEMA,
       sceneFit: SCENE_FIT_SCHEMA,
-      sceneFitReason: { type: SchemaType.STRING },
+      sceneFitReason: { type: Type.STRING },
     },
     required: ['id', 'text', 'stat', 'sceneFit', 'sceneFitReason'],
   },
 }
 
-const CUSTOM_ACTION_SCHEMA: ResponseSchema = {
-  type: SchemaType.OBJECT,
+const CUSTOM_ACTION_SCHEMA: Schema = {
+  type: Type.OBJECT,
   properties: {
     stat: STAT_SCHEMA,
     sceneFit: SCENE_FIT_SCHEMA,
-    sceneFitReason: { type: SchemaType.STRING },
+    sceneFitReason: { type: Type.STRING },
   },
   required: ['stat', 'sceneFit', 'sceneFitReason'],
 }

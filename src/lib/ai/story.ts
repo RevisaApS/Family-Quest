@@ -1,4 +1,4 @@
-import { SchemaType, type ResponseSchema, type Schema } from '@google/generative-ai'
+import { Type, type Schema } from '@google/genai'
 import { generateJSON } from './gemini'
 import { languageInstruction, type Language } from './language'
 import { pickStorySeed, seedInstruction } from './story-seed'
@@ -144,27 +144,27 @@ IMPORTANT: ${context.encounter.name} is badly wounded and in THIS scene TRANSFOR
 // The schema has to declare exactly the fields this particular call asks for:
 // the model returns nothing that isn't declared, so a fixed schema would
 // silently swallow the quest and villain on the opening scene.
-function sceneSchema(context: StoryContext): ResponseSchema {
+function sceneSchema(context: StoryContext): Schema {
   const properties: Record<string, Schema> = {
-    narration: { type: SchemaType.STRING },
-    imagePrompt: { type: SchemaType.STRING },
-    suggestedNextPlayer: { type: SchemaType.STRING },
+    narration: { type: Type.STRING },
+    imagePrompt: { type: Type.STRING },
+    suggestedNextPlayer: { type: Type.STRING },
   }
   const required = ['narration', 'imagePrompt', 'suggestedNextPlayer']
 
   if (context.isFirstScene) {
-    properties.questTitle = { type: SchemaType.STRING }
-    properties.questGoal = { type: SchemaType.STRING }
-    properties.villainName = { type: SchemaType.STRING }
+    properties.questTitle = { type: Type.STRING }
+    properties.questGoal = { type: Type.STRING }
+    properties.villainName = { type: Type.STRING }
     required.push('questTitle', 'questGoal', 'villainName')
   }
 
   if (context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss') {
-    properties.encounterName = { type: SchemaType.STRING }
+    properties.encounterName = { type: Type.STRING }
     required.push('encounterName')
   }
 
-  return { type: SchemaType.OBJECT, properties, required }
+  return { type: Type.OBJECT, properties, required }
 }
 
 export async function generateScene(context: StoryContext): Promise<GeneratedScene> {

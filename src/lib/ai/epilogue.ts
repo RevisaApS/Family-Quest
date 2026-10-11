@@ -1,4 +1,4 @@
-import { SchemaType, type ResponseSchema } from '@google/generative-ai'
+import { Type, type Schema } from '@google/genai'
 import { generateJSON } from './gemini'
 import { languageInstruction } from './language'
 import { themeById, type ValueThemeId } from '@/lib/game/values'
@@ -37,19 +37,19 @@ export interface GeneratedEpilogue {
   awards: Array<{ playerId: string; title: string; reason: string }>
 }
 
-const EPILOGUE_SCHEMA: ResponseSchema = {
-  type: SchemaType.OBJECT,
+const EPILOGUE_SCHEMA: Schema = {
+  type: Type.OBJECT,
   properties: {
-    title: { type: SchemaType.STRING },
-    story: { type: SchemaType.STRING },
+    title: { type: Type.STRING },
+    story: { type: Type.STRING },
     awards: {
-      type: SchemaType.ARRAY,
+      type: Type.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: Type.OBJECT,
         properties: {
-          playerId: { type: SchemaType.STRING },
-          title: { type: SchemaType.STRING },
-          reason: { type: SchemaType.STRING },
+          playerId: { type: Type.STRING },
+          title: { type: Type.STRING },
+          reason: { type: Type.STRING },
         },
         required: ['playerId', 'title', 'reason'],
       },

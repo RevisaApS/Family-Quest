@@ -1,4 +1,4 @@
-import { SchemaType, type ResponseSchema } from '@google/generative-ai'
+import { Type, type Schema } from '@google/genai'
 import { generateJSON } from './gemini'
 import type { AdventureStyle, EquipSlot, Stat } from '@/types/game'
 import type { Language } from '@/lib/ai/language'
@@ -17,11 +17,11 @@ export interface GeneratedLootName {
   look: string
 }
 
-const LOOT_NAME_SCHEMA: ResponseSchema = {
-  type: SchemaType.OBJECT,
+const LOOT_NAME_SCHEMA: Schema = {
+  type: Type.OBJECT,
   properties: {
-    name: { type: SchemaType.STRING },
-    look: { type: SchemaType.STRING },
+    name: { type: Type.STRING },
+    look: { type: Type.STRING },
   },
   required: ['name', 'look'],
 }
