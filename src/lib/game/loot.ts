@@ -89,3 +89,10 @@ export function createLoot(slot: EquipSlot, stat: Stat, bonus: number, name: str
     look: GENERIC_LOOK[slot],
   }
 }
+
+// What the AI is told a hero carries. The Danish name alone hides what the
+// thing is ("Pind med Snor" is a bow), so the English look rides along and
+// the storyteller can pick the right verb: shoot a bow, swing a stick.
+export function describeGear(item: LootItem): string {
+  return item.look ? `${item.name} (${item.slot}: ${item.look})` : `${item.name} (${item.slot})`
+}

@@ -39,7 +39,7 @@ import {
   shouldEnrage, enrageBoss, rollWeakStat, weaknessBonus,
 } from '@/lib/game/rpg'
 import { skillChoices, POWER_META } from '@/lib/game/skills'
-import { rollLootSlot, rollLootStat, createLoot, fallbackLootName } from '@/lib/game/loot'
+import { rollLootSlot, rollLootStat, createLoot, fallbackLootName, describeGear } from '@/lib/game/loot'
 import { toLootItem, type ShopItem } from '@/lib/game/shop'
 import { potionDefinition, HEAL_POTION_HP, LUCK_POTION_BONUS, type PotionDefinition } from '@/lib/game/potions'
 import { toPet, type PetDefinition } from '@/lib/game/pets'
@@ -217,7 +217,7 @@ export default function PlayPage() {
             maxHp: hero.maxHp,
             knockedOut: hero.knockedOut,
             skillNames: hero.skills.map(s => s.name),
-            gearNames: Object.values(hero.equipment).filter(Boolean).map(i => i!.name),
+            gearNames: Object.values(hero.equipment).filter(Boolean).map(i => describeGear(i!)),
             petName: hero.pet?.name,
           } : undefined,
         }

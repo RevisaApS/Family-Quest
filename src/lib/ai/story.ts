@@ -193,6 +193,7 @@ Current Characters:
 ${context.characters.map(describeHero).join('\n')}
 
 Weave the heroes' powers and equipment into the story when it fits — kids love hearing their gear mentioned.
+Only the equipment listed above exists: never describe a hero holding, drawing or using a weapon or tool they don't carry.
 
 Story So Far:
 ${context.storyHistory.slice(-6).join('\n') || 'The adventure is just beginning.'}

@@ -43,6 +43,12 @@ const CUSTOM_ACTION_SCHEMA: Schema = {
   required: ['stat', 'sceneFit', 'sceneFitReason'],
 }
 
+// Left alone, the model arms a rogue with a dagger and a ranger with a bow
+// because that is what the class usually carries. The kids noticed at once
+// (2026-10-12 playtest): a third of battle options used gear nobody owned.
+export const GEAR_RULE = `GEAR RULE (strict): an action may only use a weapon, tool or item listed under "What they carry", or something clearly present in the current scene. Never hand out gear because of the hero's class: no dagger, knife, sword, bow, arrows, axe, spear, staff, wand or shield unless it is listed. A hero without a weapon fights with fists, kicks, tackles, thrown stones, clever tricks, things in the scene (a branch, a rope, a loose rock), their named powers, or their pet.
+MAGIC: a wizard can always cast simple spells. Any other hero only uses magic through a power or a magic item listed above; otherwise a "magic" action is a clever trick, a hunch, or something magical already in the scene.`
+
 // The chapter's one real choice, shaped into the three options. The tempting
 // option names its prize out loud; the harder one gives up that exact prize.
 // sceneFit feeds calculateDC, so the honest-but-harder choice must never be
@@ -77,11 +83,12 @@ Current Scene: ${currentScene}
 
 Current Character: ${currentCharacter?.characterName} the ${currentCharacter?.class}
 ${currentCharacter?.rpg?.skillNames.length ? `Their powers: ${currentCharacter.rpg.skillNames.join(', ')}` : ''}
-${currentCharacter?.rpg?.gearNames.length ? `Their equipment: ${currentCharacter.rpg.gearNames.join(', ')}` : ''}
+${currentCharacter?.rpg ? `What they carry: ${currentCharacter.rpg.gearNames.length ? currentCharacter.rpg.gearNames.join('; ') : 'NOTHING yet, empty hands: no weapon, no tools'}` : ''}
 ${currentCharacter?.rpg?.petName ? `Their pet companion: ${currentCharacter.rpg.petName} — one action may playfully involve the pet when it fits.` : ''}
 ${inBattle ? `BATTLE: they are locked in combat with ${context.encounter!.name}! ALL 3 actions must be ways to ATTACK and inflict damage on the enemy — e.g. a mighty strike, a clever spell, a daring acrobatic maneuver, a fearless charge. NEVER offer friendly or passive options: no giving food or gifts, no befriending, no comforting, no talking it out, no running away.` : ''}
 ${inBattle && context.encounter?.enraged && context.encounter.weakStat ? `The enemy's glowing WEAK SPOT is vulnerable to ${context.encounter.weakStat} — at least one action must use that stat and aim for the weak spot.` : ''}
 ${currentCharacter?.rpg?.skillNames.length || currentCharacter?.rpg?.gearNames.length ? 'When it fits the scene, let one action use a named power or piece of equipment — kids love using their own gear.' : ''}
+${GEAR_RULE}
 ${dilemma}
 
 Generate exactly 3 action options the player could take. Each should:
