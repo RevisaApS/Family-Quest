@@ -12,6 +12,8 @@ import { SLOT_EMOJI } from './loot'
 // across a quest instead of ~23, so the ladder had to come down with it or the
 // coolest items in the game would go back to being scenery nobody wears.
 // The Golden Helm is deliberately the most expensive thing in the game.
+// Weapons come in two lines on the same ladder: swords for strength, bows for
+// agility (Lucas asked to buy a bow in the 2026-10-12 playtest).
 export interface ShopItem {
   id: string
   slot: EquipSlot
@@ -21,6 +23,7 @@ export interface ShopItem {
   bonus: number
   name: Record<Language, string>
   look: string // English, feeds the image prompts
+  emoji?: string // overrides the slot emoji, so a bow doesn't show crossed swords
 }
 
 export const SHOP_CATALOG: ShopItem[] = [
@@ -33,6 +36,16 @@ export const SHOP_CATALOG: ShopItem[] = [
     name: { da: 'Sølvøksen', en: 'Silver Axe' }, look: 'a gleaming silver battle axe' },
   { id: 'shop-weapon-3', slot: 'weapon', tier: 3, price: 11, stat: 'strength', bonus: 4,
     name: { da: 'Flammeklingen', en: 'Flame Blade' }, look: 'a legendary sword with a blade of living fire' },
+
+  // Bows: agility, same weapon slot, so a bow replaces the sword
+  { id: 'shop-bow-0', slot: 'weapon', tier: 0, price: 1, stat: 'agility', bonus: 1, emoji: '🏹',
+    name: { da: 'Pind med Snor', en: 'Stick and String' }, look: 'a bent stick with a piece of string tied on, a very wobbly homemade bow' },
+  { id: 'shop-bow-1', slot: 'weapon', tier: 1, price: 3, stat: 'agility', bonus: 2, emoji: '🏹',
+    name: { da: 'Jagtbuen', en: 'Hunting Bow' }, look: 'a simple wooden hunting bow with a quiver of arrows' },
+  { id: 'shop-bow-2', slot: 'weapon', tier: 2, price: 6, stat: 'agility', bonus: 3, emoji: '🏹',
+    name: { da: 'Elverbuen', en: 'Elven Bow' }, look: 'an elegant curved elven longbow carved with leaf patterns' },
+  { id: 'shop-bow-3', slot: 'weapon', tier: 3, price: 11, stat: 'agility', bonus: 4, emoji: '🏹',
+    name: { da: 'Stjernebuen', en: 'Star Bow' }, look: 'a legendary glowing bow that shoots arrows of shimmering starlight' },
 
   // Armor — heart
   { id: 'shop-armor-0', slot: 'armor', tier: 0, price: 1, stat: 'heart', bonus: 1,
@@ -86,7 +99,7 @@ export function toLootItem(shopItem: ShopItem, language: Language): LootItem {
     stat: shopItem.stat,
     bonus: shopItem.bonus,
     name: shopItem.name[language],
-    emoji: SLOT_EMOJI[shopItem.slot],
+    emoji: shopItem.emoji ?? SLOT_EMOJI[shopItem.slot],
     look: shopItem.look,
   }
 }
