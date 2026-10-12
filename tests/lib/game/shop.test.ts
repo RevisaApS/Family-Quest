@@ -7,29 +7,52 @@ import {
 } from '@/lib/game/rpg'
 
 describe('shop catalog', () => {
-  it('every slot has all four tiers', () => {
-    for (const slot of ALL_SLOTS) {
-      const items = shopItemsForSlot(slot)
+  // An item line is one ladder of four tiers: swords, bows, armor, and so on.
+  const lines = new Map<string, typeof SHOP_CATALOG>()
+  for (const item of SHOP_CATALOG) {
+    const line = item.id.replace(/-\d$/, '')
+    lines.set(line, [...(lines.get(line) ?? []), item])
+  }
+
+  it('every slot is on sale', () => {
+    for (const slot of ALL_SLOTS) expect(shopItemsForSlot(slot).length).toBeGreaterThan(0)
+  })
+
+  it('every item line has all four tiers, in one slot', () => {
+    for (const items of lines.values()) {
       expect(items.map(i => i.tier).sort()).toEqual([0, 1, 2, 3])
+      expect(new Set(items.map(i => i.slot)).size).toBe(1)
     }
   })
 
-  it('every slot has a 1-gold starter item that still gives +1 (bad, but never useless)', () => {
-    for (const slot of ALL_SLOTS) {
-      const starter = shopItemsForSlot(slot).find(i => i.tier === 0)!
+  it('every line has a 1-gold starter item that still gives +1 (bad, but never useless)', () => {
+    for (const items of lines.values()) {
+      const starter = items.find(i => i.tier === 0)!
       expect(starter.price).toBe(STARTING_GOLD)
       expect(starter.bonus).toBe(1)
     }
   })
 
-  it('price and bonus rise strictly with tier within each slot', () => {
-    for (const slot of ALL_SLOTS) {
-      const items = shopItemsForSlot(slot).sort((a, b) => a.tier - b.tier)
-      for (let i = 1; i < items.length; i++) {
-        expect(items[i].price).toBeGreaterThan(items[i - 1].price)
-        expect(items[i].bonus).toBeGreaterThan(items[i - 1].bonus)
+  it('price and bonus rise strictly with tier within each line', () => {
+    for (const items of lines.values()) {
+      const sorted = [...items].sort((a, b) => a.tier - b.tier)
+      for (let i = 1; i < sorted.length; i++) {
+        expect(sorted[i].price).toBeGreaterThan(sorted[i - 1].price)
+        expect(sorted[i].bonus).toBeGreaterThan(sorted[i - 1].bonus)
       }
     }
+  })
+
+  it('bows are agility weapons that show a bow, not crossed swords', () => {
+    const bows = lines.get('shop-bow')!
+    expect(bows).toHaveLength(4)
+    for (const bow of bows) {
+      expect(bow.slot).toBe('weapon')
+      expect(bow.stat).toBe('agility')
+      expect(toLootItem(bow, 'da').emoji).toBe('🏹')
+    }
+    const sword = SHOP_CATALOG.find(i => i.id === 'shop-weapon-1')!
+    expect(toLootItem(sword, 'da').emoji).toBe('⚔️')
   })
 
   it('the Golden Helm is the single most expensive item in the game', () => {
