@@ -90,6 +90,12 @@ describe('optionsSegments', () => {
     expect(segment.text).toBe('What do you do? One: Sneak past. Two: Shout. Three: Cast a fireball.')
   })
 
+  it('reads the teammate rescue as the fourth choice, "Fire"', () => {
+    const [segment] = optionsSegments(['Jeg sniger mig forbi', 'Jeg råber', 'Jeg hopper', 'Hjælp Aldor op'], 'da')
+    expect(segment.text).toBe('Hvad gør I? Én: Jeg sniger mig forbi. To: Jeg råber. Tre: Jeg hopper. Fire: Hjælp Aldor op.')
+    expect(optionsSegments(['a', 'b', 'c', 'Help Aldor up'], 'en')[0].text).toContain('Four: Help Aldor up.')
+  })
+
   it('skips blank options and reads nothing when there are none', () => {
     expect(optionsSegments(['  ', 'Løb'], 'da')[0].text).toBe('Hvad gør I? Én: Løb.')
     expect(optionsSegments([], 'da')).toEqual([])

@@ -35,7 +35,7 @@ function describeHero(c: StoryContext['characters'][number]): string {
     c.rpg.skillNames.length ? `powers: ${c.rpg.skillNames.join(', ')}` : '',
     c.rpg.gearNames.length ? `equipment: ${c.rpg.gearNames.join(', ')}` : '',
     c.rpg.petName ? `their loyal pet ${c.rpg.petName} at their side` : '',
-    c.rpg.knockedOut ? 'currently knocked out and needs help' : '',
+    c.rpg.knockedOut ? 'currently knocked out and needs help (sitting dizzy on the ground, seeing stars)' : '',
   ].filter(Boolean).join(', ')
   return `${base} — ${details}`
 }

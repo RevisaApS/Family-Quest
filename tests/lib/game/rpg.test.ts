@@ -7,6 +7,7 @@ import {
   equipLoot, addSkill, canUsePower, usePower, healHero,
   BASE_MAX_HP, MAX_LEVEL, QUEST_MILESTONES, MIN_HP, FUMBLE_RETALIATION_DAMAGE,
   applyPartyReward, MONSTER_XP_REWARD, XP_PER_OUTCOME, LEVEL_UP_HEAL,
+  rescuedHp, rescueHero, rescueTarget, applyRescueOutcome, settleRescueTurn, RESCUE_FAILURE_HP, GOLD_PER_OUTCOME,
 } from '@/lib/game/rpg'
 import { skillChoices } from '@/lib/game/skills'
 import { fallbackLootName, createLoot } from '@/lib/game/loot'
@@ -237,6 +238,79 @@ describe('turn resolution', () => {
     hero = addSkill(hero, skill)
     hero = addSkill(hero, skill)
     expect(hero.skills).toHaveLength(1)
+  })
+})
+
+// Playtest 2026-10-12: a knocked-out hero came back with a banner crediting
+// the twins for something they never did. Now a friend can spend a turn
+// helping them up, and the rules for that turn live here.
+describe('teammate rescue', () => {
+  const downed = (playerId: string) => ({ ...createHero(playerId), hp: 0, knockedOut: true })
+
+  it('a good rescue puts the friend back at half HP, like the old revive', () => {
+    expect(rescueHero(downed('p2'), 'success').hp).toBe(rescueHp(BASE_MAX_HP))
+    expect(rescueHero(downed('p2'), 'partial').hp).toBe(rescueHp(BASE_MAX_HP))
+    expect(rescueHero(downed('p2'), 'success').knockedOut).toBe(false)
+  })
+
+  it('a failed rescue still gets the friend up, just barely', () => {
+    const up = rescueHero(downed('p2'), 'failure')
+    expect(up.knockedOut).toBe(false)
+    expect(up.hp).toBe(RESCUE_FAILURE_HP)
+    expect(rescuedHp(9, 'failure')).toBe(1)
+    expect(rescuedHp(9, 'success')).toBe(5)
+  })
+
+  it('the helper takes no damage, even on a fumble in a fight', () => {
+    const helper = { ...createHero('p1'), hp: 3 }
+    for (const outcome of ['success', 'partial', 'failure'] as const) {
+      const { hero, damageTaken } = applyRescueOutcome(helper, downed('p2'), outcome)
+      expect(damageTaken).toBe(0)
+      expect(hero.hp).toBe(3)
+    }
+    expect(applyRescueOutcome(helper, downed('p2'), 'failure', 'fumble').hero.hp).toBe(3)
+  })
+
+  it('a rescue with nobody left to lift still never hurts the helper', () => {
+    const helper = { ...createHero('p1'), hp: 3 }
+    const { hero, damageTaken, xpGained } = settleRescueTurn(helper, 'failure', 'fumble')
+    expect(damageTaken).toBe(0)
+    expect(hero.hp).toBe(3)
+    expect(xpGained).toBe(XP_PER_OUTCOME.failure)
+  })
+
+  it('the helper earns the normal XP and gold for the result', () => {
+    for (const outcome of ['success', 'partial', 'failure'] as const) {
+      const { xpGained, goldGained, hero } = applyRescueOutcome(createHero('p1'), downed('p2'), outcome)
+      expect(xpGained).toBe(XP_PER_OUTCOME[outcome])
+      expect(goldGained).toBe(GOLD_PER_OUTCOME[outcome])
+      expect(hero.xp).toBe(XP_PER_OUTCOME[outcome])
+    }
+  })
+
+  it('returns the friend who was helped up', () => {
+    const { rescued } = applyRescueOutcome(createHero('p1'), downed('p2'), 'partial')
+    expect(rescued.playerId).toBe('p2')
+    expect(rescued.knockedOut).toBe(false)
+  })
+
+  it('offers nothing when nobody is down', () => {
+    expect(rescueTarget([createHero('p1'), createHero('p2')], 'p1')).toBeNull()
+  })
+
+  it('never offers the active hero to themselves', () => {
+    expect(rescueTarget([downed('p1'), createHero('p2')], 'p1')).toBeNull()
+  })
+
+  it('goes to whoever went down first when several are down', () => {
+    // Turn order p1, p2, p3, p4. p4 went down on their turn, then p1 on theirs;
+    // now it is p2's turn, and p4 has waited longest. The next in turn order
+    // after p2 who is down is p4, ahead of p1.
+    const party = [downed('p1'), createHero('p2'), createHero('p3'), downed('p4')]
+    expect(rescueTarget(party, 'p2')?.playerId).toBe('p4')
+    // p1 went down, then p2; on p3's turn p1 is first in line
+    const later = [downed('p1'), downed('p2'), createHero('p3')]
+    expect(rescueTarget(later, 'p3')?.playerId).toBe('p1')
   })
 })
 

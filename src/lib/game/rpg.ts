@@ -81,10 +81,11 @@ export function chestGoldAmount(d20Roll: number): number {
 export const BASE_MAX_HP = 6
 export const HP_PER_LEVEL = 1
 
-// A hero CAN go down again. At 0 HP they sit out, grey and cheering, and their
-// friends haul them back up at half HP the moment their own turn comes round —
-// so nobody ever misses a turn, and the hearts finally mean something. Raise
-// this to 1 to make the party unbreakable again.
+// A hero CAN go down again. At 0 HP they sit dizzy, grey and cheering, until a
+// friend spends a turn helping them up (see "Teammate rescue" below). If nobody
+// does, they get back up at half HP the moment their own turn comes round, so
+// nobody ever misses a turn, and the hearts finally mean something. Raise this
+// to 1 to make the party unbreakable again.
 export const MIN_HP = 0
 
 // A natural 1 in a fight isn't only comedy — the monster gets a free swing.
@@ -275,7 +276,7 @@ export interface TurnResolution {
 }
 
 // Apply one turn's outcome to the acting hero: XP, gold, damage, level-up
-// (level-up raises max HP and grants a second wind — the skill pick happens
+// (level-up raises max HP and grants a second wind; the skill pick happens
 // in the UI).
 export function applyTurnOutcome(
   hero: HeroState,
@@ -283,9 +284,17 @@ export function applyTurnOutcome(
   encounterActive: boolean,
   crit: CritType = null
 ): TurnResolution {
+  return settleTurn(hero, outcome, crit, heroDamageForOutcome(outcome, encounterActive, crit))
+}
+
+function settleTurn(
+  hero: HeroState,
+  outcome: OutcomeType,
+  crit: CritType,
+  damageTaken: number
+): TurnResolution {
   const xpGained = XP_PER_OUTCOME[outcome]
   const goldGained = GOLD_PER_OUTCOME[outcome] + (crit === 'crit' ? CRIT_BONUS_GOLD : 0)
-  const damageTaken = heroDamageForOutcome(outcome, encounterActive, crit)
 
   const xp = hero.xp + xpGained
   const newLevel = Math.min(levelForXp(xp), MAX_LEVEL)
@@ -348,6 +357,66 @@ export function applyPartyReward(
 
 export function reviveHero(hero: HeroState): HeroState {
   return { ...hero, hp: rescueHp(hero.maxHp), knockedOut: false }
+}
+
+// --- Teammate rescue ---
+// While a friend is down, the hero whose turn it is may spend it helping them
+// up. It is a normal turn (Courage, a good fit, the d20, the usual XP and
+// gold), with two differences: helping never hurts the helper, and it never
+// fails to get the friend up. The dice only decide how well.
+
+// A failed rescue still gets the friend on their feet, just barely
+export const RESCUE_FAILURE_HP = 1
+
+export function rescuedHp(maxHp: number, outcome: OutcomeType): number {
+  return outcome === 'failure' ? RESCUE_FAILURE_HP : rescueHp(maxHp)
+}
+
+export function rescueHero(hero: HeroState, outcome: OutcomeType): HeroState {
+  return { ...hero, hp: rescuedHp(hero.maxHp, outcome), knockedOut: false }
+}
+
+// Who a rescue goes to when several friends are down: the one who went down
+// first. A hero only loses hearts on their own turn and is back up by their
+// next one at the latest, so that is the first knocked-out teammate after the
+// active hero in turn order. `heroes` must be in turn order.
+export function rescueTarget<H extends Pick<HeroState, 'playerId' | 'knockedOut'>>(
+  heroes: H[],
+  activePlayerId: string
+): H | null {
+  const start = heroes.findIndex(h => h.playerId === activePlayerId)
+  if (start === -1) return null
+  for (let step = 1; step < heroes.length; step++) {
+    const hero = heroes[(start + step) % heroes.length]
+    if (hero.knockedOut) return hero
+  }
+  return null
+}
+
+export interface RescueResolution extends TurnResolution {
+  // The friend who was helped up
+  rescued: HeroState
+}
+
+// The rescue turn: the helper settles their turn like any other but takes no
+// damage, and the friend gets up with the HP the roll earned.
+// A rescue never hurts the helper, whether or not the friend was still down
+// when the die landed.
+export function settleRescueTurn(
+  helper: HeroState,
+  outcome: OutcomeType,
+  crit: CritType = null
+): TurnResolution {
+  return settleTurn(helper, outcome, crit, 0)
+}
+
+export function applyRescueOutcome(
+  helper: HeroState,
+  downed: HeroState,
+  outcome: OutcomeType,
+  crit: CritType = null
+): RescueResolution {
+  return { ...settleRescueTurn(helper, outcome, crit), rescued: rescueHero(downed, outcome) }
 }
 
 export function equipLoot(hero: HeroState, item: LootItem): HeroState {

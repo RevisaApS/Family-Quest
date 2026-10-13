@@ -42,6 +42,9 @@ export interface GeneratedAction {
   stat: Stat
   sceneFit: SceneFit
   sceneFitReason: string
+  // Set only on the built-in "help your friend up" choice: whose feet it puts
+  // them back on. The AI never writes this; the play screen adds the choice.
+  rescueTargetId?: string
 }
 
 export interface GeneratedOutcome {

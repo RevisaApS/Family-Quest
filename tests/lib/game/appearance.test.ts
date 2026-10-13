@@ -3,6 +3,8 @@ import {
   colorNameFromHsl,
   gearLooksFromEquipment,
   heroVisualDescription,
+  withKnockedOutLook,
+  KNOCKED_OUT_LOOK,
 } from '@/lib/game/appearance'
 import type { LootItem } from '@/types/game'
 
@@ -92,5 +94,24 @@ describe('heroVisualDescription', () => {
       .toContain('adult woman')
     expect(heroVisualDescription('Ida', 'rogue', 'female', 'hsl(300, 70%, 50%)', 15))
       .toContain('teenage girl')
+  })
+})
+
+// Playtest 2026-10-12: the hero was down, but the next scene picture still
+// showed him standing there fine.
+describe('withKnockedOutLook', () => {
+  const base = heroVisualDescription('Aldor', 'warrior', 'male', 'hsl(210, 70%, 50%)', 40)
+
+  it('sits a knocked-out hero down, dazed, with stars circling', () => {
+    const description = withKnockedOutLook(base, true)
+    expect(description.startsWith(base)).toBe(true)
+    expect(description).toContain(KNOCKED_OUT_LOOK)
+    expect(description).toMatch(/dazed/)
+    expect(description).toMatch(/sitting on the ground/)
+    expect(description).toMatch(/cartoon stars circling/)
+  })
+
+  it('leaves a hero who is up exactly as described', () => {
+    expect(withKnockedOutLook(base, false)).toBe(base)
   })
 })

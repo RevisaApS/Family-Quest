@@ -32,10 +32,14 @@ interface ActionPickerProps {
   onCustomIdea?: (idea: string) => void
   customLoading?: boolean
   disabled?: boolean
+  // "Hjælp Aldor op": shown while a teammate is knocked out. A fourth choice
+  // that looks different on purpose, so it reads as "help a friend", not as
+  // one more story move.
+  rescueOption?: GeneratedAction | null
 }
 
 export function ActionPicker({
-  options, statBonusFor, language, onSelect, onCustomIdea, customLoading, disabled,
+  options, statBonusFor, language, onSelect, onCustomIdea, customLoading, disabled, rescueOption,
 }: ActionPickerProps) {
   const [ideaOpen, setIdeaOpen] = useState(false)
   const [ideaText, setIdeaText] = useState('')
@@ -80,6 +84,28 @@ export function ActionPicker({
             </button>
           )
         })}
+
+        {rescueOption && (
+          <button
+            onClick={() => !disabled && onSelect(rescueOption)}
+            disabled={disabled || customLoading}
+            data-testid="rescue-choice"
+            className={cn(
+              "w-full text-left p-4 rounded-xl border-2 transition-all bg-success/10 border-success/50",
+              !disabled && !customLoading && "hover:border-success hover:bg-success/15 hover:shadow-[0_0_20px_-6px_oklch(0.62_0.11_145_/_0.5)] active:scale-[0.99]",
+              (disabled || customLoading) && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-success/20 text-xl">🤝</span>
+              <p className="text-base font-medium text-success flex-1">{rescueOption.text}</p>
+              <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-bold", statAccent[rescueOption.stat].chip)}>
+                {statLabel(rescueOption.stat, language)}
+                {statBonusFor && ` +${statBonusFor(rescueOption)}`}
+              </span>
+            </div>
+          </button>
+        )}
 
         {onCustomIdea && !ideaOpen && (
           <button

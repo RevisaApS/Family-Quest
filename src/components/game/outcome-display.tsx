@@ -27,6 +27,9 @@ interface OutcomeDisplayProps {
   language?: Language
   // Once-per-adventure powers usable right now (reroll, rally, shield)
   powerActions?: PowerAction[]
+  // A moment the whole table should see: "😵 Aldor er slået omkuld!" when
+  // this turn took the last heart, "🤝 Lucas hjælper Aldor op!" after a rescue
+  notice?: { text: string; tone: 'down' | 'up' } | null
   onContinue: () => void
 }
 
@@ -40,6 +43,7 @@ export function OutcomeDisplay({
   outcome, diceRoll, crit = null, narrative, isLoading,
   xpGained = 0, goldGained = 0, damageTaken = 0, bossDamage = 0, bossName, language = 'en',
   powerActions = [],
+  notice = null,
   onContinue,
 }: OutcomeDisplayProps) {
   const style = outcomeStyles[outcome]
@@ -124,6 +128,24 @@ export function OutcomeDisplay({
           </motion.span>
         )}
       </div>
+
+      {notice && (
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.35 }}
+          role="status"
+          data-testid="outcome-notice"
+          className={cn(
+            "text-center rounded-lg border py-2 px-3 font-serif text-lg",
+            notice.tone === 'down'
+              ? "bg-destructive/15 border-destructive/40 text-destructive"
+              : "bg-success/15 border-success/40 text-success"
+          )}
+        >
+          {notice.text}
+        </motion.div>
+      )}
 
       <div className="page-parchment p-4">
         {isLoading ? (

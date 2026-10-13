@@ -44,8 +44,12 @@ Chromium). Then:
   `partySize × 5` (HP = `partySize × 3 + 2`); boss at 0 → victory overlay
 - Success + dice ≥15 (or a nat-20 crit) → loot chest; ≥18 → rare (+2)
 - 6 XP (two successes) → level-up card picker
-- Failure → −1 HP; during boss → −2 HP; 0 HP → KO → rescue banner + half-HP
-  revive on the next scene
+- Failure → −1 HP; during boss → −2 HP; 0 HP → KO → "😵 <name> er slået
+  omkuld!" banner on the outcome. On a teammate's turn a 4th choice "🤝 Hjælp
+  <name> op" appears (heart roll; success/partial → half HP, failure → 1 HP;
+  no encounter damage that turn; outcome banner "🤝 <helper> hjælper <name>
+  op!"). If nobody helps, the hero gets up at half HP on their own turn with
+  "💫 <name> rejser sig igen!"
 - Reload mid-adventure → levels/gear persist (zustand persist v4)
 
 A ready-made driver script exists in the session scratchpad as

@@ -102,3 +102,12 @@ export function heroVisualDescription(
   if (petLook) parts.push(`accompanied by ${petLook}`)
   return parts.join(', ')
 }
+
+// A hero who is down looks it in the scene picture too, the same way the story
+// tells it: dizzy and comic, never hurt. Scene images only; portraits stay as
+// they are.
+export const KNOCKED_OUT_LOOK = 'dazed and sitting on the ground with cartoon stars circling their head'
+
+export function withKnockedOutLook(description: string, knockedOut: boolean): string {
+  return knockedOut ? `${description}, ${KNOCKED_OUT_LOOK}` : description
+}

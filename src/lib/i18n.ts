@@ -12,8 +12,12 @@ const STRINGS = {
   replaceQuestion: { da: 'Byt med', en: 'Swap with' },
   keepCurrent: { da: 'Behold', en: 'Keep' },
   knockedOut: { da: 'er slået omkuld!', en: 'is knocked out!' },
+  // The teammate rescue: the extra choice, "Hjælp Aldor op", and the banner
+  // after it, "Lucas hjælper Aldor op!"
+  rescueChoice: { da: 'Hjælp', en: 'Help' },
+  rescueChoiceUp: { da: 'op', en: 'up' },
   rescuedBy: { da: 'hjælper', en: 'helps' },
-  backUp: { da: 'på benene igen!', en: 'back on their feet!' },
+  rescuedUp: { da: 'op!', en: 'up!' },
   soloRecover: { da: 'rejser sig igen!', en: 'gets back up!' },
   bossAppears: { da: 'BOSSKAMP!', en: 'BOSS FIGHT!' },
   bossDefeated: { da: 'Bossen er besejret!', en: 'The boss is defeated!' },

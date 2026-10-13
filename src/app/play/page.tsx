@@ -37,7 +37,7 @@ import {
   equipLoot, addSkill, addGold, buyItem, chestIsGold, chestGoldAmount,
   applyPartyReward, monsterGoldReward, BOSS_GOLD_REWARD,
   MONSTER_XP_REWARD, BOSS_XP_REWARD,
-  canUsePower, usePower, healHero,
+  canUsePower, usePower, healHero, applyRescueOutcome, settleRescueTurn, rescueTarget,
   ASSIST_BONUS, spendAssist, potionCount, removePotion, buyPotion, buyPet,
   shouldEnrage, enrageBoss, rollWeakStat, weaknessBonus,
 } from '@/lib/game/rpg'
@@ -51,7 +51,7 @@ import { actIndex, shouldPlantDilemma, type ValueThemeId } from '@/lib/game/valu
 import type { GeneratedEpilogue } from '@/lib/ai/epilogue'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
 import { cn } from '@/lib/utils'
-import { heroVisualDescription, gearLooksFromEquipment } from '@/lib/game/appearance'
+import { heroVisualDescription, gearLooksFromEquipment, withKnockedOutLook } from '@/lib/game/appearance'
 import { loadPortraits, stalePortraitIds, savePortrait, downscalePortrait } from '@/lib/portraits'
 import { sfx, setSoundEnabled } from '@/lib/sound'
 import { t } from '@/lib/i18n'
@@ -179,8 +179,9 @@ export default function PlayPage() {
   const [epilogueLoading, setEpilogueLoading] = useState(false)
   // Guards the one-time chronicle entry per completed adventure
   const chronicleRecordedRef = useRef(false)
-  // Pre-roll snapshot so Second Chance / Rally can re-resolve the turn cleanly
-  const preRollRef = useRef<{ hero: HeroState; encounter: EncounterState | null } | null>(null)
+  // Pre-roll snapshot so Second Chance / Rally can re-resolve the turn cleanly.
+  // On a rescue turn it also holds the knocked-out friend as they were.
+  const preRollRef = useRef<{ hero: HeroState; encounter: EncounterState | null; rescued?: HeroState } | null>(null)
   // The values layer: the theme picked for THIS adventure (held only until the
   // opening scene writes it into quest state), and whether the scene now on
   // screen carries this act's one dilemma. Refs, not state — every AI call in
@@ -204,58 +205,67 @@ export default function PlayPage() {
     return 'none'
   }, [encounter, quest, turnHistory.length, selectedPlayers.length])
 
-  // Build story context for AI calls
-  const buildStoryContext = useCallback((): StoryContext => ({
-    adventureStyle,
-    storyHistory: storyHistory.slice(-MAX_STORY_HISTORY),
-    characters: selectedPlayers
-      .filter(p => characters.find(c => c.playerId === p.id))
-      .map(p => {
-        const char = characters.find(c => c.playerId === p.id)!
-        const hero = heroes.find(h => h.playerId === p.id)
-        return {
-          playerId: p.id,
-          playerName: p.name,
-          characterName: char.name,
-          class: char.class,
-          rpg: hero ? {
-            level: hero.level,
-            hp: hero.hp,
-            maxHp: hero.maxHp,
-            knockedOut: hero.knockedOut,
-            skillNames: hero.skills.map(s => s.name),
-            gearNames: Object.values(hero.equipment).filter(Boolean).map(i => describeGear(i!)),
-            petName: hero.pet?.name,
-          } : undefined,
-        }
-      }),
-    currentPlayerId: currentPlayer?.id ?? '',
-    language,
-    encounterPhase: currentEncounterPhase(),
-    encounter: encounter
-      ? {
-          kind: encounter.kind,
-          name: encounter.name,
-          hp: encounter.hp,
-          maxHp: encounter.maxHp,
-          enraged: encounter.enraged,
-          weakStat: encounter.weakStat,
-          announceEnrage: !!encounter.enraged && !encounter.enrageAnnounced && !encounter.defeated,
-        }
-      : null,
-    quest: quest ?? null,
-    isFirstScene,
-    // The adventure's hidden spine, and whether this scene carries its act's
-    // dilemma. Prompt guidance only — never rendered anywhere.
-    valueTheme: quest?.theme ?? pickedThemeRef.current ?? undefined,
-    dilemma: dilemmaRef.current,
-    // The last few quests this family finished, so the DM can call back to
-    // villains they've already beaten instead of starting from nothing
-    pastAdventures: chronicle.slice(-3).map(r => ({ questTitle: r.questTitle, villain: r.villain })),
-  }), [adventureStyle, storyHistory, selectedPlayers, characters, heroes, currentPlayer, language, encounter, quest, currentEncounterPhase, isFirstScene, chronicle])
+  // Build story context for AI calls. Heroes come from the store at call time,
+  // not from this render: a revive lands in the store a moment before the next
+  // scene's prompt is built, and the render-time copy still described that
+  // hero as knocked out.
+  const buildStoryContext = useCallback((): StoryContext => {
+    const liveHeroes = useGameStore.getState().heroes
+    return {
+      adventureStyle,
+      storyHistory: storyHistory.slice(-MAX_STORY_HISTORY),
+      characters: selectedPlayers
+        .filter(p => characters.find(c => c.playerId === p.id))
+        .map(p => {
+          const char = characters.find(c => c.playerId === p.id)!
+          const hero = liveHeroes.find(h => h.playerId === p.id)
+          return {
+            playerId: p.id,
+            playerName: p.name,
+            characterName: char.name,
+            class: char.class,
+            rpg: hero ? {
+              level: hero.level,
+              hp: hero.hp,
+              maxHp: hero.maxHp,
+              knockedOut: hero.knockedOut,
+              skillNames: hero.skills.map(s => s.name),
+              gearNames: Object.values(hero.equipment).filter(Boolean).map(i => describeGear(i!)),
+              petName: hero.pet?.name,
+            } : undefined,
+          }
+        }),
+      currentPlayerId: currentPlayer?.id ?? '',
+      language,
+      encounterPhase: currentEncounterPhase(),
+      encounter: encounter
+        ? {
+            kind: encounter.kind,
+            name: encounter.name,
+            hp: encounter.hp,
+            maxHp: encounter.maxHp,
+            enraged: encounter.enraged,
+            weakStat: encounter.weakStat,
+            announceEnrage: !!encounter.enraged && !encounter.enrageAnnounced && !encounter.defeated,
+          }
+        : null,
+      quest: quest ?? null,
+      isFirstScene,
+      // The adventure's hidden spine, and whether this scene carries its act's
+      // dilemma. Prompt guidance only: never rendered anywhere.
+      valueTheme: quest?.theme ?? pickedThemeRef.current ?? undefined,
+      dilemma: dilemmaRef.current,
+      // The last few quests this family finished, so the DM can call back to
+      // villains they've already beaten instead of starting from nothing
+      pastAdventures: chronicle.slice(-3).map(r => ({ questTitle: r.questTitle, villain: r.villain })),
+    }
+  }, [adventureStyle, storyHistory, selectedPlayers, characters, currentPlayer, language, encounter, quest, currentEncounterPhase, isFirstScene, chronicle])
 
-  const heroImageDescriptions = useCallback((): string[] =>
-    selectedPlayers
+  const heroImageDescriptions = useCallback((): string[] => {
+    // From the store, like the story context: the picture must show who is
+    // down right now, not who was down when this render happened
+    const liveHeroes = useGameStore.getState().heroes
+    return selectedPlayers
       .map(p => {
         const char = characters.find(c => c.playerId === p.id)
         if (!char) return null
@@ -263,15 +273,19 @@ export default function PlayPage() {
         // empty-handed, and every item they buy or loot shows up on them from
         // that turn on — buy the Golden Helm and the paintings wear it, buy
         // the Crooked Stick and they're holding it. The pet walks alongside.
-        const hero = heroes.find(h => h.playerId === p.id)
-        return heroVisualDescription(
-          char.name, char.class, char.gender, p.color, p.age,
-          gearLooksFromEquipment(hero?.equipment ?? {}),
-          hero?.pet?.look
+        // A knocked-out hero sits dizzy in the picture, as the party bar shows.
+        const hero = liveHeroes.find(h => h.playerId === p.id)
+        return withKnockedOutLook(
+          heroVisualDescription(
+            char.name, char.class, char.gender, p.color, p.age,
+            gearLooksFromEquipment(hero?.equipment ?? {}),
+            hero?.pet?.look
+          ),
+          !!hero?.knockedOut
         )
       })
-      .filter((d): d is string => !!d),
-  [selectedPlayers, characters, heroes])
+      .filter((d): d is string => !!d)
+  }, [selectedPlayers, characters])
 
   // Hero portraits (IndexedDB) ride along on scene-image requests as visual
   // anchors. Awaited inside loadScene (and cached) so even the very first
@@ -344,23 +358,16 @@ export default function PlayPage() {
     setLuckActive(false)
     preRollRef.current = null
 
-    // A knocked-out hero stays down — cheering teammates on from the
-    // sidelines — until their OWN turn begins; then friends help them back
-    // up at half HP. Nobody ever misses their turn.
+    // A knocked-out hero stays down, cheering teammates on from the
+    // sidelines, until a friend spends a turn helping them up. If nobody has
+    // by the time their OWN turn begins, they get up by themselves at half
+    // HP: nobody ever misses their turn. The banner credits nobody, because
+    // nobody helped.
     const state = useGameStore.getState()
     const koHero = state.heroes.find(h => h.knockedOut && h.playerId === currentPlayer?.id)
     if (koHero && currentCharacter) {
       updateHero(reviveHero(koHero))
-      const helperNames = selectedPlayers
-        .filter(p => p.id !== currentPlayer?.id)
-        .map(p => characters.find(c => c.playerId === p.id)?.name)
-        .filter(Boolean)
-        .join(', ')
-      if (helperNames) {
-        setRescueMessage(`🤝 ${helperNames} ${t('rescuedBy', language)} ${currentCharacter.name} ${t('backUp', language)}`)
-      } else {
-        setRescueMessage(`💫 ${currentCharacter.name} ${t('soloRecover', language)}`)
-      }
+      setRescueMessage(`💫 ${currentCharacter.name} ${t('soloRecover', language)}`)
     }
 
     // The values layer, decided before the prompt is built. The theme is picked
@@ -427,7 +434,7 @@ export default function PlayPage() {
     } else {
       setRetryFn(() => () => { loadScene() })
     }
-  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, characters, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest, isFirstScene, currentEncounterPhase, pickAdventureTheme, markDilemmaPlanted])
+  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest, isFirstScene, currentEncounterPhase, pickAdventureTheme, markDilemmaPlanted])
 
   // Load actions for current scene
   const loadActions = useCallback(async () => {
@@ -577,11 +584,41 @@ export default function PlayPage() {
     if (sceneOnScreen) narrate('scene', sceneSegments, language)
   }, [sceneOnScreen, sceneSegments, language, narrate])
 
-  // The three choices, read once the scene has finished (the narrator queues
-  // them behind it). The kid's own-idea box and the buttons' chrome are not read.
+  // Teammate rescue: while a friend is down, the hero whose turn it is gets a
+  // fourth choice, "Hjælp Aldor op". It plays like any other choice (Courage,
+  // a good fit, the d20) and always gets the friend up; the roll decides how
+  // well. With several down, it goes to whoever went down first.
+  const rescueAction = useMemo((): GeneratedAction | null => {
+    if (!currentPlayer) return null
+    const active = heroes.find(h => h.playerId === currentPlayer.id)
+    if (!active || active.knockedOut) return null
+    const inTurnOrder = selectedPlayers
+      .map(p => heroes.find(h => h.playerId === p.id))
+      .filter((h): h is HeroState => !!h)
+    const downed = rescueTarget(inTurnOrder, currentPlayer.id)
+    const name = downed && characters.find(c => c.playerId === downed.playerId)?.name
+    if (!downed || !name) return null
+    return {
+      id: `rescue-${downed.playerId}`,
+      text: `${t('rescueChoice', language)} ${name} ${t('rescueChoiceUp', language)}`,
+      stat: 'heart',
+      sceneFit: 'good',
+      sceneFitReason: '',
+      rescueTargetId: downed.playerId,
+    }
+  }, [currentPlayer, heroes, selectedPlayers, characters, language])
+  // Only offered next to the storyteller's choices, never instead of them
+  const offeredRescue = actions.length > 0 ? rescueAction : null
+
+  // The choices, read once the scene has finished (the narrator queues them
+  // behind it): the three from the storyteller, and the rescue as "Fire" when
+  // it is on offer. The kid's own-idea box and the buttons' chrome are not read.
   const optionSegments = useMemo(
-    () => optionsSegments(actions.map(a => a.text), language),
-    [actions, language]
+    () => optionsSegments(
+      [...actions.map(a => a.text), ...(offeredRescue ? [offeredRescue.text] : [])],
+      language
+    ),
+    [actions, offeredRescue, language]
   )
   useEffect(() => {
     if (recapOpen === false && gamePhase === 'scene' && !loadingActions && optionSegments.length > 0) {
@@ -691,9 +728,22 @@ export default function PlayPage() {
     else if (resolved.outcome === 'success') sfx.success()
     else if (resolved.outcome === 'failure') sfx.failure()
 
-    // Apply RPG consequences to the acting hero (from the snapshot baseline)
-    const resolution = applyTurnOutcome(baseHero, resolved.outcome, encActive, resolved.crit)
+    // Apply RPG consequences to the acting hero (from the snapshot baseline).
+    // A rescue settles the helper's turn without damage and puts the friend
+    // back on their feet with whatever HP the roll earned.
+    // A rescue whose friend is already back up when the die lands still
+    // settles like a rescue: no damage to the helper, none to the monster.
+    const rescueTurn = !!action.rescueTargetId
+    const rescueBase = rescueTurn ? base.rescued : undefined
+    const rescue = rescueBase
+      ? applyRescueOutcome(baseHero, rescueBase, resolved.outcome, resolved.crit)
+      : null
+    const resolution = rescue
+      ?? (rescueTurn
+        ? settleRescueTurn(baseHero, resolved.outcome, resolved.crit)
+        : applyTurnOutcome(baseHero, resolved.outcome, encActive, resolved.crit))
     updateHero(resolution.hero)
+    if (rescue) updateHero(rescue.rescued)
     setTurnXp(resolution.xpGained)
     setTurnGold(resolution.goldGained)
     setTurnDamage(resolution.damageTaken)
@@ -711,9 +761,11 @@ export default function PlayPage() {
 
     // Damage the shared enemy; defeat queues the celebration (rewards applied
     // on the celebration's continue, so a reroll can cleanly undo all of it)
+    // A rescue is not an attack: the monster is left alone that turn, so a
+    // rescue can never land a finishing blow or wake the boss's second form.
     let encDamage = 0
     let monsterDown = false
-    if (encActive && baseEncounter) {
+    if (encActive && baseEncounter && !rescueTurn) {
       const baseDamage = encounterDamageForOutcome(resolved.outcome, resolved.crit)
       encDamage = baseDamage + weaknessBonus(baseEncounter, action.stat, baseDamage)
       const newHp = Math.max(0, baseEncounter.hp - encDamage)
@@ -777,6 +829,7 @@ export default function PlayPage() {
     // Fetch AI-generated outcome narrative — the helping teammate gets
     // written into the story too
     const helperCharacter = assistPlayerId ? characters.find(c => c.playerId === assistPlayerId) : null
+    const rescuedName = rescue ? characters.find(c => c.playerId === rescue.rescued.playerId)?.name : undefined
     const context = buildStoryContext()
     const narrative = await fetchOutcome(
       context,
@@ -790,6 +843,9 @@ export default function PlayPage() {
       resolution.damageTaken,
       encDamage,
       resolved.crit,
+      // The blow that takes the last heart, or the friend being helped up:
+      // each is told as a moment of its own
+      { knockedOut: resolution.hero.knockedOut, rescueTargetName: rescuedName },
     )
     setOutcomeNarrative(narrative || t('storyContinues', language))
   }
@@ -803,7 +859,10 @@ export default function PlayPage() {
       const helper = useGameStore.getState().heroes.find(h => h.playerId === assistPlayerId)
       if (helper && !helper.assistUsed) updateHero(spendAssist(helper))
     }
-    preRollRef.current = { hero: currentHero, encounter }
+    const rescued = selectedAction.rescueTargetId
+      ? useGameStore.getState().heroes.find(h => h.playerId === selectedAction.rescueTargetId && h.knockedOut)
+      : undefined
+    preRollRef.current = { hero: currentHero, encounter, rescued }
     await resolveTurn(result, 0, selectedAction)
   }
 
@@ -867,7 +926,9 @@ export default function PlayPage() {
     if (canUsePower(hero, 'rally') && outcomeType !== 'success' && turnCrit !== 'fumble') {
       list.push({ id: 'rally', label: `${POWER_META.rally.emoji} ${POWER_META.rally.name[language]} (+3)`, onUse: handleRally })
     }
-    if (canUsePower(hero, 'shield') && turnDamage > 0) {
+    // Not after a knock-out: the story has already told the hero falling
+    // down, and the next teammate's rescue is the way back up.
+    if (canUsePower(hero, 'shield') && turnDamage > 0 && !hero.knockedOut) {
       list.push({ id: 'shield', label: `${POWER_META.shield.emoji} ${POWER_META.shield.name[language]}`, onUse: handleShield })
     }
     return list
@@ -1099,6 +1160,19 @@ export default function PlayPage() {
       ? [{ emoji: '🍀', label: potionDefinition('luck').name[language], value: LUCK_POTION_BONUS }] : []),
   ] : []
   const boostTotal = rollBoosts.reduce((sum, b) => sum + b.value, 0)
+
+  // The outcome's big moment, read from the heroes as they are now, so a
+  // Shield or a reroll that changes the result changes the banner too.
+  // The acting hero is never down when the turn starts (loadScene gets them
+  // up), so down now means this turn's blow did it.
+  const rescuedChar = selectedAction?.rescueTargetId
+    ? characters.find(c => c.playerId === selectedAction.rescueTargetId)
+    : null
+  const outcomeNotice = currentHero?.knockedOut
+    ? { text: `😵 ${currentCharacter.name} ${t('knockedOut', language)}`, tone: 'down' as const }
+    : rescuedChar
+      ? { text: `🤝 ${currentCharacter.name} ${t('rescuedBy', language)} ${rescuedChar.name} ${t('rescuedUp', language)}`, tone: 'up' as const }
+      : null
 
   const phaseTransition = {
     initial: { opacity: 0, y: 20 },
@@ -1475,6 +1549,7 @@ export default function PlayPage() {
                       onSelect={handleActionSelect}
                       onCustomIdea={handleCustomIdea}
                       customLoading={loadingCustomAction}
+                      rescueOption={offeredRescue}
                     />
                   ) : null}
                 </motion.div>
@@ -1587,6 +1662,7 @@ export default function PlayPage() {
                   bossName={encounter?.name}
                   language={language}
                   powerActions={outcomePowerActions()}
+                  notice={outcomeNotice}
                   onContinue={handleContinue}
                 />
               </div>

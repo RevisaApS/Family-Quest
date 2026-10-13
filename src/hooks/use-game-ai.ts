@@ -84,6 +84,8 @@ export function useGameAI() {
     damageTaken = 0,
     bossDamage = 0,
     crit: 'crit' | 'fumble' | null = null,
+    // The knock-out and the teammate rescue, each told as a moment of its own
+    moment: { knockedOut?: boolean; rescueTargetName?: string } = {},
   ): Promise<string | null> => {
     setLoadingOutcome(true)
     setError(null)
@@ -91,7 +93,7 @@ export function useGameAI() {
       const response = await fetch('/api/ai/outcome', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storyContext, actionChosen, stat, outcome, currentScene, damageTaken, bossDamage, crit }),
+        body: JSON.stringify({ storyContext, actionChosen, stat, outcome, currentScene, damageTaken, bossDamage, crit, ...moment }),
       })
       if (!response.ok) throw new Error('Failed to generate outcome')
       const data = await response.json()
