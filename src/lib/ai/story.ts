@@ -252,7 +252,7 @@ Available player IDs: ${context.characters.map(c => c.playerId).join(', ')}
 Make the narration engaging and end with a moment that calls for action.`
 
   const raw = await generateJSON<Omit<GeneratedScene, 'segments' | 'narration'> & { segments?: unknown }>(
-    prompt, sceneSchema(context), SCENE_TEMPERATURE
+    prompt, sceneSchema(context), SCENE_TEMPERATURE, 'story'
   )
   const segments = normalizeSegments(raw.segments)
   // A blank page would strand the family: failing here brings up the play

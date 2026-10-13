@@ -102,5 +102,5 @@ Award rules:
 ${costlyMomentRule(context.valueTheme)}
 - Award titles and reasons are in the story language`
 
-  return generateJSON<GeneratedEpilogue>(prompt, EPILOGUE_SCHEMA)
+  return generateJSON<GeneratedEpilogue>(prompt, EPILOGUE_SCHEMA, undefined, 'story')
 }

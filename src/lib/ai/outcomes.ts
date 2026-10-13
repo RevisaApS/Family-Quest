@@ -63,5 +63,5 @@ ${context.crit === 'fumble' ? 'THE ROLL WAS A NATURAL 1 — describe a COMICAL f
 Write 2-3 sentences describing what happens. Be vivid and engaging. Don't include dice numbers or game mechanics - just tell the story.
 Follow on from what just happened rather than restating the scene, and don't reuse the imagery or opening words of the lines above.`
 
-  return generateText(prompt)
+  return generateText(prompt, 'story')
 }

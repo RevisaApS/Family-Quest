@@ -35,5 +35,5 @@ RULES:
 - No lesson, no moral, no praise, no advice. Just the hook.
 - Output the sentence only — no quotes, no label.`
 
-  return generateText(prompt)
+  return generateText(prompt, 'story')
 }

@@ -8,26 +8,39 @@ export function genai(): GoogleGenAI {
   return client
 }
 
-// gemini-3.5-flash is deprecated and its requests are routed here anyway.
-const MODEL = 'gemini-3.6-flash'
 
 // Three of these calls run back to back on every turn (scene → actions →
 // outcome) before a kid sees what happened, so this latency IS the game's
 // pacing. The model was spending ~1000 thinking tokens to write ~200 tokens of
 // story, which tripled the wait without making the story any better.
 // 3.6 ignores the old thinkingBudget and has no "off", so ask for the least.
-const THINKING_OFF = { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } }
+//
+// Two writers. Story prose (scenes, outcomes, the epilogue, the cliffhanger)
+// is read aloud to the kids and, in time, by them, so it goes to the model
+// that spells Danish right: a blind proofread on 2026-10-12 found a mistake in
+// 9 of 28 texts from 3.6-flash ("visker" for "hvisker", "et højt klang") and
+// in 1 of 28 from 3.8-flash, at ~5.0 s per scene instead of ~2.7 s. More
+// thinking on 3.6 barely helped (7 of 28). Short game text (action buttons,
+// loot names, grading a kid's idea) had no mistakes and stays on the fast one.
+// gemini-3.5-flash is deprecated and its requests are routed to 3.6 anyway;
+// 3.8 has no minimal thinking, so it gets the lowest level it has.
+export type Writer = 'story' | 'fast'
+const WRITERS: Record<Writer, { model: string; thinkingLevel: ThinkingLevel }> = {
+  story: { model: 'gemini-3.8-flash', thinkingLevel: ThinkingLevel.LOW },
+  fast: { model: 'gemini-3.6-flash', thinkingLevel: ThinkingLevel.MINIMAL },
+}
 
 // A call that never settles used to strand the table on a spinner with no
 // button to press. Failing fast hands control back to the UI, which already
 // knows how to retry a scene and how to carry on without an outcome.
 const TIMEOUT_MS = 20_000
 
-async function generate(prompt: string, config: GenerateContentConfig = {}): Promise<string> {
+async function generate(prompt: string, config: GenerateContentConfig, writer: Writer): Promise<string> {
+  const { model, thinkingLevel } = WRITERS[writer]
   const response = await genai().models.generateContent({
-    model: MODEL,
+    model,
     contents: prompt,
-    config: { ...THINKING_OFF, httpOptions: { timeout: TIMEOUT_MS }, ...config },
+    config: { thinkingConfig: { thinkingLevel }, httpOptions: { timeout: TIMEOUT_MS }, ...config },
   })
   // The old SDK threw on a blocked or empty answer; the UI's retry and
   // carry-on paths are built around that throw, so keep it.
@@ -35,8 +48,15 @@ async function generate(prompt: string, config: GenerateContentConfig = {}): Pro
   return response.text
 }
 
-export async function generateText(prompt: string): Promise<string> {
-  return generate(prompt)
+// A story call that fails (busy, timed out, empty) gets one more go on the
+// fast writer: a slightly rougher sentence beats a stalled table.
+export async function generateText(prompt: string, writer: Writer = 'fast'): Promise<string> {
+  try {
+    return await generate(prompt, {}, writer)
+  } catch (error) {
+    if (writer === 'fast') throw error
+    return generate(prompt, {}, 'fast')
+  }
 }
 
 // Pass a responseSchema wherever possible: left to its own devices the model
@@ -49,7 +69,8 @@ export async function generateJSON<T>(
   // Storytelling calls pass a higher temperature: with thinking off, the
   // default settles onto the same safe phrasing (and the same villain name)
   // every adventure. The response schema keeps the shape valid regardless.
-  temperature?: number
+  temperature?: number,
+  writer: Writer = 'fast'
 ): Promise<T> {
   const config: GenerateContentConfig = {
     responseMimeType: 'application/json',
@@ -58,9 +79,11 @@ export async function generateJSON<T>(
   }
 
   let lastError: unknown
+  // The retry always goes to the fast writer, so a failed story call falls
+  // back the same way generateText does.
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      return parseJsonLoosely<T>(await generate(prompt, config))
+      return parseJsonLoosely<T>(await generate(prompt, config, attempt === 0 ? writer : 'fast'))
     } catch (error) {
       lastError = error
     }
