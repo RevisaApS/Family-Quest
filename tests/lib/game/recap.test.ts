@@ -9,6 +9,13 @@ describe('resume recap ("Sidst i eventyret…")', () => {
     expect(parseStoryLine('[Mason · Jeg kaster en gnist · ✗] ').text).toBe('Jeg kaster en gnist')
   })
 
+  it('keeps spoken lines in Danish quotes intact', () => {
+    // Scenes now quote their characters, and outcomes may follow suit
+    expect(parseStoryLine('[Storm · Jeg råber til trolden · ~] »Flyt dig!« råber Storm, men trolden griner.')).toEqual({
+      hero: 'Storm', action: 'Jeg råber til trolden', tag: '~', text: '»Flyt dig!« råber Storm, men trolden griner.',
+    })
+  })
+
   it('keeps lines from older saves as plain text instead of dropping them', () => {
     expect(parseStoryLine('Mason chose to run. It worked.')).toEqual({ text: 'Mason chose to run. It worked.' })
   })

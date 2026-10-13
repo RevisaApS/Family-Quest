@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const generateJSON = vi.fn().mockResolvedValue([])
 const generateText = vi.fn().mockResolvedValue('')
+// A scene needs one usable segment back; these tests only read its prompt
+const SCENE_REPLY = { segments: [{ speaker: 'narrator', text: 'Porten knirker.' }], imagePrompt: '', suggestedNextPlayer: 'p1' }
 
 vi.mock('@/lib/ai/gemini', () => ({
   generateJSON: (...args: unknown[]) => generateJSON(...args),
@@ -30,6 +32,7 @@ beforeEach(() => {
 
 describe('Danish language instruction in prompts', () => {
   it('scene prompt instructs Danish output for ages 8-10', async () => {
+    generateJSON.mockResolvedValueOnce(SCENE_REPLY)
     await generateScene(baseContext)
     const prompt = generateJSON.mock.calls[0][0] as string
     expect(prompt).toContain('Danish')
@@ -60,6 +63,7 @@ describe('Danish language instruction in prompts', () => {
   })
 
   it('English mode does not instruct Danish', async () => {
+    generateJSON.mockResolvedValueOnce(SCENE_REPLY)
     await generateScene({ ...baseContext, language: 'en' })
     const prompt = generateJSON.mock.calls[0][0] as string
     expect(prompt).not.toContain('Danish')

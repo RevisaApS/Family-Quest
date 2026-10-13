@@ -134,6 +134,10 @@ const STRINGS = {
   digitalDice: { da: 'Digital', en: 'Digital' },
   physicalDice: { da: 'Fysisk', en: 'Physical' },
   languageLabel: { da: 'Sprog', en: 'Language' },
+  infoReadAloud: { da: 'Oplæsning: Læs selv historien højt, eller lad fortælleren læse op, med egne stemmer til figurerne', en: 'Reading aloud: Read the story aloud yourselves, or let the narrator read it, with voices for the characters' },
+  readAloudLabel: { da: 'Oplæsning', en: 'Reading aloud' },
+  readSelf: { da: 'Vi læser selv', en: 'We read ourselves' },
+  readNarrator: { da: 'Fortælleren læser op', en: 'The narrator reads' },
   continueToCharacters: { da: 'Videre til heltene', en: 'Continue to Characters' },
 
   // The grown-up's page at /voksen. Unlinked from the app on purpose — the kids
@@ -204,6 +208,10 @@ const STRINGS = {
   villainLabel: { da: 'Skurken', en: 'The villain' },
   // Shown on the Save & quit button while the storyteller writes the closing line
   writingHook: { da: 'Fortælleren skriver en sidste linje...', en: 'The storyteller writes one last line...' },
+  // The narrator (read-aloud mode): replay the page, and the calm note when
+  // the voice cannot be reached and the family reads on themselves
+  readAgain: { da: 'Læs igen', en: 'Read again' },
+  narratorHoarse: { da: 'Fortælleren er hæs lige nu. Læs selv videre.', en: 'The narrator has lost their voice for now. Read on yourselves.' },
   outcomeSuccess: { da: 'Sejr!', en: 'Success!' },
   outcomePartial: { da: 'Delvis sejr', en: 'Partial Success' },
   outcomeTwist: { da: 'Uventet drejning!', en: 'Plot Twist!' },

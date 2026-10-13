@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const generateJSON = vi.fn().mockResolvedValue([])
 const generateText = vi.fn().mockResolvedValue('')
+// A scene needs one usable segment back; these tests only read its prompt
+const SCENE_REPLY = { segments: [{ speaker: 'narrator', text: 'Porten knirker.' }], imagePrompt: '', suggestedNextPlayer: 'p1' }
 
 vi.mock('@/lib/ai/gemini', () => ({
   generateJSON: (...args: unknown[]) => generateJSON(...args),
@@ -82,6 +84,7 @@ describe('valuesInstruction', () => {
 
 describe('scene prompt', () => {
   it('injects the theme into every scene of the adventure', async () => {
+    generateJSON.mockResolvedValueOnce(SCENE_REPLY)
     await generateScene(themed)
     const prompt = generateJSON.mock.calls[0][0] as string
     expect(prompt).toContain(themeById('hard-first')!.antiVirtue)
@@ -90,6 +93,7 @@ describe('scene prompt', () => {
   })
 
   it('says nothing about values when the adventure has no theme', async () => {
+    generateJSON.mockResolvedValueOnce(SCENE_REPLY)
     await generateScene(baseContext)
     const prompt = generateJSON.mock.calls[0][0] as string
     expect(prompt).not.toMatch(/HIDDEN SPINE/)
@@ -97,18 +101,21 @@ describe('scene prompt', () => {
   })
 
   it('plants the dilemma only on the scene that carries it', async () => {
+    generateJSON.mockResolvedValueOnce(SCENE_REPLY)
     await generateScene({ ...themed, dilemma: true })
     const withDilemma = generateJSON.mock.calls[0][0] as string
     expect(withDilemma).toContain("THIS SCENE CARRIES THE CHAPTER'S ONE CHOICE")
     expect(withDilemma).toContain('Hvad gør I?')
 
     generateJSON.mockClear()
+    generateJSON.mockResolvedValueOnce(SCENE_REPLY)
     await generateScene(themed)
     const without = generateJSON.mock.calls[0][0] as string
     expect(without).not.toContain('Hvad gør I?')
   })
 
   it('keeps the theme out of the invented quest title and villain name', async () => {
+    generateJSON.mockResolvedValueOnce(SCENE_REPLY)
     await generateScene({ ...themed, quest: null, isFirstScene: true })
     const prompt = generateJSON.mock.calls[0][0] as string
     expect(prompt).toMatch(/NEVER named in the quest title/i)

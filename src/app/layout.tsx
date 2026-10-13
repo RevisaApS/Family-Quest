@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { IM_Fell_English, Alegreya } from "next/font/google"
 import "./globals.css"
+import { NarratorUnlock } from "@/components/game/narrator-unlock"
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] })
@@ -51,7 +52,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${fellEnglish.variable} ${alegreya.variable} dark antialiased`}>
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        <NarratorUnlock />
+        {children}
+      </body>
     </html>
   )
 }

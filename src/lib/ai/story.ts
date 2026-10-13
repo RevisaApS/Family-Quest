@@ -2,6 +2,7 @@ import { Type, type Schema } from '@google/genai'
 import { generateJSON } from './gemini'
 import { languageInstruction, type Language } from './language'
 import { pickLegendNod, pickStorySeed, seedInstruction } from './story-seed'
+import { CHARACTER_VOICES, joinSegments, normalizeSegments } from './segments'
 import { themeById, type ValueThemeId } from '@/lib/game/values'
 import type { AdventureStyle } from '@/types/game'
 import type { GeneratedScene, StoryContext } from '@/types/ai'
@@ -153,16 +154,32 @@ IMPORTANT: ${context.encounter.name} is badly wounded and in THIS scene TRANSFOR
   }
 }
 
+// The scene comes back as segments in reading order so the narrator can give
+// speaking characters their own voices; `narration` is joined from them.
+const SEGMENTS_SCHEMA: Schema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      speaker: { type: Type.STRING, format: 'enum', enum: ['narrator', 'character'] },
+      name: { type: Type.STRING },
+      voice: { type: Type.STRING, format: 'enum', enum: [...CHARACTER_VOICES] },
+      text: { type: Type.STRING },
+    },
+    required: ['speaker', 'text'],
+  },
+}
+
 // The schema has to declare exactly the fields this particular call asks for:
 // the model returns nothing that isn't declared, so a fixed schema would
 // silently swallow the quest and villain on the opening scene.
-function sceneSchema(context: StoryContext): Schema {
+export function sceneSchema(context: StoryContext): Schema {
   const properties: Record<string, Schema> = {
-    narration: { type: Type.STRING },
+    segments: SEGMENTS_SCHEMA,
     imagePrompt: { type: Type.STRING },
     suggestedNextPlayer: { type: Type.STRING },
   }
-  const required = ['narration', 'imagePrompt', 'suggestedNextPlayer']
+  const required = ['segments', 'imagePrompt', 'suggestedNextPlayer']
 
   if (context.isFirstScene) {
     properties.questTitle = { type: Type.STRING }
@@ -212,10 +229,20 @@ KEEP IT FRESH: move the story somewhere new. Do not reuse a location, creature, 
 
 Generate the next scene. Return JSON:
 {
-  "narration": "2-3 sentences describing the scene, what the characters see and hear",
+  "segments": [
+    { "speaker": "narrator", "text": "what the narrator tells (all segments together: 2-3 sentences)" },
+    { "speaker": "character", "name": "who speaks", "voice": "one voice type from the list below", "text": "only the words they say" }
+  ],
   "imagePrompt": "A detailed prompt for generating an image of this scene",
   "suggestedNextPlayer": "the player ID of whichever character would most naturally act next based on the story context"${context.isFirstScene ? ',\n  "questTitle": "the quest\'s short title",\n  "questGoal": "one sentence describing the goal",\n  "villainName": "the villain\'s name"' : ''}${context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss' ? ',\n  "encounterName": "the enemy\'s name"' : ''}
 }
+
+THE SCENE AS SEGMENTS: "segments" is the scene in reading order, mostly the narrator.
+- LENGTH: ALL segments together are 2-3 sentences describing the scene, what the characters see and hear. That is the whole scene, the same length as a scene with no dialogue: a spoken line takes the place of narration, it never adds to it.
+- Dialogue is optional: at most one or two short spoken lines in the whole scene, and only when a character would naturally speak (a quest-giver, a villager, a monster, the villain).
+- The heroes never get spoken lines: the players decide what their heroes say.
+- A character segment holds ONLY the spoken words: no quote marks, and no "he said" (that goes in a narrator segment).
+- "voice" is one of: gruff (big, deep, grumpy), squeaky (small, high, quick), wise (old, slow), young (a child or youngster), menacing (a dark, cold villain), friendly (kind and warm).
 
 The imagePrompt must ALWAYS be written in English (it goes to an image model), regardless of the story language. Describe the location, mood and any creatures — do NOT describe the heroes' appearance, that is added separately.
 
@@ -224,5 +251,12 @@ Available player IDs: ${context.characters.map(c => c.playerId).join(', ')}
 
 Make the narration engaging and end with a moment that calls for action.`
 
-  return generateJSON<GeneratedScene>(prompt, sceneSchema(context), SCENE_TEMPERATURE)
+  const raw = await generateJSON<Omit<GeneratedScene, 'segments' | 'narration'> & { segments?: unknown }>(
+    prompt, sceneSchema(context), SCENE_TEMPERATURE
+  )
+  const segments = normalizeSegments(raw.segments)
+  // A blank page would strand the family: failing here brings up the play
+  // page's retry button instead
+  if (segments.length === 0) throw new Error('Scene came back without any story')
+  return { ...raw, segments, narration: joinSegments(segments, context.language) }
 }

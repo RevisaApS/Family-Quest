@@ -12,6 +12,7 @@ import { DifficultyOption } from '@/components/onboarding/difficulty-option'
 import { StepIndicator } from '@/components/onboarding/step-indicator'
 import { useGameStore } from '@/stores/game-store'
 import { t } from '@/lib/i18n'
+import { unlockNarrator } from '@/lib/narrator'
 import type { AdventureStyle, Difficulty, DiceType } from '@/types/game'
 import { cn } from '@/lib/utils'
 
@@ -19,7 +20,7 @@ const DICE_TYPES: DiceType[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20']
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { adventureStyle, difficulty, dicePreference, language, setSettings, diceInventory, setDiceInventory } = useGameStore()
+  const { adventureStyle, difficulty, dicePreference, language, readAloud, setSettings, diceInventory, setDiceInventory } = useGameStore()
   const [showInfo, setShowInfo] = useState(false)
   // The values-layer control deliberately does NOT live here: this page is step
   // 2 of the onboarding the kids walk through. It lives at /voksen, unlinked.
@@ -53,6 +54,7 @@ export default function SettingsPage() {
                 <p>{t('infoDifficulty', language)}</p>
                 <p>{t('infoDice', language)}</p>
                 <p>{t('infoLanguage', language)}</p>
+                <p>{t('infoReadAloud', language)}</p>
               </div>
             )}
           </div>
@@ -164,6 +166,37 @@ export default function SettingsPage() {
               >
                 <span className="text-2xl block mb-1">🇬🇧</span>
                 <span className="font-medium">English</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-card/30 rounded-xl p-4 border border-border/50 space-y-3">
+            <Label className="text-lg">{t('readAloudLabel', language)}</Label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSettings({ readAloud: 'self' })}
+                className={cn(
+                  "flex-1 p-4 rounded-lg border-2 transition-all bg-card text-center",
+                  readAloud === 'self' ? "border-primary ring-2 ring-primary/20" : "border-border"
+                )}
+              >
+                <span className="text-2xl block mb-1">📖</span>
+                <span className="font-medium">{t('readSelf', language)}</span>
+              </button>
+              <button
+                onClick={() => {
+                  // Inside the tap, before anything else: iPad Safari only
+                  // lets the narrator's audio start from a user gesture
+                  unlockNarrator()
+                  setSettings({ readAloud: 'narrator' })
+                }}
+                className={cn(
+                  "flex-1 p-4 rounded-lg border-2 transition-all bg-card text-center",
+                  readAloud === 'narrator' ? "border-primary ring-2 ring-primary/20" : "border-border"
+                )}
+              >
+                <span className="text-2xl block mb-1">🗣️</span>
+                <span className="font-medium">{t('readNarrator', language)}</span>
               </button>
             </div>
           </div>

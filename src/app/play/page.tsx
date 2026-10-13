@@ -26,6 +26,9 @@ import { ShopModal } from '@/components/game/shop-modal'
 import { InventoryModal } from '@/components/game/inventory-modal'
 import { useGameStore } from '@/stores/game-store'
 import { useGameAI } from '@/hooks/use-game-ai'
+import { useNarrator } from '@/hooks/use-narrator'
+import { pauseNarrator, unlockNarrator } from '@/lib/narrator'
+import { narratorOnly, optionsSegments, type StorySegment } from '@/lib/ai/segments'
 import { calculateDC, resolveD20, requiredRolls, rollD20 } from '@/lib/game/mechanics'
 import {
   heroStatBonus, applyTurnOutcome, reviveHero,
@@ -95,6 +98,7 @@ export default function PlayPage() {
     diceInventory, soundEnabled, setSoundEnabled: setSoundPref, startNewAdventure,
     shopHintSeen, setShopHintSeen, chronicle,
     pickAdventureTheme, markDilemmaPlanted,
+    readAloud, setSettings,
   } = useGameStore()
   const {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
@@ -112,6 +116,9 @@ export default function PlayPage() {
   const currentHero = heroes.find(h => h.playerId === currentPlayer?.id)
 
   const [narration, setNarration] = useState('')
+  // The same scene in reading order, with spoken lines marked: what the
+  // narrator reads in read-aloud mode
+  const [sceneSegments, setSceneSegments] = useState<StorySegment[]>([])
   const [currentSceneText, setCurrentSceneText] = useState('')
   const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(null)
   const [actions, setActions] = useState<GeneratedAction[]>([])
@@ -318,6 +325,7 @@ export default function PlayPage() {
   const loadScene = useCallback(async () => {
     setGamePhase('loading')
     setNarration('')
+    setSceneSegments([])
     setSceneImageUrl(null)
     setActions([])
     setSelectedAction(null)
@@ -376,6 +384,7 @@ export default function PlayPage() {
       // This act has now spent its dilemma, even across a reload
       if (dilemmaRef.current) markDilemmaPlanted(act)
       setNarration(scene.narration)
+      setSceneSegments(scene.segments?.length ? scene.segments : narratorOnly(scene.narration))
       setCurrentSceneText(scene.narration)
       setGamePhase('scene')
 
@@ -552,6 +561,65 @@ export default function PlayPage() {
       useGameStore.getState().addToChronicle(finalRecord)
     })
   }, [victoryVisible]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Read-aloud mode: the narrator reads each page as it appears, the answer
+  // options after it, then the outcome, the epilogue and the recap's closing
+  // line. One at a time, in that order. In "we read ourselves" mode none of
+  // this runs and no audio is ever requested.
+  const narratorOn = readAloud === 'narrator'
+  const {
+    narrate, cancel: cancelNarration, replay: replayNarration, hoarse: narratorHoarse,
+  } = useNarrator(narratorOn, isPaused)
+
+  const sceneOnScreen = recapOpen === false && (gamePhase === 'scene' || gamePhase === 'dice')
+    && !loadingScene && !!narration
+  useEffect(() => {
+    if (sceneOnScreen) narrate('scene', sceneSegments, language)
+  }, [sceneOnScreen, sceneSegments, language, narrate])
+
+  // The three choices, read once the scene has finished (the narrator queues
+  // them behind it). The kid's own-idea box and the buttons' chrome are not read.
+  const optionSegments = useMemo(
+    () => optionsSegments(actions.map(a => a.text), language),
+    [actions, language]
+  )
+  useEffect(() => {
+    if (recapOpen === false && gamePhase === 'scene' && !loadingActions && optionSegments.length > 0) {
+      narrate('options', optionSegments, language)
+    }
+  }, [recapOpen, gamePhase, loadingActions, optionSegments, language, narrate])
+  // A choice has been made: reading the options now would only talk over the dice
+  useEffect(() => {
+    if (gamePhase !== 'scene') cancelNarration('options')
+  }, [gamePhase, cancelNarration])
+
+  useEffect(() => {
+    if (recapOpen !== false || gamePhase !== 'outcome' || loadingOutcome || !outcomeNarrative) return
+    // The canned line for an unreachable storyteller is not worth a request
+    if (outcomeNarrative === t('storyContinues', language)) return
+    narrate('outcome', narratorOnly(outcomeNarrative), language)
+  }, [recapOpen, gamePhase, loadingOutcome, outcomeNarrative, language, narrate])
+
+  useEffect(() => {
+    if (victoryVisible && epilogue?.story) narrate('epilogue', narratorOnly(epilogue.story), language)
+  }, [victoryVisible, epilogue, language, narrate])
+
+  const resumeHook = savedAdventures.find(a => a.id === activeAdventureId)?.hook
+  useEffect(() => {
+    if (recapOpen && resumeHook) narrate('hook', narratorOnly(resumeHook), language)
+  }, [recapOpen, resumeHook, language, narrate])
+
+  // The family moved on: "Eventyret fortsætter", "Videre!" on the recap, or
+  // closing the victory screen stops that text mid-sentence
+  useEffect(() => {
+    if (gamePhase !== 'outcome') cancelNarration('outcome')
+  }, [gamePhase, cancelNarration])
+  useEffect(() => {
+    if (recapOpen === false) cancelNarration('hook')
+  }, [recapOpen, cancelNarration])
+  useEffect(() => {
+    if (!victoryVisible) cancelNarration('epilogue')
+  }, [victoryVisible, cancelNarration])
 
   if (!currentPlayer || !currentCharacter) {
     return (
@@ -1045,7 +1113,7 @@ export default function PlayPage() {
         {/* Shop + sound + pause buttons */}
         <button
           onClick={() => { setShopHintSeen(); setShopOpen(true) }}
-          className="fixed top-4 right-28 size-11 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
+          className="fixed top-4 right-40 size-11 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
           aria-label="Open shop"
         >
           🏪
@@ -1063,7 +1131,7 @@ export default function PlayPage() {
             <motion.div
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 1.2, repeat: Infinity }}
-              className="absolute -top-2 right-[6.5rem] w-4 h-4 rotate-45 bg-primary"
+              className="absolute -top-2 right-[9.5rem] w-4 h-4 rotate-45 bg-primary"
               aria-hidden="true"
             />
             <div className="relative rounded-lg bg-primary text-primary-foreground p-3 text-sm shadow-lg space-y-2">
@@ -1088,7 +1156,41 @@ export default function PlayPage() {
         </button>
         <button
           onClick={() => {
+            // Inside the tap, before anything else: iPad Safari only lets the
+            // narrator's audio start from a user gesture
+            if (!narratorOn) unlockNarrator()
+            setSettings({ readAloud: narratorOn ? 'self' : 'narrator' })
+          }}
+          className="fixed top-4 right-28 size-11 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
+          aria-label={`${t('readAloudLabel', language)}: ${t(narratorOn ? 'readNarrator' : 'readSelf', language)}`}
+          aria-pressed={narratorOn}
+          title={`${t('readAloudLabel', language)}: ${t(narratorOn ? 'readNarrator' : 'readSelf', language)}`}
+        >
+          {narratorOn ? '🗣️' : '📖'}
+        </button>
+
+        {/* The narrator could not be reached: say so calmly, the text is
+            right there on the page and the game goes on */}
+        <AnimatePresence>
+          {narratorHoarse && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="fixed top-[4.25rem] inset-x-4 z-[60] flex justify-center pointer-events-none"
+              role="status"
+            >
+              <p className="rounded-full bg-card/90 backdrop-blur-sm border border-primary/25 px-4 py-2 text-sm shadow-lg shadow-black/30">
+                📖 {t('narratorHoarse', language)}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <button
+          onClick={() => {
             setSaveName(savedAdventures.find(a => a.id === activeAdventureId)?.name ?? '')
+            // Inside the tap, so the voice stops with the game
+            pauseNarrator(true)
             setIsPaused(true)
           }}
           className="fixed top-4 right-4 size-11 flex items-center justify-center rounded-full bg-card/70 backdrop-blur-sm border border-primary/25 shadow-lg shadow-black/30 transition-colors hover:border-primary/60 z-40"
@@ -1101,7 +1203,16 @@ export default function PlayPage() {
           <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
             <div className="card-surface p-6 rounded-xl border border-primary/20 space-y-4 max-w-xs w-full">
               <h2 className="text-xl font-serif text-primary text-center">{t('paused', language)}</h2>
-              <Button className="w-full" onClick={() => setIsPaused(false)}>{t('resume', language)}</Button>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  // Inside the tap, so iPad Safari lets the voice carry on
+                  pauseNarrator(false)
+                  setIsPaused(false)
+                }}
+              >
+                {t('resume', language)}
+              </Button>
               <div className="space-y-2">
                 <Input
                   value={saveName}
@@ -1319,6 +1430,17 @@ export default function PlayPage() {
                   isLoadingNarration={loadingScene}
                   imageUrl={sceneImageUrl ?? undefined}
                   isLoadingImage={loadingImage}
+                  // The page again, then its options while there is still a
+                  // choice to make. From memory when it can, else asked again.
+                  onReplay={narratorOn && sceneSegments.length > 0
+                    ? () => replayNarration(
+                        gamePhase === 'scene'
+                          ? [['scene', sceneSegments], ['options', optionSegments]]
+                          : [['scene', sceneSegments]],
+                        language
+                      )
+                    : undefined}
+                  replayLabel={t('readAgain', language)}
                 />
               </div>
 

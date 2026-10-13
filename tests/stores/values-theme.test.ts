@@ -33,8 +33,8 @@ const migrate = (persisted: unknown, version: number): any =>
   (useGameStore.persist.getOptions().migrate as any)(persisted, version)
 
 describe('store migration v6 → v7', () => {
-  it('is on version 7', () => {
-    expect(useGameStore.persist.getOptions().version).toBe(7)
+  it('is on version 7 or later', () => {
+    expect(useGameStore.persist.getOptions().version).toBeGreaterThanOrEqual(7)
   })
 
   it('initialises the values fields', () => {

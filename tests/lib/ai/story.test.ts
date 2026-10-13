@@ -4,7 +4,8 @@ import type { StoryContext } from '@/types/ai'
 const generateJSON = vi.fn()
 vi.mock('@/lib/ai/gemini', () => ({ generateJSON: (...args: unknown[]) => generateJSON(...args) }))
 
-const { generateScene } = await import('@/lib/ai/story')
+const { generateScene, sceneSchema } = await import('@/lib/ai/story')
+const { CHARACTER_VOICES } = await import('@/lib/ai/segments')
 
 const CONTEXT: StoryContext = {
   adventureStyle: 'realistic',
@@ -27,7 +28,7 @@ function promptFrom(call: number): string {
 describe('generateScene — opening variety', () => {
   beforeEach(() => {
     generateJSON.mockReset()
-    generateJSON.mockResolvedValue({ narration: '', imagePrompt: '', suggestedNextPlayer: 'p1' })
+    generateJSON.mockResolvedValue({ segments: [{ speaker: 'narrator', text: 'Porten knirker.' }], imagePrompt: '', suggestedNextPlayer: 'p1' })
   })
 
   it('asks a different question every time the adventure starts', async () => {
@@ -111,5 +112,83 @@ describe('generateScene — opening variety', () => {
     const prompt = promptFrom(0)
     expect(prompt).not.toContain("THIS ADVENTURE'S INGREDIENTS")
     expect(prompt).toContain('Fru Tang')
+  })
+})
+
+describe('generateScene: segments for the narrator', () => {
+  beforeEach(() => {
+    generateJSON.mockReset()
+  })
+
+  const LATER: StoryContext = {
+    ...CONTEXT,
+    isFirstScene: false,
+    quest: { title: 'Den Tabte Lygte', goal: 'Find lygten', villain: 'Fru Tang', milestonesDone: 1 },
+  }
+
+  it('asks for segments instead of a narration string, with a fixed set of voices', () => {
+    const schema = sceneSchema(LATER)
+    expect(schema.required).toContain('segments')
+    expect(schema.required).not.toContain('narration')
+    const item = schema.properties!.segments.items!
+    expect(item.required).toEqual(['speaker', 'text'])
+    expect(item.properties!.speaker.enum).toEqual(['narrator', 'character'])
+    expect(item.properties!.voice.enum).toEqual([...CHARACTER_VOICES])
+  })
+
+  it('still declares the opening scene and encounter fields alongside segments', () => {
+    expect(sceneSchema(CONTEXT).required).toEqual(
+      expect.arrayContaining(['segments', 'questTitle', 'questGoal', 'villainName'])
+    )
+    expect(sceneSchema({ ...LATER, encounterPhase: 'arriving-monster' }).required).toContain('encounterName')
+  })
+
+  it('joins the segments into the narration everything else reads', async () => {
+    generateJSON.mockResolvedValue({
+      segments: [
+        { speaker: 'narrator', text: 'En trold spærrer broen.' },
+        { speaker: 'character', name: 'Trolden', voice: 'gruff', text: 'Ingen kommer over min bro!' },
+        { speaker: 'narrator', text: 'Hvad gør I?' },
+      ],
+      imagePrompt: 'A troll on a bridge',
+      suggestedNextPlayer: 'p1',
+    })
+    const scene = await generateScene(LATER)
+    expect(scene.narration).toBe('En trold spærrer broen. »Ingen kommer over min bro!« Hvad gør I?')
+    expect(scene.segments).toHaveLength(3)
+    expect(scene.segments[1]).toEqual({ speaker: 'character', name: 'Trolden', voice: 'gruff', text: 'Ingen kommer over min bro!' })
+    expect(scene.imagePrompt).toBe('A troll on a bridge')
+  })
+
+  it('fails, so the retry button appears, when no usable segment comes back', async () => {
+    // A blank page used to come through as narration: '' and strand the table
+    for (const segments of [[], 'not a list', [{ speaker: 'narrator', text: '   ' }], undefined]) {
+      generateJSON.mockResolvedValue({ segments, imagePrompt: 'A gate', suggestedNextPlayer: 'p1' })
+      await expect(generateScene(LATER)).rejects.toThrow('without any story')
+    }
+  })
+
+  it('keeps a line with Danish quotes intact for the story memory and recap', async () => {
+    generateJSON.mockResolvedValue({
+      segments: [
+        { speaker: 'character', name: 'Heksen', voice: 'menacing', text: '»Kom nærmere,«' },
+        { speaker: 'narrator', text: 'hvisker heksen.' },
+      ],
+      imagePrompt: 'A witch',
+      suggestedNextPlayer: 'p1',
+    })
+    const scene = await generateScene(LATER)
+    // The model's own quotes are stripped before ours go on: never »»doubled««
+    expect(scene.narration).toBe('»Kom nærmere,« hvisker heksen.')
+  })
+
+  it('tells the model dialogue is optional, short, and never for the heroes', async () => {
+    generateJSON.mockResolvedValue({ segments: [{ speaker: 'narrator', text: 'Natten falder på.' }], imagePrompt: '', suggestedNextPlayer: 'p1' })
+    await generateScene(LATER)
+    const prompt = promptFrom(0)
+    expect(prompt).toContain('Dialogue is optional: at most one or two short spoken lines')
+    expect(prompt).toContain('The heroes never get spoken lines')
+    expect(prompt).toContain('2-3 sentences')
+    for (const voice of CHARACTER_VOICES) expect(prompt).toContain(voice)
   })
 })

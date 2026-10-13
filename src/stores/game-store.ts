@@ -9,6 +9,9 @@ import { nextTheme, type ValueTheme, type ValueThemeId } from '@/lib/game/values
 import type { CompletedAdventure } from '@/lib/game/chronicle'
 import type { Language } from '@/lib/ai/language'
 
+// Who reads the story aloud: a grown-up at the table, or the AI narrator.
+export type ReadAloud = 'self' | 'narrator'
+
 interface Player {
   id: string
   name: string
@@ -65,11 +68,13 @@ interface GameStore {
   difficulty: Difficulty
   dicePreference: 'physical' | 'digital'
   language: Language
+  readAloud: ReadAloud
   setSettings: (settings: Partial<{
     adventureStyle: AdventureStyle
     difficulty: Difficulty
     dicePreference: 'physical' | 'digital'
     language: Language
+    readAloud: ReadAloud
   }>) => void
 
   characters: Character[]
@@ -222,6 +227,8 @@ export const useGameStore = create<GameStore>()(
       difficulty: 'medium',
       dicePreference: 'physical',
       language: 'da',
+      // Nobody hears the narrator until the family chooses it
+      readAloud: 'self',
       setSettings: (settings) => set((state) => ({ ...state, ...settings })),
 
       characters: [],
@@ -329,7 +336,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'family-quest-storage',
-      version: 7,
+      version: 8,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
       // v1 predates the RPG update (heroes, boss, sound).
@@ -338,6 +345,7 @@ export const useGameStore = create<GameStore>()(
       // v4 predates teamwork/potions/pets (assist, comeback, potion backpack).
       // v5 predates the Hall of Heroes chronicle.
       // v6 predates the values layer (theme rotation + override).
+      // v7 predates the read-aloud setting.
       migrate: (persisted, version) => {
         let state = persisted as GameStore & { boss?: EncounterState | null }
         if (version < 1) {
@@ -382,6 +390,9 @@ export const useGameStore = create<GameStore>()(
             // adventure that never had it. The next new quest starts the cycle.
             quest: state.quest ? { ...state.quest, dilemmaAct: state.quest.dilemmaAct ?? null } : state.quest,
           }
+        }
+        if (version < 8) {
+          state = { ...state, readAloud: state.readAloud === 'narrator' ? 'narrator' : 'self' }
         }
         return state
       },

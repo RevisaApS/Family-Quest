@@ -10,11 +10,14 @@ interface SceneDisplayProps {
   isLoadingNarration: boolean
   // False when re-showing a page the family has already seen — no fade-in
   animateIn?: boolean
+  // Read-aloud mode: hear this page again, from audio already in memory
+  onReplay?: () => void
+  replayLabel?: string
 }
 
 // The signature element of the whole app: a page of the storybook.
 // Illustration plate on top, narration in ink below — one piece of paper.
-export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNarration, animateIn = true }: SceneDisplayProps) {
+export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNarration, animateIn = true, onReplay, replayLabel }: SceneDisplayProps) {
   const showNarrationBox = isLoadingNarration || !!narration
 
   return (
@@ -63,15 +66,28 @@ export function SceneDisplay({ imageUrl, isLoadingImage, narration, isLoadingNar
                 <LoadingShimmer className="h-4 w-3/4 from-[oklch(0.88_0.045_82)] via-[oklch(0.93_0.04_86)] to-[oklch(0.88_0.045_82)]" />
               </div>
             ) : (
-              <motion.p
-                key={narration}
-                initial={animateIn ? { opacity: 0 } : false}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8 }}
-                className="drop-cap text-lg leading-relaxed"
-              >
-                {narration}
-              </motion.p>
+              <>
+                <motion.p
+                  key={narration}
+                  initial={animateIn ? { opacity: 0 } : false}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8 }}
+                  className="drop-cap text-lg leading-relaxed"
+                >
+                  {narration}
+                </motion.p>
+                {onReplay && replayLabel && (
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="button"
+                      onClick={onReplay}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--parchment-edge)] px-3 py-1.5 text-sm font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] active:scale-95"
+                    >
+                      🔁 {replayLabel}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </motion.div>
         )}

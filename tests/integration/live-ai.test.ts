@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { generateScene } from '@/lib/ai/story'
 import { generateActions } from '@/lib/ai/actions'
 import { generateOutcome } from '@/lib/ai/outcomes'
+import { joinSegments } from '@/lib/ai/segments'
 import type { StoryContext } from '@/types/ai'
 
 // Preflight against the REAL Gemini API — run this before a session to prove
@@ -57,6 +58,17 @@ describe.skipIf(!hasKey)('live Gemini calls', () => {
       // The story-memory lines are bracketed meta — the DM must not copy that
       // shape into what the family actually hears read aloud.
       expect(scene.narration).not.toMatch(/\[.+·.+\]/)
+      // The scene comes back as segments for the narrator, and the page text
+      // is exactly those segments joined
+      expect(scene.segments.length).toBeGreaterThan(0)
+      expect(joinSegments(scene.segments, 'da')).toBe(scene.narration)
+      for (const segment of scene.segments) expect(segment.text.trim()).toBeTruthy()
+    }
+    const lines = scenes.flatMap(s => s.segments.filter(seg => seg.speaker === 'character'))
+    console.log(`\n--- ${lines.length} spoken line(s) across ${REPEATS} scenes ---\n${lines.map(l => `${l.name} (${l.voice}): ${l.text}`).join('\n')}\n`)
+    // Dialogue is optional and short: never more than two lines in a scene
+    for (const scene of scenes) {
+      expect(scene.segments.filter(seg => seg.speaker === 'character').length).toBeLessThanOrEqual(2)
     }
   }, 120_000)
 

@@ -1,9 +1,14 @@
 import type { Stat, SceneFit, AdventureStyle, CharacterClass } from './game'
 import type { Language } from '@/lib/ai/language'
 import type { ValueThemeId } from '@/lib/game/values'
+import type { StorySegment } from '@/lib/ai/segments'
 
 export interface GeneratedScene {
+  // Built from segments on the server: the paragraph shown on the page
   narration: string
+  // The same scene in reading order, with spoken lines marked, so the
+  // narrator can give characters their own voices
+  segments: StorySegment[]
   imagePrompt: string
   suggestedNextPlayer: string
   // Only set when the scene introduces a monster or the boss
