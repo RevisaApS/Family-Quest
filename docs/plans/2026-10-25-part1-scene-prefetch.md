@@ -255,6 +255,10 @@ Give each of the three functions a last parameter `opts: { signal?: AbortSignal;
 }
 ```
 
+In `fetchScene` and `fetchActions`, change `return response.json()` to
+`return await response.json()`. Without the `await`, an abort during the body read
+escapes the `catch`, and the prefetch's promise chain rejects unhandled.
+
 Existing callers pass nothing and behave exactly as before.
 
 - [ ] **Step 2: Typecheck**
@@ -290,6 +294,10 @@ export interface PrefetchStart {
   // a no-op, which also absorbs StrictMode's double-invoked effects.
   id: string
   context: StoryContext
+  // Off on arrival, aftermath and enrage turns: today their actions are asked
+  // for after loadScene has created or changed the encounter, and a prefetch
+  // built before that would offer non-combat options in a fight.
+  prefetchActions: boolean
   fetchScene: (c: StoryContext, o: { signal: AbortSignal; silent: true }) => Promise<GeneratedScene | null>
   fetchActions: (c: StoryContext, sceneText: string, o: { signal: AbortSignal; silent: true }) => Promise<GeneratedAction[] | null>
   fetchImage: (scene: GeneratedScene, signal: AbortSignal) => Promise<string | null>
@@ -297,7 +305,7 @@ export interface PrefetchStart {
 
 export interface PrefetchTaken {
   scene: Promise<GeneratedScene | null>
-  actions: Promise<GeneratedAction[] | null>
+  actions: Promise<GeneratedAction[] | null> | null
   image: Promise<string | null>
 }
 
@@ -306,7 +314,7 @@ interface Entry {
   key: string
   controller: AbortController
   scene: Promise<GeneratedScene | null>
-  actions: Promise<GeneratedAction[] | null>
+  actions: Promise<GeneratedAction[] | null> | null
   image: Promise<string | null>
 }
 
@@ -324,7 +332,9 @@ export function useScenePrefetch() {
     const controller = new AbortController()
     const opts = { signal: controller.signal, silent: true as const }
     const scene = s.fetchScene(s.context, opts)
-    const actions = scene.then(sc => (sc ? s.fetchActions(s.context, sc.narration, opts) : null))
+    const actions = s.prefetchActions
+      ? scene.then(sc => (sc ? s.fetchActions(s.context, sc.narration, opts) : null))
+      : null
     const image = scene.then(sc => (sc ? s.fetchImage(sc, controller.signal) : null))
     entry.current = {
       id: s.id,
@@ -463,9 +473,11 @@ useEffect(() => {
   const phase = currentEncounterPhase(next.turnHistoryLength)
   const dilemma = decideDilemma(phase, false)
   const context = buildStoryContext(snap, dilemma)
+  const ordinaryTurn = phase === 'none' || (phase === 'active' && !context.encounter?.announceEnrage)
   prefetch.start({
     id: contextKey(context),
     context,
+    prefetchActions: ordinaryTurn,
     fetchScene: (c, o) => fetchScene(c, o),
     fetchActions: (c, text, o) => fetchActions(c, text, o),
     fetchImage: (scene, signal) => getHeroPortraits()
@@ -510,50 +522,81 @@ git commit -m "feat: write the next scene in the background once the outcome is 
 
 - [ ] **Step 1: Use the prefetch when it fits**
 
-In `loadScene`, the revive and the dilemma decision already ran above this point. Replace
+Add next to the other refs and state:
+
+```ts
+// Every loadScene gets a number; late results from an older scene are dropped
+const sceneSeqRef = useRef(0)
+// Prefetched actions still on their way: the options slot shows "thinking"
+const [awaitingPrefetchedActions, setAwaitingPrefetchedActions] = useState(false)
+// Bumped to make the actions effect ask again (its guard ignores a same-text scene)
+const [actionsRetryTick, setActionsRetryTick] = useState(0)
+```
+
+Move the `actionsRequestedRef` declaration above `loadScene` so it is in scope.
+
+At the very top of `loadScene`, before the reset block, take a number. In the reset
+block, clear the waiting flag:
+
+```ts
+const sceneSeq = ++sceneSeqRef.current
+// ...existing resets...
+setAwaitingPrefetchedActions(false)
+```
+
+The revive and the dilemma decision already run before `buildStoryContext()`. Replace
 `const scene = await fetchScene(context)` with:
 
 ```ts
 const taken = prefetch.take(context)
-const scene = taken ? await taken.scene : await fetchScene(context)
-const sceneSeq = ++sceneSeqRef.current
+const prefetched = taken ? await taken.scene : null
+// A failed or empty prefetch falls back to today's request
+const usedPrefetch = !!prefetched
+const scene = prefetched ?? await fetchScene(context)
+if (sceneSeqRef.current !== sceneSeq) return
 ```
-
-Add `const sceneSeqRef = useRef(0)` next to the other refs.
 
 The key includes the dilemma flag, so a match means the prefetch was built with the same
 value `loadScene` just put in `dilemmaRef.current`. The side-effect block (dilemma
 marking, quest, encounter, enrage) runs unchanged on the adopted scene. This is the only
 place the prefetch is consumed: all five `setTurnCounter` sites lead here.
 
-When the scene is set and `taken` exists, hand the actions over without a second
-request:
+Inside `if (scene) { ... }`, after `setGamePhase('scene')`, hand over the prefetched
+actions when there are any:
 
 ```ts
-if (taken) {
+if (usedPrefetch && taken?.actions) {
   actionsRequestedRef.current = scene.narration
+  setAwaitingPrefetchedActions(true)
   taken.actions.then(a => {
     if (sceneSeqRef.current !== sceneSeq) return
+    setAwaitingPrefetchedActions(false)
     if (a) setActions(a)
-    else { actionsRequestedRef.current = null; loadActions() }
+    // Ask again through the effect, which reads the current scene and context
+    else { actionsRequestedRef.current = null; setActionsRetryTick(t => t + 1) }
   })
 }
 ```
 
-Move the `actionsRequestedRef` declaration above `loadScene` so it is in scope.
+When there are no prefetched actions (arrival, aftermath and enrage turns, or no
+prefetch), do nothing: the actions effect asks as today.
 
-Replace the image block so it uses the prefetched image when present, and never paints
-onto a newer scene:
+Replace the image block so it uses the prefetched image only when the prefetched scene
+was used, and never paints onto a newer scene:
 
 ```ts
-const image = taken
+const image = usedPrefetch && taken
   ? taken.image
   : getHeroPortraits().then(portraits => fetchImage(scene.imagePrompt, adventureStyle, heroImageDescriptions(), portraits))
 image.then(url => { if (url && sceneSeqRef.current === sceneSeq) setSceneImageUrl(url) })
 ```
 
-If `taken` was used but `await taken.scene` returned `null` (the prefetch failed), fall
-through to `fetchScene(context)` once before showing the retry button.
+Then two small changes outside `loadScene`:
+
+- Add `actionsRetryTick` to the actions effect's dependency list (around line 495).
+- In the JSX, show the "thinking" state for actions when
+  `loadingActions || awaitingPrefetchedActions` (around lines 1538-1553), so the options
+  slot is never blank.
 
 - [ ] **Step 2: Typecheck and run the unit tests**
 
@@ -583,7 +626,7 @@ In the CDP driver, stub `*/api/ai/scene` with a 4 s delay and a different narrat
 every call (the actions guard needs that). Stub `*/api/ai/image` with a 6 s delay,
 `*/api/ai/actions` with 2 s, and `*/api/ai/outcome` with 3 s.
 
-- [ ] **Step 3: Check three paths**
+- [ ] **Step 3: Check these paths**
 
 1. **Plain turn.** Roll, wait for the outcome, wait about 5 s, then click "Videre". The
    next scene text must be visible within 300 ms. Count the requests: one scene call for
@@ -593,8 +636,12 @@ every call (the actions guard needs that). Stub `*/api/ai/image` with a 6 s dela
 3. **Loot equip.** Force a chest and equip the item. The prefetch is discarded, and the
    next scene is requested fresh after the chest closes (today's behaviour).
 4. **Spawn turn.** Seed the turn count so the next scene is `arriving-monster`. The
-   prefetch is used and the encounter appears exactly once.
-5. **No double spend.** In the stub log, every turn has at most one scene request and one
+   prefetched scene is used, the encounter appears exactly once, and the actions are
+   asked for after the encounter exists. Check that they are combat options (the
+   actions request body has `encounterPhase: 'active'`).
+5. **Failed prefetch.** Make the stub fail the first scene call. "Videre" falls back to
+   a fresh request, and the picture and the options both arrive.
+6. **No double spend.** In the stub log, every turn has at most one scene request and one
    image request unless something changed.
 
 - [ ] **Step 4: Full suite**
