@@ -6,6 +6,16 @@ import type { EpilogueContext, GeneratedEpilogue } from '@/lib/ai/epilogue'
 import type { OutcomeType, Stat, EquipSlot } from '@/types/game'
 import type { Language } from '@/lib/ai/language'
 
+// A background request (the next-scene prefetch) passes a signal so it can be
+// dropped, and runs silent: no spinner and no error banner for a page nobody
+// has asked for yet.
+export interface FetchOpts {
+  signal?: AbortSignal
+  silent?: boolean
+}
+
+const isAbort = (err: unknown) => err instanceof DOMException && err.name === 'AbortError'
+
 export function useGameAI() {
   const [loadingScene, setLoadingScene] = useState(false)
   const [loadingActions, setLoadingActions] = useState(false)
@@ -14,41 +24,41 @@ export function useGameAI() {
   const [loadingImage, setLoadingImage] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchScene = useCallback(async (context: StoryContext): Promise<GeneratedScene | null> => {
-    setLoadingScene(true)
-    setError(null)
+  const fetchScene = useCallback(async (context: StoryContext, opts: FetchOpts = {}): Promise<GeneratedScene | null> => {
+    if (!opts.silent) { setLoadingScene(true); setError(null) }
     try {
       const response = await fetch('/api/ai/scene', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(context),
+        signal: opts.signal,
       })
       if (!response.ok) throw new Error('Failed to generate scene')
-      return response.json()
+      return await response.json()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      if (!isAbort(err) && !opts.silent) setError(err instanceof Error ? err.message : 'Unknown error')
       return null
     } finally {
-      setLoadingScene(false)
+      if (!opts.silent) setLoadingScene(false)
     }
   }, [])
 
-  const fetchActions = useCallback(async (context: StoryContext, currentScene: string): Promise<GeneratedAction[] | null> => {
-    setLoadingActions(true)
-    setError(null)
+  const fetchActions = useCallback(async (context: StoryContext, currentScene: string, opts: FetchOpts = {}): Promise<GeneratedAction[] | null> => {
+    if (!opts.silent) { setLoadingActions(true); setError(null) }
     try {
       const response = await fetch('/api/ai/actions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ context, currentScene }),
+        signal: opts.signal,
       })
       if (!response.ok) throw new Error('Failed to generate actions')
-      return response.json()
+      return await response.json()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      if (!isAbort(err) && !opts.silent) setError(err instanceof Error ? err.message : 'Unknown error')
       return null
     } finally {
-      setLoadingActions(false)
+      if (!opts.silent) setLoadingActions(false)
     }
   }, [])
 
@@ -110,14 +120,16 @@ export function useGameAI() {
     sceneDescription: string,
     style: string,
     heroDescriptions: string[] = [],
-    heroPortraits: string[] = []
+    heroPortraits: string[] = [],
+    opts: FetchOpts = {}
   ): Promise<string | null> => {
-    setLoadingImage(true)
+    if (!opts.silent) setLoadingImage(true)
     try {
       const response = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sceneDescription, style, heroDescriptions, heroPortraits }),
+        signal: opts.signal,
       })
       if (!response.ok) return null
       const data = await response.json()
@@ -125,7 +137,7 @@ export function useGameAI() {
     } catch {
       return null
     } finally {
-      setLoadingImage(false)
+      if (!opts.silent) setLoadingImage(false)
     }
   }, [])
 
