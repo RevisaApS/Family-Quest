@@ -205,10 +205,16 @@ export function createEncounter(
   kind: 'monster' | 'boss',
   name: string,
   milestonesDone: number,
-  partySize: number
+  partySize: number,
+  appearance?: string
 ): EncounterState {
   const maxHp = encounterMaxHp(kind, milestonesDone, partySize)
-  return { kind, name, hp: maxHp, maxHp, defeated: false }
+  return {
+    id: crypto.randomUUID(),
+    kind, name,
+    appearance: appearance?.trim() || undefined,
+    hp: maxHp, maxHp, defeated: false,
+  }
 }
 
 // --- Boss phase 2 ---

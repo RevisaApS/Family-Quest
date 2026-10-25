@@ -2,19 +2,20 @@
 
 // Shared IndexedDB access for big binary-ish blobs (data URLs) that would
 // blow the zustand localStorage bucket. v1 had only portraits; v2 adds
-// item images.
+// item images; v3 adds monster portraits.
 
 const DB_NAME = 'family-quest'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 export const PORTRAITS_STORE = 'portraits'
 export const ITEM_IMAGES_STORE = 'item-images'
+export const MONSTERS_STORE = 'monsters'
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onupgradeneeded = () => {
-      for (const store of [PORTRAITS_STORE, ITEM_IMAGES_STORE]) {
+      for (const store of [PORTRAITS_STORE, ITEM_IMAGES_STORE, MONSTERS_STORE]) {
         if (!request.result.objectStoreNames.contains(store)) {
           request.result.createObjectStore(store)
         }

@@ -146,6 +146,12 @@ const takeSnapshot = (state: GameStore): SavedAdventure['snapshot'] => ({
   quest: state.quest,
 })
 
+// Encounters from before v9 had no id. They get one so the type holds, but
+// no appearance: an old fight keeps its old look and never gets a portrait.
+type LegacyEncounter = Omit<EncounterState, 'id'> & { id?: string }
+const withEncounterId = <T extends LegacyEncounter | null | undefined>(e: T) =>
+  (e ? { ...e, id: e.id ?? crypto.randomUUID() } : e) as T extends LegacyEncounter ? EncounterState : T
+
 const DEFAULT_DICE: DiceInventory = { d4: 0, d6: 2, d8: 0, d10: 0, d12: 0, d20: 0 }
 
 // Snapshot the in-progress story into its slot (or a new auto-named one) so
@@ -306,7 +312,7 @@ export const useGameStore = create<GameStore>()(
             assistUsed: h.assistUsed ?? false,
           })),
           encounter: target.snapshot.encounter
-            ?? (oldBoss ? { ...oldBoss, kind: oldBoss.kind ?? 'boss' as const } : null),
+            ?? (oldBoss ? withEncounterId({ ...oldBoss, kind: oldBoss.kind ?? 'boss' as const }) : null),
           quest: target.snapshot.quest ?? null,
           activeAdventureId: id,
         }
@@ -336,7 +342,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'family-quest-storage',
-      version: 8,
+      version: 9,
       // v0 storage predates the language setting and had digital dice as the
       // unchosen default — align both with the new defaults once.
       // v1 predates the RPG update (heroes, boss, sound).
@@ -346,6 +352,7 @@ export const useGameStore = create<GameStore>()(
       // v5 predates the Hall of Heroes chronicle.
       // v6 predates the values layer (theme rotation + override).
       // v7 predates the read-aloud setting.
+      // v8 predates encounter ids (monster portraits are filed under them).
       migrate: (persisted, version) => {
         let state = persisted as GameStore & { boss?: EncounterState | null }
         if (version < 1) {
@@ -393,6 +400,20 @@ export const useGameStore = create<GameStore>()(
         }
         if (version < 8) {
           state = { ...state, readAloud: state.readAloud === 'narrator' ? 'narrator' : 'self' }
+        }
+        if (version < 9) {
+          if (state.encounter) {
+            state = { ...state, encounter: withEncounterId(state.encounter as LegacyEncounter) }
+          }
+          if (state.savedAdventures) {
+            state = {
+              ...state,
+              savedAdventures: state.savedAdventures.map(a => ({
+                ...a,
+                snapshot: { ...a.snapshot, encounter: withEncounterId(a.snapshot.encounter as LegacyEncounter | null | undefined) },
+              })),
+            }
+          }
         }
         return state
       },

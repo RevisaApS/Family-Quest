@@ -15,6 +15,20 @@ export interface ReferenceImage {
   data: string // base64, no data: prefix
 }
 
+// A reference image goes in right after a text part naming who it shows, so
+// the prompt can point at "the reference labelled Lyn" instead of guessing
+// which picture is whose.
+export interface LabelledReference {
+  label: string
+  image: ReferenceImage
+}
+
+// The monster or boss in a fight, with the look fixed when it arrived
+export interface SceneCreature {
+  name: string
+  appearance: string
+}
+
 // One shared base look so the whole adventure feels like one illustrated book,
 // with the adventure style shifting tone rather than technique.
 const BASE_STYLE =
@@ -28,6 +42,18 @@ const STYLE_TONES: Record<AdventureStyle, string> = {
     'fierce monsters with glowing eyes. Thrilling and a little spooky, but heroic. No gore.',
   dark: 'Moody, mysterious atmosphere with rich shadows, but still heroic and hopeful.',
 }
+
+// The realistic tone's stock "fierce monsters with glowing eyes" would fight
+// a creature's fixed look, so it is left out whenever one is given.
+const REALISTIC_TONE_FIXED_CREATURE =
+  'Epic and adventurous with a dark, cool edge: dramatic shadows, stormlight, mist. ' +
+  'Thrilling and a little spooky, but heroic. No gore.'
+
+function styleTone(style: AdventureStyle, fixedCreature: boolean): string {
+  return fixedCreature && style === 'realistic' ? REALISTIC_TONE_FIXED_CREATURE : STYLE_TONES[style]
+}
+
+const sentence = (text: string) => `${text.trim().replace(/[.!\s]+$/, '')}.`
 
 const imageCache = new Map<string, string>()
 
@@ -70,38 +96,61 @@ async function generateImage(
 const GEAR_RULE =
   " Equipment accuracy is the most important thing in this picture: paint every item a hero is described as carrying so it is large, unobstructed and instantly recognisable, and never give a hero a weapon, shield, armor, helmet, amulet or boots that their description does not list."
 
+export interface ImagePromptOptions {
+  // At least one hero portrait is attached, labelled with the hero's name
+  heroReferences?: boolean
+  creature?: SceneCreature | null
+  // The creature's portrait is attached, labelled with its name
+  creatureReference?: boolean
+}
+
 export function buildImagePrompt(
   sceneDescription: string,
   style: AdventureStyle,
   heroDescriptions: string[] = [],
-  hasReferencePortraits = false
+  opts: ImagePromptOptions = {}
 ): string {
   const heroes = heroDescriptions.length
-    ? hasReferencePortraits
-      ? ` The heroes in this scene are the characters shown in the attached reference portraits: ${heroDescriptions.join('; ')}. Take each hero's face, hair, skin and body from their reference portrait. The written description above — not the portrait — decides their equipment: ignore any weapon, armor, helmet, jewellery or boots visible in a reference portrait unless the description lists it too.`
+    ? opts.heroReferences
+      ? ` The heroes in this scene: ${heroDescriptions.join('; ')}. Each attached reference portrait follows a label with the name of who it shows. Take each hero's face, hair, skin and body from the reference labelled with their name. The written description above — not the portrait — decides their equipment: ignore any weapon, armor, helmet, jewellery or boots visible in a reference portrait unless the description lists it too.`
       : ` The heroes in this scene: ${heroDescriptions.join('; ')}. Keep each hero's appearance exactly as described.`
     : ''
+  const creature = opts.creature
+    ? ` The creature is ${opts.creature.name}: ${sentence(opts.creature.appearance)}` +
+      (opts.creatureReference ? ` It must match the reference labelled ${opts.creature.name}.` : '')
+    : ''
   const gearRule = heroDescriptions.length ? GEAR_RULE : ''
-  return `${BASE_STYLE} ${STYLE_TONES[style]} Scene: ${sceneDescription}.${heroes}${gearRule} No text, letters, or UI elements in the image.`
+  return `${BASE_STYLE} ${styleTone(style, !!opts.creature)} Scene: ${sceneDescription}.${heroes}${creature}${gearRule} No text, letters, or UI elements in the image.`
+}
+
+// Each picture right after the text part that names it
+export function referenceParts(references: LabelledReference[]): Part[] {
+  return references.flatMap(r => [
+    { text: `Reference: ${r.label}` },
+    { inlineData: { mimeType: r.image.mimeType, data: r.image.data } },
+  ])
 }
 
 export async function generateSceneImage(
   sceneDescription: string,
   style: AdventureStyle,
   heroDescriptions: string[] = [],
-  heroPortraits: ReferenceImage[] = []
+  references: LabelledReference[] = [],
+  creature: SceneCreature | null = null
 ): Promise<string | null> {
   // Key on the FULL prompt: the fixed style prefix alone is longer than any
   // truncated key, and a truncated key made every scene "identical" — the
   // whole adventure got stuck on the first cached image.
-  const prompt = buildImagePrompt(sceneDescription, style, heroDescriptions, heroPortraits.length > 0)
+  const creatureReference = !!creature && references.some(r => r.label === creature.name)
+  const prompt = buildImagePrompt(sceneDescription, style, heroDescriptions, {
+    heroReferences: references.some(r => r.label !== creature?.name),
+    creature,
+    creatureReference,
+  })
   const cacheKey = prompt
   if (imageCache.has(cacheKey)) return imageCache.get(cacheKey)!
 
-  const parts: Part[] = [
-    ...heroPortraits.map(p => ({ inlineData: { mimeType: p.mimeType, data: p.data } })),
-    { text: prompt },
-  ]
+  const parts: Part[] = [...referenceParts(references), { text: prompt }]
   const dataUrl = await generateImage(parts, '16:9')
   if (dataUrl) imageCache.set(cacheKey, dataUrl)
   return dataUrl
@@ -155,4 +204,23 @@ export async function generateHeroPortrait(heroDescription: string): Promise<str
     'Paint only what the description lists — do not add any weapon, shield, armor, helmet or jewellery that it does not mention. ' +
     'Friendly and heroic, suitable for children. No text or letters in the image.'
   return generateImage([{ text: prompt }], '1:1')
+}
+
+export function buildMonsterPortraitPrompt(name: string, appearance: string, style: AdventureStyle): string {
+  return (
+    `${BASE_STYLE} ${styleTone(style, true)} ` +
+    `Creature portrait of ${name}: ${sentence(appearance)} ` +
+    'The whole creature, centered and facing the viewer, on a simple atmospheric background. ' +
+    'Only this one creature: no people, no heroes. No text or letters in the image.'
+  )
+}
+
+// One portrait per monster, painted when it arrives. It is the reference for
+// every scene of that fight, so the creature stays the same creature.
+export async function generateMonsterPortrait(
+  name: string,
+  appearance: string,
+  style: AdventureStyle
+): Promise<string | null> {
+  return generateImage([{ text: buildMonsterPortraitPrompt(name, appearance, style) }], '1:1')
 }

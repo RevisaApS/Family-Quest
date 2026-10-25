@@ -13,6 +13,8 @@ export interface GeneratedScene {
   suggestedNextPlayer: string
   // Only set when the scene introduces a monster or the boss
   encounterName?: string
+  // Set with encounterName: the creature's fixed look, in English
+  encounterAppearance?: string
   // Only set on the very first scene of an adventure
   questTitle?: string
   questGoal?: string
@@ -69,6 +71,7 @@ export interface StoryContext {
     name: string
     hp: number
     maxHp: number
+    appearance?: string
     // Boss phase 2: weak spot revealed at half HP. announceEnrage marks the
     // one scene that must narrate the transformation.
     enraged?: boolean

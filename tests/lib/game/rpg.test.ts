@@ -175,6 +175,16 @@ describe('quest arc & encounters', () => {
     expect(boss.kind).toBe('boss')
     expect(boss.defeated).toBe(false)
   })
+
+  it('gives every encounter its own id and keeps the fixed look', () => {
+    const troll = createEncounter('monster', 'Mosetrolden', 0, 2, '  A hulking moss-green troll with one cracked tusk.  ')
+    const other = createEncounter('monster', 'Mosetrolden', 0, 2)
+    expect(troll.id).toBeTruthy()
+    expect(troll.id).not.toBe(other.id)
+    expect(troll.appearance).toBe('A hulking moss-green troll with one cracked tusk.')
+    expect(other.appearance).toBeUndefined()
+    expect(createEncounter('monster', 'X', 0, 2, '   ').appearance).toBeUndefined()
+  })
 })
 
 describe('turn resolution', () => {

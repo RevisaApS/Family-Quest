@@ -5,6 +5,7 @@ import type { StoryContext, GeneratedScene, GeneratedAction } from '@/types/ai'
 import type { EpilogueContext, GeneratedEpilogue } from '@/lib/ai/epilogue'
 import type { OutcomeType, Stat, EquipSlot } from '@/types/game'
 import type { Language } from '@/lib/ai/language'
+import type { SceneImageRequest } from '@/lib/game/scene-cast'
 
 // A background request (the next-scene prefetch) passes a signal so it can be
 // dropped, and runs silent: no spinner and no error banner for a page nobody
@@ -116,11 +117,12 @@ export function useGameAI() {
     }
   }, [])
 
+  // The cast (heroes, labelled portraits, the fight's creature) comes from
+  // sceneCast, so descriptions and pictures always line up
   const fetchImage = useCallback(async (
     sceneDescription: string,
     style: string,
-    heroDescriptions: string[] = [],
-    heroPortraits: string[] = [],
+    cast: SceneImageRequest,
     opts: FetchOpts = {}
   ): Promise<string | null> => {
     if (!opts.silent) setLoadingImage(true)
@@ -128,7 +130,7 @@ export function useGameAI() {
       const response = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sceneDescription, style, heroDescriptions, heroPortraits }),
+        body: JSON.stringify({ sceneDescription, style, ...cast }),
         signal: opts.signal,
       })
       if (!response.ok) return null
@@ -147,6 +149,23 @@ export function useGameAI() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ heroDescription }),
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      return data.imageUrl ?? null
+    } catch {
+      return null
+    }
+  }, [])
+
+  // A monster portrait is best-effort: without it the scenes still get the
+  // creature's written look
+  const fetchMonsterPortrait = useCallback(async (name: string, appearance: string, style: string): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/ai/monster-portrait', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, appearance, style }),
       })
       if (!response.ok) return null
       const data = await response.json()
@@ -218,6 +237,6 @@ export function useGameAI() {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
     error,
     fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName, fetchCliffhanger, fetchPortrait,
-    fetchEpilogue,
+    fetchMonsterPortrait, fetchEpilogue,
   }
 }

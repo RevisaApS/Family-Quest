@@ -192,3 +192,60 @@ describe('generateScene: segments for the narrator', () => {
     for (const voice of CHARACTER_VOICES) expect(prompt).toContain(voice)
   })
 })
+
+describe('generateScene: monsters keep their look', () => {
+  beforeEach(() => {
+    generateJSON.mockReset()
+    generateJSON.mockResolvedValue({ segments: [{ speaker: 'narrator', text: 'Trolden brøler.' }], imagePrompt: 'Mosetrolden roars', suggestedNextPlayer: 'p1' })
+  })
+
+  const LATER: StoryContext = {
+    ...CONTEXT,
+    isFirstScene: false,
+    quest: { title: 'Den Tabte Lygte', goal: 'Find lygten', villain: 'Fru Tang', milestonesDone: 1 },
+  }
+  const TROLL = 'A hulking moss-green troll the size of a hut, with one cracked tusk.'
+  const FIGHT: StoryContext = {
+    ...LATER,
+    encounterPhase: 'active',
+    encounter: { kind: 'monster', name: 'Mosetrolden', hp: 4, maxHp: 6, appearance: TROLL },
+  }
+
+  it('asks the arrival scene for a fixed English look, for monsters and the boss', async () => {
+    for (const encounterPhase of ['arriving-monster', 'arriving-boss'] as const) {
+      expect(sceneSchema({ ...LATER, encounterPhase }).required).toEqual(
+        expect.arrayContaining(['encounterName', 'encounterAppearance'])
+      )
+    }
+    await generateScene({ ...LATER, encounterPhase: 'arriving-monster' })
+    expect(promptFrom(0)).toMatch(/"encounterAppearance": one or two concrete sentences IN ENGLISH/)
+    expect(promptFrom(0)).toMatch(/fixed for the whole fight/)
+  })
+
+  it('leaves the look out of ordinary scenes', () => {
+    expect(sceneSchema(LATER).properties).not.toHaveProperty('encounterAppearance')
+    expect(sceneSchema(FIGHT).properties).not.toHaveProperty('encounterAppearance')
+  })
+
+  it('gives the fight scene the fixed look and keeps the creature out of the picture prompt', async () => {
+    await generateScene(FIGHT)
+    const prompt = promptFrom(0)
+    expect(prompt).toContain(`Mosetrolden looks like this, and the look never changes: ${TROLL}`)
+    expect(prompt).toMatch(/In "imagePrompt", call it "Mosetrolden" and do not describe its body/)
+    expect(prompt).not.toContain('Describe the location, mood and any creatures')
+  })
+
+  it('exempts the creature being fought from KEEP IT FRESH, and only during the fight', async () => {
+    await generateScene(FIGHT)
+    expect(promptFrom(0)).toContain('The one exception is Mosetrolden, the creature the heroes are fighting')
+    await generateScene(LATER)
+    expect(promptFrom(1)).toContain('KEEP IT FRESH')
+    expect(promptFrom(1)).not.toContain('The one exception')
+  })
+
+  it('keeps an old fight without a look working as before', async () => {
+    await generateScene({ ...FIGHT, encounter: { ...FIGHT.encounter!, appearance: undefined } })
+    expect(promptFrom(0)).not.toContain('looks like this')
+    expect(promptFrom(0)).toContain('Describe the location, mood and any creatures')
+  })
+})

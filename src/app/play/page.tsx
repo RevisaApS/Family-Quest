@@ -55,11 +55,13 @@ import { CLASS_DEFINITIONS } from '@/lib/game/classes'
 import { cn } from '@/lib/utils'
 import { heroVisualDescription, gearLooksFromEquipment, withKnockedOutLook } from '@/lib/game/appearance'
 import { loadPortraits, stalePortraitIds, savePortrait, downscalePortrait } from '@/lib/portraits'
+import { loadMonsterPortrait, saveMonsterPortrait } from '@/lib/monster-portraits'
+import { sceneCast, sceneCreature, type Creature } from '@/lib/game/scene-cast'
 import { sfx, setSoundEnabled } from '@/lib/sound'
 import { t } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { GeneratedAction, StoryContext, EncounterPhase } from '@/types/ai'
+import type { GeneratedAction, GeneratedScene, StoryContext, EncounterPhase } from '@/types/ai'
 import type { OutcomeType, Skill, CritType, HeroState, EncounterState } from '@/types/game'
 
 // A quest runs ~23 turns. At 10 the epilogue's slice(-8) could already have
@@ -113,7 +115,7 @@ export default function PlayPage() {
   const {
     loadingScene, loadingActions, loadingCustomAction, loadingOutcome, loadingImage,
     error, fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName,
-    fetchEpilogue, fetchPortrait, fetchCliffhanger,
+    fetchEpilogue, fetchPortrait, fetchCliffhanger, fetchMonsterPortrait,
   } = useGameAI()
   // The next page, written in the background while the outcome is on screen
   const prefetch = useScenePrefetch()
@@ -260,6 +262,7 @@ export default function PlayPage() {
             name: encounter.name,
             hp: encounter.hp,
             maxHp: encounter.maxHp,
+            appearance: encounter.appearance,
             enraged: encounter.enraged,
             weakStat: encounter.weakStat,
             announceEnrage: !!encounter.enraged && !encounter.enrageAnnounced && !encounter.defeated,
@@ -277,7 +280,7 @@ export default function PlayPage() {
     }
   }, [adventureStyle, storyHistory, selectedPlayers, characters, currentPlayer, language, encounter, quest, currentEncounterPhase, chronicle])
 
-  const heroImageDescriptions = useCallback((heroesOverride?: HeroState[]): string[] => {
+  const castHeroes = useCallback((portraits: Map<string, string>, heroesOverride?: HeroState[]) => {
     // From the store, like the story context: the picture must show who is
     // down right now, not who was down when this render happened. The
     // prefetch passes the projected heroes, so the next hero stands up.
@@ -292,7 +295,7 @@ export default function PlayPage() {
         // the Crooked Stick and they're holding it. The pet walks alongside.
         // A knocked-out hero sits dizzy in the picture, as the party bar shows.
         const hero = liveHeroes.find(h => h.playerId === p.id)
-        return withKnockedOutLook(
+        const description = withKnockedOutLook(
           heroVisualDescription(
             char.name, char.class, char.gender, p.color, p.age,
             gearLooksFromEquipment(hero?.equipment ?? {}),
@@ -300,21 +303,67 @@ export default function PlayPage() {
           ),
           !!hero?.knockedOut
         )
+        return { name: char.name, description, portrait: portraits.get(p.id) ?? null }
       })
-      .filter((d): d is string => !!d)
+      .filter((h): h is NonNullable<typeof h> => !!h)
   }, [selectedPlayers, characters])
 
   // Hero portraits (IndexedDB) ride along on scene-image requests as visual
   // anchors. Awaited inside loadScene (and cached) so even the very first
   // scene image gets the references — no state race on mount.
-  const portraitsRef = useRef<string[] | null>(null)
-  const getHeroPortraits = useCallback(async (): Promise<string[]> => {
+  const portraitsRef = useRef<Map<string, string> | null>(null)
+  const getHeroPortraits = useCallback(async (): Promise<Map<string, string>> => {
     if (portraitsRef.current) return portraitsRef.current
-    const map = await loadPortraits(selectedPlayers.map(p => p.id))
-    const portraits = selectedPlayers.map(p => map.get(p.id)).filter((u): u is string => !!u)
-    if (portraits.length > 0 || selectedPlayers.length > 0) portraitsRef.current = portraits
+    const portraits = await loadPortraits(selectedPlayers.map(p => p.id))
+    if (selectedPlayers.length > 0) portraitsRef.current = portraits
     return portraits
   }, [selectedPlayers])
+
+  // One portrait per monster, painted when it arrives and shared by the
+  // prefetch and loadScene through one promise per name + look, so the
+  // arrival scene never paints it twice. After a reload it comes back from
+  // IndexedDB by encounter id. A failed paint is forgotten, so the next
+  // scene can try again; until then scenes use the written look alone.
+  const monsterPortraitsRef = useRef(new Map<string, Promise<string | null>>())
+  const monsterPortrait = useCallback((creature: Creature): Promise<string | null> => {
+    const key = `${creature.name}\n${creature.appearance}`
+    const known = monsterPortraitsRef.current.get(key)
+    if (known) return known
+    const painting = (async () => {
+      const saved = creature.id ? await loadMonsterPortrait(creature.id) : null
+      if (saved) return saved
+      const url = await fetchMonsterPortrait(creature.name, creature.appearance, adventureStyle)
+      return url ? downscalePortrait(url) : null
+    })()
+    monsterPortraitsRef.current.set(key, painting)
+    painting.then(url => { if (!url) monsterPortraitsRef.current.delete(key) })
+    return painting
+  }, [fetchMonsterPortrait, adventureStyle])
+
+  // The scene picture: heroes and their portraits from one list, and the
+  // fight's creature with its portrait. Waits for the monster portrait, so
+  // the arrival scene is painted with the creature it introduces.
+  const paintScene = useCallback(async (
+    scene: GeneratedScene,
+    creature: Creature | null,
+    heroesOverride?: HeroState[],
+    opts?: { signal?: AbortSignal; silent?: boolean }
+  ): Promise<string | null> => {
+    const [portraits, creaturePortrait] = await Promise.all([
+      getHeroPortraits(),
+      creature ? monsterPortrait(creature) : Promise.resolve(null),
+    ])
+    if (opts?.signal?.aborted) return null
+    const cast = sceneCast(castHeroes(portraits, heroesOverride), creature ? { ...creature, portrait: creaturePortrait } : null)
+    return fetchImage(scene.imagePrompt, adventureStyle, cast, opts)
+  }, [getHeroPortraits, monsterPortrait, castHeroes, fetchImage, adventureStyle])
+
+  // The name loadScene gives an arriving encounter when the model sent none
+  const fallbackEncounterName = useCallback((phase: EncounterPhase | undefined): string => (
+    phase === 'arriving-boss'
+      ? quest?.villain || (language === 'da' ? 'Skyggekongen' : 'The Shadow King')
+      : language === 'da' ? 'Skyggeuhyret' : 'The Shadow Beast'
+  ), [quest, language])
 
   // Portraits painted before heroes started empty-handed still show the free
   // class gear the family never bought, and a portrait is the reference image
@@ -449,8 +498,18 @@ export default function PlayPage() {
       }
 
       const partySize = selectedPlayers.length
-      const fallbackMonster = language === 'da' ? 'Skyggeuhyret' : 'The Shadow Beast'
-      const fallbackBoss = quest?.villain || (language === 'da' ? 'Skyggekongen' : 'The Shadow King')
+      // The creature this picture must keep the same, read before the
+      // encounter below is created or cleared
+      const creature = sceneCreature(context.encounterPhase, scene, encounter, fallbackEncounterName(context.encounterPhase))
+      // A new monster: fix its look and file its portrait under its id
+      const arrive = (kind: 'monster' | 'boss', milestones: number) => {
+        const name = scene.encounterName?.trim() || fallbackEncounterName(context.encounterPhase)
+        const created = createEncounter(kind, name, milestones, partySize, scene.encounterAppearance)
+        setEncounter(created)
+        if (creature) {
+          monsterPortrait(creature).then(url => { if (url) saveMonsterPortrait(created.id, url) })
+        }
+      }
 
       if (context.isFirstScene) {
         // The call to adventure: a quest-giver, stakes, and a named villain
@@ -465,10 +524,10 @@ export default function PlayPage() {
           dilemmaAct: null,
         })
       } else if (context.encounterPhase === 'arriving-monster') {
-        setEncounter(createEncounter('monster', scene.encounterName?.trim() || fallbackMonster, quest?.milestonesDone ?? 1, partySize))
+        arrive('monster', quest?.milestonesDone ?? 1)
         sfx.bossAppear()
       } else if (context.encounterPhase === 'arriving-boss') {
-        setEncounter(createEncounter('boss', scene.encounterName?.trim() || fallbackBoss, 2, partySize))
+        arrive('boss', 2)
         sfx.bossAppear()
       } else if (context.encounterPhase === 'just-defeated') {
         // Aftermath scene told — the battlefield is clear again
@@ -483,12 +542,12 @@ export default function PlayPage() {
       // and the image fades in whenever it's ready. Never onto a newer scene.
       const image = usedPrefetch && taken
         ? taken.image
-        : getHeroPortraits().then(portraits => fetchImage(scene.imagePrompt, adventureStyle, heroImageDescriptions(), portraits))
+        : paintScene(scene, creature)
       image.then(url => { if (url && sceneSeqRef.current === sceneSeq) setSceneImageUrl(url) })
     } else {
       setRetryFn(() => () => { loadScene() })
     }
-  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest, isFirstScene, currentEncounterPhase, pickAdventureTheme, markDilemmaPlanted, decideDilemma, prefetch])
+  }, [buildStoryContext, fetchScene, paintScene, monsterPortrait, fallbackEncounterName, encounter, language, selectedPlayers.length, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest, isFirstScene, currentEncounterPhase, pickAdventureTheme, markDilemmaPlanted, decideDilemma, prefetch])
 
   // Load actions for current scene
   const loadActions = useCallback(async () => {
@@ -573,8 +632,10 @@ export default function PlayPage() {
       prefetchActions: ordinaryTurn,
       fetchScene,
       fetchActions,
-      fetchImage: (scene, signal) => getHeroPortraits()
-        .then(portraits => fetchImage(scene.imagePrompt, adventureStyle, heroImageDescriptions(next.heroes), portraits, { signal, silent: true })),
+      // An arrival scene paints its monster portrait first, then the scene
+      fetchImage: (scene, signal) => paintScene(
+        scene, sceneCreature(phase, scene, encounter, fallbackEncounterName(phase)), next.heroes, { signal, silent: true }
+      ),
     })
   }, [gamePhase, loadingOutcome, outcomeNarrative, heroes, monsterVictory, showVictory]) // eslint-disable-line react-hooks/exhaustive-deps
 

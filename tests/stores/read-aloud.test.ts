@@ -28,8 +28,8 @@ describe('read-aloud setting', () => {
     useGameStore.setState({ readAloud: 'self' })
   })
 
-  it('is on version 8', () => {
-    expect(useGameStore.persist.getOptions().version).toBe(8)
+  it('is on version 9', () => {
+    expect(useGameStore.persist.getOptions().version).toBe(9)
   })
 
   it('defaults to the family reading themselves, so nothing changes until they opt in', () => {

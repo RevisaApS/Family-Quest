@@ -97,8 +97,14 @@ export interface HeroState {
 // Shared enemy the party takes down together — small monsters along the
 // quest, the big boss at the end.
 export interface EncounterState {
+  // Made in createEncounter; keys the monster portrait in IndexedDB
+  id: string
   kind: 'monster' | 'boss'
   name: string
+  // English: species, size, colours, one distinctive feature. Fixed when the
+  // monster arrives so every scene paints the same creature. Encounters from
+  // before v9 have none and keep their old, drifting look.
+  appearance?: string
   hp: number
   maxHp: number
   defeated: boolean

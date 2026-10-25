@@ -130,14 +130,33 @@ IRON RULES (breaking one ruins the whole adventure):
 - QUIET PAYBACK, RARELY: if "Story So Far" shows the heroes gave something up or helped someone at a cost, that may come back and help them now — unpredictably, not every time, and never announced or explained as a reward.${dilemma}`
 }
 
+// The arrival scene fixes the creature's look once. Every later picture of
+// the fight is painted from it (and from a portrait painted from it), so it
+// has to be concrete enough for an image model to repeat.
+const APPEARANCE_ASK =
+  'Also return "encounterAppearance": one or two concrete sentences IN ENGLISH (it goes to an image model) describing how it looks: species or kind of creature, size, colours, and one distinctive feature. Use the same look in this scene\'s imagePrompt. This look is fixed for the whole fight.'
+
+const isArrival = (context: StoryContext) =>
+  context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss'
+
+// The fight's creature, when its look was fixed on arrival
+function fixedCreature(context: StoryContext): { name: string; appearance: string } | null {
+  const e = context.encounter
+  return context.encounterPhase === 'active' && e?.appearance ? { name: e.name, appearance: e.appearance } : null
+}
+
 function encounterInstruction(context: StoryContext): string {
   switch (context.encounterPhase) {
     case 'arriving-monster':
-      return `IMPORTANT: In THIS scene a monster appears and blocks the heroes' path — ${context.quest?.villain ? `a servant or creature of the villain ${context.quest.villain}, proof the heroes are getting closer` : 'a dramatic twist tied to the quest'}. Return "encounterName" with the monster's name in the story language. ${MONSTER_TONE[context.adventureStyle]}`
+      return `IMPORTANT: In THIS scene a monster appears and blocks the heroes' path — ${context.quest?.villain ? `a servant or creature of the villain ${context.quest.villain}, proof the heroes are getting closer` : 'a dramatic twist tied to the quest'}. Return "encounterName" with the monster's name in the story language. ${MONSTER_TONE[context.adventureStyle]} ${APPEARANCE_ASK}`
     case 'arriving-boss':
-      return `IMPORTANT: In THIS scene, ${context.quest?.villain ? `the villain ${context.quest.villain}` : `the quest's big villain`} finally appears in person for the final showdown the whole adventure has built toward! ${MONSTER_TONE[context.adventureStyle]} Return "encounterName" with the villain's name in the story language${context.quest?.villain ? ` (it must be ${context.quest.villain})` : ''}.`
+      return `IMPORTANT: In THIS scene, ${context.quest?.villain ? `the villain ${context.quest.villain}` : `the quest's big villain`} finally appears in person for the final showdown the whole adventure has built toward! ${MONSTER_TONE[context.adventureStyle]} Return "encounterName" with the villain's name in the story language${context.quest?.villain ? ` (it must be ${context.quest.villain})` : ''}. ${APPEARANCE_ASK}`
     case 'active': {
-      const base = `The heroes are mid-battle with ${context.encounter?.name} (${context.encounter?.hp}/${context.encounter?.maxHp} HP left). The scene must continue this fight — describe the enemy reacting and the battle evolving.`
+      const creature = fixedCreature(context)
+      const look = creature
+        ? ` ${creature.name} looks like this, and the look never changes: ${creature.appearance} In "imagePrompt", call it "${creature.name}" and do not describe its body, colours or features: the picture adds its fixed look separately.`
+        : ''
+      const base = `The heroes are mid-battle with ${context.encounter?.name} (${context.encounter?.hp}/${context.encounter?.maxHp} HP left). The scene must continue this fight — describe the enemy reacting and the battle evolving.${look}`
       if (context.encounter?.announceEnrage && context.encounter.weakStat) {
         return `${base}
 IMPORTANT: ${context.encounter.name} is badly wounded and in THIS scene TRANSFORMS into a desperate, more dramatic second form — but the transformation cracks its defenses and reveals a glowing WEAK SPOT. Describe the transformation vividly, and make clear that attacks using ${context.encounter.weakStat} (in the story language) now strike the weak spot and hit extra hard. Thrilling, never gory.`
@@ -188,12 +207,24 @@ export function sceneSchema(context: StoryContext): Schema {
     required.push('questTitle', 'questGoal', 'villainName')
   }
 
-  if (context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss') {
+  if (isArrival(context)) {
     properties.encounterName = { type: Type.STRING }
-    required.push('encounterName')
+    properties.encounterAppearance = { type: Type.STRING }
+    required.push('encounterName', 'encounterAppearance')
   }
 
   return { type: Type.OBJECT, properties, required }
+}
+
+// Sameness is the failure mode for places and phrases, but not for the
+// creature mid-fight: a monster that changes species between scenes is the
+// bug the fixed look exists to stop.
+export function freshnessInstruction(context: StoryContext): string {
+  const creature = context.encounterPhase === 'active' ? context.encounter?.name : null
+  const exempt = creature
+    ? ` The one exception is ${creature}, the creature the heroes are fighting: it stays exactly the same creature.`
+    : ''
+  return `KEEP IT FRESH: move the story somewhere new. Do not reuse a location, creature, phrase or opening word from "Story So Far", and do not restate what just happened — start from the consequence of it.${exempt}`
 }
 
 export async function generateScene(context: StoryContext): Promise<GeneratedScene> {
@@ -225,7 +256,7 @@ ${encounterInstruction(context)}
 
 ${valuesInstruction(context.valueTheme, !!context.dilemma, context.language)}
 
-KEEP IT FRESH: move the story somewhere new. Do not reuse a location, creature, phrase or opening word from "Story So Far", and do not restate what just happened — start from the consequence of it.
+${freshnessInstruction(context)}
 
 Generate the next scene. Return JSON:
 {
@@ -234,7 +265,7 @@ Generate the next scene. Return JSON:
     { "speaker": "character", "name": "who speaks", "voice": "one voice type from the list below", "text": "only the words they say" }
   ],
   "imagePrompt": "A detailed prompt for generating an image of this scene",
-  "suggestedNextPlayer": "the player ID of whichever character would most naturally act next based on the story context"${context.isFirstScene ? ',\n  "questTitle": "the quest\'s short title",\n  "questGoal": "one sentence describing the goal",\n  "villainName": "the villain\'s name"' : ''}${context.encounterPhase === 'arriving-monster' || context.encounterPhase === 'arriving-boss' ? ',\n  "encounterName": "the enemy\'s name"' : ''}
+  "suggestedNextPlayer": "the player ID of whichever character would most naturally act next based on the story context"${context.isFirstScene ? ',\n  "questTitle": "the quest\'s short title",\n  "questGoal": "one sentence describing the goal",\n  "villainName": "the villain\'s name"' : ''}${isArrival(context) ? ',\n  "encounterName": "the enemy\'s name",\n  "encounterAppearance": "how the enemy looks, in English"' : ''}
 }
 
 THE SCENE AS SEGMENTS: "segments" is the scene in reading order, mostly the narrator.
@@ -244,7 +275,7 @@ THE SCENE AS SEGMENTS: "segments" is the scene in reading order, mostly the narr
 - A character segment holds ONLY the spoken words: no quote marks, and no "he said" (that goes in a narrator segment).
 - "voice" is one of: gruff (big, deep, grumpy), squeaky (small, high, quick), wise (old, slow), young (a child or youngster), menacing (a dark, cold villain), friendly (kind and warm).
 
-The imagePrompt must ALWAYS be written in English (it goes to an image model), regardless of the story language. Describe the location, mood and any creatures — do NOT describe the heroes' appearance, that is added separately.
+The imagePrompt must ALWAYS be written in English (it goes to an image model), regardless of the story language. ${fixedCreature(context) ? `Describe the location, the mood and what ${context.encounter?.name} is doing — do NOT describe the heroes' appearance or ${context.encounter?.name}'s looks, both are added separately.` : "Describe the location, mood and any creatures — do NOT describe the heroes' appearance, that is added separately."}
 
 Choose suggestedNextPlayer based on the narrative — who would be most relevant to act in this scene?
 Available player IDs: ${context.characters.map(c => c.playerId).join(', ')}
