@@ -26,6 +26,7 @@ import { ShopModal } from '@/components/game/shop-modal'
 import { InventoryModal } from '@/components/game/inventory-modal'
 import { useGameStore } from '@/stores/game-store'
 import { useGameAI } from '@/hooks/use-game-ai'
+import { useScenePrefetch } from '@/hooks/use-scene-prefetch'
 import { useNarrator } from '@/hooks/use-narrator'
 import { pauseNarrator, unlockNarrator } from '@/lib/narrator'
 import { narratorOnly, optionsSegments, type StorySegment } from '@/lib/ai/segments'
@@ -48,6 +49,7 @@ import { potionDefinition, HEAL_POTION_HP, LUCK_POTION_BONUS, type PotionDefinit
 import { toPet, type PetDefinition } from '@/lib/game/pets'
 import { turnStatsForPlayer, type CompletedAdventure } from '@/lib/game/chronicle'
 import { actIndex, shouldPlantDilemma, type ValueThemeId } from '@/lib/game/values'
+import { turnSummaryLine, projectNextTurn, contextKey } from '@/lib/game/prefetch'
 import type { GeneratedEpilogue } from '@/lib/ai/epilogue'
 import { CLASS_DEFINITIONS } from '@/lib/game/classes'
 import { cn } from '@/lib/utils'
@@ -82,6 +84,14 @@ interface PendingChest {
   namePending?: boolean
 }
 
+// The turn after "Videre", as the prefetch projects it
+interface ContextSnapshot {
+  storyHistory: string[]
+  turnHistoryLength: number
+  currentPlayerId: string
+  heroes: HeroState[]
+}
+
 interface PendingMonsterVictory {
   monsterName: string
   finisherName: string
@@ -105,6 +115,8 @@ export default function PlayPage() {
     error, fetchScene, fetchActions, fetchCustomAction, fetchOutcome, fetchImage, fetchLootName,
     fetchEpilogue, fetchPortrait, fetchCliffhanger,
   } = useGameAI()
+  // The next page, written in the background while the outcome is on screen
+  const prefetch = useScenePrefetch()
 
   const selectedPlayers = useMemo(
     () => players.filter(p => selectedPlayerIds.includes(p.id)),
@@ -195,11 +207,12 @@ export default function PlayPage() {
   const encounterActive = !!encounter && !encounter.defeated
   const isFirstScene = storyHistory.length === 0 && !quest
 
-  const currentEncounterPhase = useCallback((): EncounterPhase => {
+  // turnCount defaults to now; the prefetch asks about the turn after "Videre"
+  const currentEncounterPhase = useCallback((turnCount: number = turnHistory.length): EncounterPhase => {
     if (encounter) return encounter.defeated ? 'just-defeated' : 'active'
     const milestones = quest?.milestonesDone ?? 0
     if (quest && milestones < QUEST_MILESTONES
-      && turnHistory.length >= encounterSpawnTurn(milestones, selectedPlayers.length)) {
+      && turnCount >= encounterSpawnTurn(milestones, selectedPlayers.length)) {
       return nextEncounterKind(milestones) === 'boss' ? 'arriving-boss' : 'arriving-monster'
     }
     return 'none'
@@ -208,12 +221,15 @@ export default function PlayPage() {
   // Build story context for AI calls. Heroes come from the store at call time,
   // not from this render: a revive lands in the store a moment before the next
   // scene's prompt is built, and the render-time copy still described that
-  // hero as knocked out.
-  const buildStoryContext = useCallback((): StoryContext => {
-    const liveHeroes = useGameStore.getState().heroes
+  // hero as knocked out. With a snapshot it describes the turn after "Videre"
+  // instead, for the prefetch; it must then come out identical to what
+  // loadScene builds once that turn really starts.
+  const buildStoryContext = useCallback((snap?: ContextSnapshot, snapDilemma = false): StoryContext => {
+    const liveHeroes = snap?.heroes ?? useGameStore.getState().heroes
+    const history = snap?.storyHistory ?? storyHistory
     return {
       adventureStyle,
-      storyHistory: storyHistory.slice(-MAX_STORY_HISTORY),
+      storyHistory: history.slice(-MAX_STORY_HISTORY),
       characters: selectedPlayers
         .filter(p => characters.find(c => c.playerId === p.id))
         .map(p => {
@@ -235,9 +251,9 @@ export default function PlayPage() {
             } : undefined,
           }
         }),
-      currentPlayerId: currentPlayer?.id ?? '',
+      currentPlayerId: snap?.currentPlayerId ?? currentPlayer?.id ?? '',
       language,
-      encounterPhase: currentEncounterPhase(),
+      encounterPhase: currentEncounterPhase(snap?.turnHistoryLength),
       encounter: encounter
         ? {
             kind: encounter.kind,
@@ -250,21 +266,22 @@ export default function PlayPage() {
           }
         : null,
       quest: quest ?? null,
-      isFirstScene,
+      isFirstScene: history.length === 0 && !quest,
       // The adventure's hidden spine, and whether this scene carries its act's
       // dilemma. Prompt guidance only: never rendered anywhere.
       valueTheme: quest?.theme ?? pickedThemeRef.current ?? undefined,
-      dilemma: dilemmaRef.current,
+      dilemma: snap ? snapDilemma : dilemmaRef.current,
       // The last few quests this family finished, so the DM can call back to
       // villains they've already beaten instead of starting from nothing
       pastAdventures: chronicle.slice(-3).map(r => ({ questTitle: r.questTitle, villain: r.villain })),
     }
-  }, [adventureStyle, storyHistory, selectedPlayers, characters, currentPlayer, language, encounter, quest, currentEncounterPhase, isFirstScene, chronicle])
+  }, [adventureStyle, storyHistory, selectedPlayers, characters, currentPlayer, language, encounter, quest, currentEncounterPhase, chronicle])
 
-  const heroImageDescriptions = useCallback((): string[] => {
+  const heroImageDescriptions = useCallback((heroesOverride?: HeroState[]): string[] => {
     // From the store, like the story context: the picture must show who is
-    // down right now, not who was down when this render happened
-    const liveHeroes = useGameStore.getState().heroes
+    // down right now, not who was down when this render happened. The
+    // prefetch passes the projected heroes, so the next hero stands up.
+    const liveHeroes = heroesOverride ?? useGameStore.getState().heroes
     return selectedPlayers
       .map(p => {
         const char = characters.find(c => c.playerId === p.id)
@@ -335,8 +352,29 @@ export default function PlayPage() {
     })()
   }, [_hasHydrated, selectedPlayers, characters, fetchPortrait])
 
+  // Whether the next scene carries this act's dilemma. Returns the value and
+  // touches nothing, so the prefetch can ask without spending the dilemma.
+  const decideDilemma = useCallback((phase: EncounterPhase, firstScene: boolean) => shouldPlantDilemma({
+    milestonesDone: quest?.milestonesDone ?? 0,
+    lastDilemmaAct: quest?.dilemmaAct ?? null,
+    encounterPhase: phase,
+    isFirstScene: firstScene,
+    hasTheme: !!(quest?.theme ?? pickedThemeRef.current),
+  }), [quest])
+
+  // Every loadScene gets a number; late results from an older scene are dropped
+  const sceneSeqRef = useRef(0)
+  // Prefetched actions still on their way: the options slot shows "thinking"
+  const [awaitingPrefetchedActions, setAwaitingPrefetchedActions] = useState(false)
+  // Bumped to make the actions effect ask again (its guard ignores a same-text scene)
+  const [actionsRetryTick, setActionsRetryTick] = useState(0)
+  // Actions are fetched the moment the scene text lands. The ref keeps one
+  // request per scene; the retry button can always re-ask.
+  const actionsRequestedRef = useRef<string | null>(null)
+
   // Load scene for current player
   const loadScene = useCallback(async () => {
+    const sceneSeq = ++sceneSeqRef.current
     setGamePhase('loading')
     setNarration('')
     setSceneSegments([])
@@ -356,6 +394,7 @@ export default function PlayPage() {
     setAssistPlayerId(null)
     setRollGuesses({})
     setLuckActive(false)
+    setAwaitingPrefetchedActions(false)
     preRollRef.current = null
 
     // A knocked-out hero stays down, cheering teammates on from the
@@ -377,16 +416,16 @@ export default function PlayPage() {
       pickedThemeRef.current = pickAdventureTheme().id
     }
     const act = actIndex(quest?.milestonesDone ?? 0)
-    dilemmaRef.current = shouldPlantDilemma({
-      milestonesDone: quest?.milestonesDone ?? 0,
-      lastDilemmaAct: quest?.dilemmaAct ?? null,
-      encounterPhase: currentEncounterPhase(),
-      isFirstScene,
-      hasTheme: !!(quest?.theme ?? pickedThemeRef.current),
-    })
+    dilemmaRef.current = decideDilemma(currentEncounterPhase(), isFirstScene)
 
     const context = buildStoryContext()
-    const scene = await fetchScene(context)
+    // The page written in the background, if it was built from this exact
+    // context. A failed or stale prefetch falls back to today's request.
+    const taken = prefetch.take(context)
+    const prefetched = taken ? await taken.scene : null
+    const usedPrefetch = !!prefetched
+    const scene = prefetched ?? await fetchScene(context)
+    if (sceneSeqRef.current !== sceneSeq) return
     if (scene) {
       // This act has now spent its dilemma, even across a reload
       if (dilemmaRef.current) markDilemmaPlanted(act)
@@ -394,6 +433,20 @@ export default function PlayPage() {
       setSceneSegments(scene.segments?.length ? scene.segments : narratorOnly(scene.narration))
       setCurrentSceneText(scene.narration)
       setGamePhase('scene')
+
+      // Hand over the prefetched options. Arrival, aftermath and enrage turns
+      // have none, and the actions effect asks as today.
+      if (usedPrefetch && taken?.actions) {
+        actionsRequestedRef.current = scene.narration
+        setAwaitingPrefetchedActions(true)
+        taken.actions.then(a => {
+          if (sceneSeqRef.current !== sceneSeq) return
+          setAwaitingPrefetchedActions(false)
+          if (a) setActions(a)
+          // Ask again through the effect, which reads the current scene and context
+          else { actionsRequestedRef.current = null; setActionsRetryTick(n => n + 1) }
+        })
+      }
 
       const partySize = selectedPlayers.length
       const fallbackMonster = language === 'da' ? 'Skyggeuhyret' : 'The Shadow Beast'
@@ -427,14 +480,15 @@ export default function PlayPage() {
       }
 
       // Paint the scene in the background — the text is readable immediately
-      // and the image fades in whenever it's ready.
-      getHeroPortraits()
-        .then(portraits => fetchImage(scene.imagePrompt, adventureStyle, heroImageDescriptions(), portraits))
-        .then(url => { if (url) setSceneImageUrl(url) })
+      // and the image fades in whenever it's ready. Never onto a newer scene.
+      const image = usedPrefetch && taken
+        ? taken.image
+        : getHeroPortraits().then(portraits => fetchImage(scene.imagePrompt, adventureStyle, heroImageDescriptions(), portraits))
+      image.then(url => { if (url && sceneSeqRef.current === sceneSeq) setSceneImageUrl(url) })
     } else {
       setRetryFn(() => () => { loadScene() })
     }
-  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest, isFirstScene, currentEncounterPhase, pickAdventureTheme, markDilemmaPlanted])
+  }, [buildStoryContext, fetchScene, fetchImage, adventureStyle, heroImageDescriptions, getHeroPortraits, language, selectedPlayers.length, currentCharacter, currentPlayer, updateHero, setEncounter, setQuest, quest, isFirstScene, currentEncounterPhase, pickAdventureTheme, markDilemmaPlanted, decideDilemma, prefetch])
 
   // Load actions for current scene
   const loadActions = useCallback(async () => {
@@ -485,14 +539,47 @@ export default function PlayPage() {
 
   // Actions are fetched the moment the scene text lands — the family reads
   // (or listens) while the DM thinks, and the choices are ready when they are.
-  // The ref keeps one request per scene; the retry button can always re-ask.
-  const actionsRequestedRef = useRef<string | null>(null)
   useEffect(() => {
     if (gamePhase !== 'scene' || loadingScene || !currentSceneText) return
     if (actionsRequestedRef.current === currentSceneText) return
     actionsRequestedRef.current = currentSceneText
     loadActions()
-  }, [gamePhase, loadingScene, currentSceneText, loadActions])
+  }, [gamePhase, loadingScene, currentSceneText, loadActions, actionsRetryTick])
+
+  // The outcome is written: start the next page while the family reads it.
+  // Skipped while a monster or boss victory is pending: the payday changes the
+  // milestones and levels the next scene is built on. The effect re-runs when
+  // heroes change (Shield, Heal, potions, shop), and a reroll writes a new
+  // narrative; both give a new key, so the old request is aborted. The id
+  // guard also absorbs StrictMode's double-invoked effect.
+  useEffect(() => {
+    if (gamePhase !== 'outcome' || loadingOutcome || !outcomeNarrative || !currentCharacter) return
+    if (monsterVictory || showVictory) { prefetch.cancel(); return }
+    const line = turnSummaryLine(currentCharacter.name, selectedAction?.text, outcomeType, outcomeNarrative)
+    const next = projectNextTurn({
+      storyHistory, pendingLine: line, maxHistory: MAX_STORY_HISTORY,
+      turnHistoryLength: turnHistory.length, currentPlayerIndex,
+      playerIds: selectedPlayers.map(p => p.id),
+      heroes: useGameStore.getState().heroes,
+    })
+    const snap = { storyHistory: next.storyHistory, turnHistoryLength: next.turnHistoryLength, currentPlayerId: next.currentPlayerId, heroes: next.heroes }
+    const phase = currentEncounterPhase(next.turnHistoryLength)
+    const dilemma = decideDilemma(phase, false)
+    const context = buildStoryContext(snap, dilemma)
+    const ordinaryTurn = phase === 'none' || (phase === 'active' && !context.encounter?.announceEnrage)
+    prefetch.start({
+      id: contextKey(context),
+      context,
+      prefetchActions: ordinaryTurn,
+      fetchScene,
+      fetchActions,
+      fetchImage: (scene, signal) => getHeroPortraits()
+        .then(portraits => fetchImage(scene.imagePrompt, adventureStyle, heroImageDescriptions(next.heroes), portraits, { signal, silent: true })),
+    })
+  }, [gamePhase, loadingOutcome, outcomeNarrative, heroes, monsterVictory, showVictory]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Leaving the page drops whatever is in flight
+  useEffect(() => () => prefetch.cancel(), [prefetch])
 
   // The boss just fell and the victory overlay is up: write the storybook
   // epilogue and record this quest in the family chronicle. Everything is
@@ -958,8 +1045,7 @@ export default function PlayPage() {
     // prose stays purely in the story language — the old format wrapped Danish
     // text in English sentences ("chose to", "Using", "succeeded") and fed that
     // back into every prompt, which invites English into the output.
-    const outcomeTag = outcomeType === 'success' ? '✓' : outcomeType === 'partial' ? '~' : '✗'
-    const turnSummary = `[${currentCharacter.name} · ${selectedAction?.text} · ${outcomeTag}] ${outcomeNarrative}`
+    const turnSummary = turnSummaryLine(currentCharacter.name, selectedAction?.text, outcomeType, outcomeNarrative)
 
     const newStoryHistory = [...storyHistory, turnSummary].slice(-MAX_STORY_HISTORY)
     const newTurnHistory = [...turnHistory, {
@@ -1535,7 +1621,7 @@ export default function PlayPage() {
                       🧪 {potionDefinition('heal').name[language]} (+{HEAL_POTION_HP} ❤️)
                     </Button>
                   )}
-                  {loadingActions ? (
+                  {loadingActions || awaitingPrefetchedActions ? (
                     <div className="text-center text-muted-foreground animate-pulse py-4">
                       {t('thinkingActions', language)}
                     </div>
