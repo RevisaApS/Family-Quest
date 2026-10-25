@@ -1,0 +1,561 @@
+<title>Family Quest Looks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Lilita+One&family=Grenze+Gotisch:wght@500;700&family=Almendra:wght@400;700&display=swap">
+<style>
+/* Canvas: one column of three artboards. Each artboard = iPad mockup (left) + why/tradeoff/reward moment (right). */
+:root {
+  --bg: #eceef2;
+  --surface: #ffffff;
+  --ink: #1a1e26;
+  --muted: #586070;
+  --line: #d3d8e0;
+  --rec: #1f6b4a;
+  --rec-ink: #ffffff;
+  --body: "Andika", "Trebuchet MS", system-ui, sans-serif;
+  --f-table: "Lilita One", "Arial Black", sans-serif;
+  --f-book: "Grenze Gotisch", "Georgia", serif;
+  --f-fire: "Almendra", "Georgia", serif;
+  /* hero colours, the same in every direction: Aldor blue, Lucas red, Mason green */
+  --h-aldor: #3d6fd1;
+  --h-lucas: #d2483a;
+  --h-mason: #2f9a5c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #12151a; --surface: #1b1f27; --ink: #e9ecf1; --muted: #9ba3b0; --line: #2c323d;
+    --rec: #3fae7c; --rec-ink: #08140e;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12151a; --surface: #1b1f27; --ink: #e9ecf1; --muted: #9ba3b0; --line: #2c323d;
+  --rec: #3fae7c; --rec-ink: #08140e;
+}
+html, body { background: var(--bg); color: var(--ink); }
+body {
+  font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 40px; }
+header.intro { display: grid; gap: 10px; max-width: 70ch; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.intro p { margin: 0; color: var(--muted); font-size: 17px; }
+.same { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; gap: 8px; }
+.same h2 { font-size: 15px; margin: 0; }
+.same ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; color: var(--muted); }
+.same li strong { color: var(--ink); }
+
+.board { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(260px, 1fr); gap: 28px; align-items: start; }
+.board + .board { border-top: 1px solid var(--line); padding-top: 40px; }
+.side { display: grid; gap: 14px; }
+.side h2 { margin: 0; font-size: 28px; line-height: 1.1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.letter { font-size: 14px; color: var(--muted); font-weight: 700; letter-spacing: .06em; }
+.badge { font-size: 13px; font-weight: 700; background: var(--rec); color: var(--rec-ink); border-radius: 999px; padding: 3px 11px; letter-spacing: .02em; }
+.side p { margin: 0; }
+.side .k { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 2px; }
+.why-rec { border-left: 3px solid var(--rec); padding-left: 12px; }
+.mini-label { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+@media (max-width: 900px) { .board { grid-template-columns: 1fr; } }
+
+/* iPad frame */
+.ipad { background: #0d0f12; border-radius: 26px; padding: 14px; box-shadow: 0 18px 40px -18px rgba(0,0,0,.45); }
+.screen { container-type: inline-size; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; position: relative; }
+.screen svg.art { display: block; width: 100%; height: 100%; }
+
+/* ============ A. Spillebordet ============ */
+.a {
+  --wood: #4a2c18; --felt: #1d4b45; --felt-hi: #2b6a61; --card: #f6ecd2; --card-ink: #2a1c10; --brass: #e2ac43;
+  background:
+    radial-gradient(120% 90% at 50% 40%, var(--felt-hi), var(--felt) 70%),
+    var(--felt);
+  box-shadow: inset 0 0 0 1.4cqw var(--wood), inset 0 0 0 1.7cqw #2b1809, inset 0 0 6cqw rgba(0,0,0,.45);
+  padding: 3cqw 3.2cqw 2.6cqw; display: grid; grid-template-rows: auto 1fr auto; gap: 1.8cqw;
+  font-family: var(--body); color: var(--card);
+}
+.a-top { display: flex; align-items: center; gap: 1.4cqw; }
+.tok { display: flex; align-items: center; gap: .9cqw; background: rgba(0,0,0,.28); border-radius: 99cqw; padding: .5cqw 1.6cqw .5cqw .5cqw; }
+.tok.on { background: var(--card); color: var(--card-ink); box-shadow: 0 .5cqw 0 rgba(0,0,0,.35), 0 0 0 .35cqw var(--brass); transform: translateY(-.3cqw); }
+.tok .av { width: 5cqw; height: 5cqw; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-table); font-size: 2.3cqw; color: #fff; border: .45cqw solid rgba(255,255,255,.85); }
+.tok .nm { font-family: var(--f-table); font-size: 1.8cqw; line-height: 1; }
+.tok .cl { font-size: 1.15cqw; opacity: .8; }
+.hearts { font-size: 1.3cqw; letter-spacing: .1cqw; color: #ff6b5e; line-height: 1.2; }
+.hearts .e { color: rgba(255,255,255,.25); }
+.tok.on .hearts .e { color: rgba(42,28,16,.2); }
+.turn { font-family: var(--f-table); font-size: 1.15cqw; background: var(--brass); color: var(--card-ink); border-radius: 99cqw; padding: .1cqw .8cqw; margin-left: .4cqw; }
+.a-top .sp { flex: 1; }
+.chip { display: flex; align-items: center; gap: .6cqw; background: rgba(0,0,0,.3); border-radius: 99cqw; padding: .8cqw 1.4cqw; font-size: 1.5cqw; font-weight: 700; }
+.a-mid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 2.2cqw; min-height: 0; align-items: center; }
+.a-art { background: var(--card); padding: .9cqw .9cqw 2.6cqw; border-radius: .8cqw; transform: rotate(-1.6deg); box-shadow: 0 1.2cqw 2cqw rgba(0,0,0,.45); position: relative; }
+.a-art .cap { position: absolute; bottom: .55cqw; left: 0; right: 0; text-align: center; font-family: var(--f-table); color: var(--card-ink); font-size: 1.4cqw; }
+.a-art svg { border-radius: .4cqw; aspect-ratio: 400 / 260; height: auto; }
+.a-text { background: var(--card); color: var(--card-ink); border-radius: 1.2cqw; padding: 2cqw 2.4cqw; font-size: 2cqw; line-height: 1.5; box-shadow: 0 1cqw 1.8cqw rgba(0,0,0,.35); }
+.a-text p { margin: 0 0 .8cqw; }
+.a-text .say { display: inline-flex; gap: .5cqw; align-items: center; font-size: 1.3cqw; font-weight: 700; color: #7a5a2c; }
+.a-hand { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 1.4cqw; align-items: end; }
+.card {
+  background: var(--card); color: var(--card-ink); border-radius: 1.2cqw; padding: 1.3cqw 1.3cqw 1.1cqw;
+  min-height: 15.5cqw; display: grid; grid-template-rows: auto 1fr auto; gap: .6cqw;
+  box-shadow: 0 .7cqw 0 rgba(0,0,0,.3), 0 1.2cqw 2cqw rgba(0,0,0,.25);
+}
+.card:nth-child(1) { transform: rotate(-2.5deg) translateY(.6cqw); }
+.card:nth-child(2) { transform: rotate(-.8deg); }
+.card:nth-child(3) { transform: rotate(.8deg); }
+.card:nth-child(4) { transform: rotate(2.5deg) translateY(.6cqw); }
+.card .who { display: flex; align-items: center; gap: .6cqw; font-family: var(--f-table); font-size: 1.35cqw; }
+.card .dot { width: 2.4cqw; height: 2.4cqw; border-radius: 50%; color: #fff; display: grid; place-items: center; font-size: 1.3cqw; }
+.card .txt { font-size: 1.65cqw; line-height: 1.35; font-weight: 700; }
+.card .chk { font-size: 1.15cqw; color: #7a5a2c; border-top: .15cqw dashed rgba(42,28,16,.25); padding-top: .5cqw; }
+.card.own { background: transparent; color: var(--card); border: .3cqw dashed rgba(246,236,210,.7); box-shadow: none; place-content: center; text-align: center; grid-template-rows: auto auto; }
+.card.own .big { font-family: var(--f-table); font-size: 2.2cqw; }
+.card.own .txt { font-weight: 400; font-size: 1.3cqw; opacity: .85; }
+.die { display: grid; justify-items: center; gap: .4cqw; padding-bottom: .4cqw; }
+.die svg { width: 10.5cqw; height: auto; filter: drop-shadow(0 .8cqw .8cqw rgba(0,0,0,.4)); }
+.die span { font-family: var(--f-table); font-size: 1.6cqw; color: var(--brass); }
+
+/* ============ B. Eventyrbogen ============ */
+.b {
+  --lapis: #1b2f6b; --lapis-d: #101d47; --vellum: #f1e6cd; --vellum-d: #e2d2ae; --ink: #2b1d13; --verm: #b8331f; --gold: #c99a2e;
+  background: radial-gradient(100% 80% at 50% 30%, var(--lapis), var(--lapis-d));
+  padding: 2.4cqw 3cqw 3cqw; display: grid; grid-template-rows: auto 1fr; gap: 1.8cqw; font-family: var(--body); color: var(--vellum);
+}
+.b-top { display: flex; align-items: center; gap: 2.4cqw; }
+.b-hero { display: flex; align-items: center; gap: .8cqw; font-size: 1.5cqw; }
+.b-hero .seal { width: 3.6cqw; height: 3.6cqw; border-radius: 50%; display: grid; place-items: center; color: #fff; font-family: var(--f-book); font-size: 2cqw; box-shadow: inset 0 0 0 .3cqw rgba(255,255,255,.25), 0 .3cqw .5cqw rgba(0,0,0,.4); }
+.b-hero b { font-family: var(--f-book); font-size: 2cqw; font-weight: 700; display: block; line-height: 1; }
+.b-hero.on b { color: var(--gold); }
+.b-top .sp { flex: 1; }
+.b-top .chip { background: rgba(255,255,255,.1); }
+.book { display: grid; grid-template-columns: 1fr 1fr; border-radius: 1cqw; overflow: hidden; box-shadow: 0 2cqw 3cqw rgba(0,0,0,.5); min-height: 0; }
+.page { background: var(--vellum); color: var(--ink); padding: 2.4cqw 2.8cqw; position: relative; display: grid; align-content: start; gap: 1.2cqw; }
+.page.l { background: linear-gradient(90deg, var(--vellum) 82%, var(--vellum-d)); }
+.page.r { background: linear-gradient(270deg, var(--vellum) 86%, var(--vellum-d)); }
+.chap { font-family: var(--f-book); color: var(--verm); font-size: 2.3cqw; line-height: 1; }
+.chap small { display: block; font-family: var(--body); color: #7d6447; font-size: 1.2cqw; letter-spacing: .12em; text-transform: uppercase; margin-bottom: .4cqw; }
+.frame { padding: .7cqw; background: var(--gold); box-shadow: inset 0 0 0 .35cqw var(--verm); border-radius: .4cqw; }
+.frame svg { aspect-ratio: 400/260; height: auto; border-radius: .2cqw; }
+.b-cap { font-size: 1.3cqw; color: #7d6447; font-style: italic; text-align: center; margin: 0; }
+.b-text { font-size: 1.85cqw; line-height: 1.5; margin: 0; }
+.b-text .dc { float: left; font-family: var(--f-book); font-size: 5.6cqw; line-height: .8; color: #fff; background: var(--verm); padding: .9cqw 1cqw .5cqw; margin: .3cqw 1cqw 0 0; box-shadow: inset 0 0 0 .3cqw var(--gold); }
+.b-q { font-family: var(--f-book); font-size: 2.2cqw; color: var(--lapis); margin: .4cqw 0 0; }
+.b-opts { list-style: none; margin: 0; padding: 0; display: grid; gap: .8cqw; }
+.b-opts li { display: flex; align-items: center; gap: 1cqw; font-size: 1.6cqw; font-weight: 700; padding: .9cqw 1.1cqw; border-radius: .6cqw; background: rgba(255,255,255,.55); border: .15cqw solid rgba(43,29,19,.18); }
+.b-opts .seal { width: 3cqw; height: 3cqw; flex: none; border-radius: 50%; color: #fff; display: grid; place-items: center; font-family: var(--f-book); font-size: 1.6cqw; }
+.b-opts li.own { background: transparent; border-style: dashed; color: #6b5236; }
+.b-opts li.own .seal { background: transparent; border: .2cqw dashed #6b5236; color: #6b5236; }
+.ribbon { position: absolute; top: 0; right: 3cqw; width: 2.2cqw; height: 7cqw; background: var(--verm); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); }
+
+/* ============ C. Lejrbålet ============ */
+.c {
+  --night: #0c1230; --night-2: #18204a; --fire: #ffb347; --fire-d: #e2702a; --glow: #ffe2a8; --smoke: rgba(220,225,255,.08);
+  background:
+    radial-gradient(60% 45% at 50% 100%, rgba(255,150,60,.42), transparent 70%),
+    radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 31% 9%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 58% 14%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 77% 6%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 22%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 44% 4%, #fff 50%, transparent 51%),
+    linear-gradient(180deg, var(--night), var(--night-2));
+  padding: 2.6cqw 3cqw 1.4cqw; display: grid; grid-template-rows: 1fr auto auto; gap: 1.6cqw;
+  font-family: var(--body); color: var(--glow);
+}
+.c-top { display: grid; grid-template-columns: .95fr 1.05fr; gap: 2.4cqw; align-items: center; min-height: 0; }
+.vision { border-radius: 50% / 45%; overflow: hidden; box-shadow: 0 0 4cqw rgba(255,200,120,.35); -webkit-mask-image: radial-gradient(closest-side, #000 78%, transparent); mask-image: radial-gradient(closest-side, #000 78%, transparent); }
+.vision svg { aspect-ratio: 400/260; height: auto; filter: saturate(.85) sepia(.15); }
+.c-text { background: var(--smoke); border: .15cqw solid rgba(255,226,168,.18); border-radius: 1.4cqw; padding: 1.8cqw 2.2cqw; font-size: 1.9cqw; line-height: 1.5; color: #fff4dc; }
+.c-text p { margin: 0; }
+.c-text .t { font-family: var(--f-fire); color: var(--fire); font-size: 2.2cqw; margin-bottom: .6cqw; display: block; }
+.stones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4cqw; }
+.stone { border-radius: 2.4cqw 2.4cqw 1.6cqw 1.6cqw; padding: 1.2cqw 1.4cqw; background: linear-gradient(180deg, #2a3260, #1a2147); border: .2cqw solid rgba(255,179,71,.45); box-shadow: 0 0 1.6cqw rgba(255,179,71,.25), inset 0 .3cqw 0 rgba(255,255,255,.08); display: grid; gap: .5cqw; font-size: 1.55cqw; font-weight: 700; color: #fff4dc; line-height: 1.3; }
+.stone .who { display: flex; align-items: center; gap: .5cqw; font-family: var(--f-fire); font-size: 1.35cqw; color: var(--fire); font-weight: 700; }
+.stone .dot { width: 1.4cqw; height: 1.4cqw; border-radius: 50%; }
+.stone.own { background: transparent; border-style: dashed; box-shadow: none; text-align: center; place-content: center; color: var(--glow); }
+.campfire { display: flex; justify-content: center; align-items: flex-end; gap: 2.4cqw; }
+.c-hero { display: grid; justify-items: center; gap: .3cqw; font-size: 1.25cqw; }
+.c-hero .av { width: 5.2cqw; height: 5.2cqw; border-radius: 50%; display: grid; place-items: center; color: #fff; font-family: var(--f-fire); font-size: 2.4cqw; box-shadow: 0 0 0 .3cqw rgba(255,226,168,.6), 0 0 2cqw rgba(255,179,71,.45); }
+.c-hero.on .av { box-shadow: 0 0 0 .4cqw var(--fire), 0 0 3cqw rgba(255,179,71,.9); }
+.c-hero b { font-family: var(--f-fire); font-size: 1.6cqw; color: #fff4dc; }
+.c-hero .hearts { font-size: 1.1cqw; }
+.fire { width: 9cqw; height: auto; transform-origin: 50% 100%; animation: flicker 1.6s ease-in-out infinite alternate; }
+@keyframes flicker { from { transform: scale(1, 1); } to { transform: scale(1.04, .95); } }
+.ember { position: absolute; bottom: 8cqw; left: 50%; width: .5cqw; height: .5cqw; border-radius: 50%; background: var(--fire); opacity: 0; animation: rise 3.6s linear infinite; }
+.ember:nth-of-type(2) { left: 47%; animation-delay: 1.1s; }
+.ember:nth-of-type(3) { left: 53%; animation-delay: 2.2s; }
+@keyframes rise { 0% { transform: translateY(0); opacity: .9; } 100% { transform: translate(1.5cqw, -18cqw); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .fire, .ember { animation: none; } }
+
+/* reward moments */
+.reward { border-radius: 14px; overflow: hidden; container-type: inline-size; }
+.rw-a { background: radial-gradient(circle at 50% 40%, #2b6a61, #1d4b45); padding: 22px; display: flex; gap: 16px; align-items: center; }
+.rw-a .loot { background: #f6ecd2; color: #2a1c10; border-radius: 12px; padding: 12px; width: 120px; flex: none; transform: rotate(-4deg); box-shadow: 0 0 0 3px #b07be0, 0 0 22px rgba(176,123,224,.7); display: grid; gap: 6px; text-align: center; }
+.rw-a .loot .ic { font-size: 40px; line-height: 1; }
+.rw-a .loot b { font-family: var(--f-table); font-size: 17px; font-weight: 400; }
+.rw-a .loot small { font-size: 12px; font-weight: 700; color: #6d3fa0; }
+.rw-a .msg { color: #f6ecd2; font-size: 15px; }
+.rw-a .msg b { font-family: var(--f-table); font-size: 22px; font-weight: 400; display: block; color: #e2ac43; }
+.rw-b { background: #f1e6cd; color: #2b1d13; padding: 20px; display: flex; gap: 16px; align-items: center; }
+.rw-b .wax { width: 78px; height: 78px; flex: none; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #d4543c, #8f2414); color: #f6dfb1; display: grid; place-items: center; font-family: var(--f-book); font-size: 34px; box-shadow: 0 4px 8px rgba(0,0,0,.3); }
+.rw-b b { font-family: var(--f-book); font-size: 24px; color: #b8331f; display: block; line-height: 1.1; }
+.rw-c { background: linear-gradient(180deg, #0c1230, #18204a); color: #fff4dc; padding: 20px; display: flex; gap: 16px; align-items: center; }
+.rw-c svg { width: 90px; flex: none; }
+.rw-c b { font-family: var(--f-fire); font-size: 22px; color: #ffb347; display: block; line-height: 1.1; }
+footer.next { color: var(--muted); font-size: 15px; max-width: 70ch; }
+.intro a { color: var(--ink); }
+.part { display: grid; gap: 18px; border-top: 1px solid var(--line); padding-top: 40px; scroll-margin-top: 16px; }
+.part > h2 { margin: 0; font-size: 28px; line-height: 1.15; text-wrap: balance; }
+.part > p { margin: 0; max-width: 72ch; color: var(--muted); }
+.part > p strong { color: var(--ink); }
+
+/* HP options */
+.hp-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 900px) { .hp-opts { grid-template-columns: 1fr; } }
+.hp-opt { display: grid; gap: 10px; align-content: start; }
+.hp-opt h3 { margin: 0; font-size: 18px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hp-opt p { margin: 0; font-size: 15px; color: var(--muted); }
+.felt { background: radial-gradient(120% 90% at 50% 40%, #2b6a61, #1d4b45); border-radius: 14px; padding: 16px; display: grid; gap: 12px; color: #f6ecd2; box-shadow: inset 0 0 0 5px #4a2c18; }
+.hrow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; }
+.hrow .av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-table); font-size: 20px; color: #fff; border: 3px solid rgba(255,255,255,.85); }
+.hrow .av.mon { background: #3b4a2a; border-color: #e2ac43; font-size: 22px; }
+.hrow .lbl { font-size: 13px; opacity: .85; display: block; }
+.hrow .lbl b { font-family: var(--f-table); font-weight: 400; font-size: 16px; opacity: 1; }
+.hp1 { display: flex; align-items: center; gap: 8px; }
+.hp1 .n { font-family: var(--f-table); font-size: 18px; white-space: nowrap; color: #fff; }
+.hp1 .n small { font-size: 13px; opacity: .7; }
+.hp1 .n .h { color: #ff6b5e; }
+.seg { flex: 1; height: 14px; border-radius: 4px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--max) - 2px), #1d4b45 calc(100% / var(--max) - 2px) calc(100% / var(--max))),
+    linear-gradient(90deg, #ff6b5e calc(var(--cur) / var(--max) * 100%), rgba(0,0,0,.35) 0);
+}
+.hp2 { font-size: 20px; letter-spacing: 1px; color: #ff6b5e; line-height: 1.1; }
+.hp2 .e { color: rgba(255,255,255,.22); }
+.hp2 .half { background: linear-gradient(90deg, #ff6b5e 50%, rgba(255,255,255,.22) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hp3 { display: flex; align-items: center; gap: 10px; }
+.bigheart { width: 40px; height: 36px; position: relative; display: grid; place-items: center; }
+.bigheart::before { content: ""; position: absolute; inset: 0;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath d='M12 21.5 10.3 20C4.2 14.5 0 10.8 0 6.3 0 2.7 2.8 0 6.3 0c2 0 3.9.9 5.2 2.4C12.8.9 14.7 0 16.7 0 20.2 0 24 2.7 24 6.3c0 4.5-4.2 8.2-10.3 13.7z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath d='M12 21.5 10.3 20C4.2 14.5 0 10.8 0 6.3 0 2.7 2.8 0 6.3 0c2 0 3.9.9 5.2 2.4C12.8.9 14.7 0 16.7 0 20.2 0 24 2.7 24 6.3c0 4.5-4.2 8.2-10.3 13.7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  background: linear-gradient(0deg, #ff6b5e var(--p), rgba(255,255,255,.22) 0); }
+.bigheart span { position: relative; font-family: var(--f-table); font-size: 15px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); margin-top: -3px; }
+.hp3 .of { font-size: 13px; opacity: .8; }
+
+/* Battle view */
+.battle { display: grid; grid-template-rows: auto 1fr auto; }
+.b-head { display: flex; align-items: center; gap: 1.4cqw; }
+.b-head .fight { font-family: var(--f-table); font-size: 2.6cqw; color: #ff8a5c; letter-spacing: .1cqw; text-shadow: 0 .3cqw 0 rgba(0,0,0,.4); }
+.b-head .sp { flex: 1; }
+.arena { display: grid; grid-template-columns: 1fr auto 1.15fr; gap: 2cqw; align-items: center; min-height: 0; }
+.party { display: grid; gap: 1.1cqw; }
+.ptok { display: grid; grid-template-columns: 5cqw minmax(0, 1fr); gap: 1cqw; align-items: center; background: rgba(0,0,0,.28); border-radius: 1.2cqw; padding: .8cqw 1.2cqw .8cqw .8cqw; }
+.ptok.on { background: var(--card); color: var(--card-ink); box-shadow: 0 0 0 .35cqw var(--brass), 0 .5cqw 0 rgba(0,0,0,.35); }
+.ptok .av { width: 5cqw; height: 5cqw; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-table); font-size: 2.3cqw; color: #fff; border: .4cqw solid rgba(255,255,255,.85); }
+.ptok .nm { font-family: var(--f-table); font-size: 1.7cqw; line-height: 1.1; display: flex; justify-content: space-between; gap: 1cqw; }
+.ptok .nm small { font-family: var(--body); font-size: 1.2cqw; opacity: .75; }
+.mbar { display: flex; align-items: center; gap: .8cqw; margin-top: .4cqw; }
+.mbar .n { font-family: var(--f-table); font-size: 1.5cqw; white-space: nowrap; }
+.mbar .n .h { color: #ff6b5e; }
+.mbar .seg { height: 1.2cqw; border-radius: .4cqw; }
+.ptok.on .mbar .seg { background:
+    repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--max) - 2px), var(--card) calc(100% / var(--max) - 2px) calc(100% / var(--max))),
+    linear-gradient(90deg, #e04a3c calc(var(--cur) / var(--max) * 100%), rgba(42,28,16,.18) 0); }
+.vs { font-family: var(--f-table); font-size: 3.4cqw; color: var(--brass); text-shadow: 0 .3cqw 0 rgba(0,0,0,.4); }
+.foe { background: var(--card); color: var(--card-ink); border-radius: 1.4cqw; padding: 1cqw; box-shadow: 0 0 0 .4cqw #8f2414, 0 1.4cqw 2.4cqw rgba(0,0,0,.5); display: grid; gap: .8cqw; position: relative; animation: shake 3.2s ease-in-out infinite; }
+.foe svg { width: 100%; height: auto; aspect-ratio: 200 / 150; border-radius: .7cqw; display: block; background: #f3a35f; }
+.foe .fn { font-family: var(--f-table); font-size: 2.1cqw; display: flex; justify-content: space-between; align-items: baseline; gap: 1cqw; padding-inline: .4cqw; }
+.foe .fn small { font-family: var(--body); font-weight: 700; font-size: 1.2cqw; color: #8f2414; }
+.foe .mbar { padding: 0 .4cqw .2cqw; }
+.foe .mbar .seg { background:
+    repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--max) - 2px), var(--card) calc(100% / var(--max) - 2px) calc(100% / var(--max))),
+    linear-gradient(90deg, #8f2414 calc(var(--cur) / var(--max) * 100%), rgba(42,28,16,.18) 0); }
+.dmg { position: absolute; top: 18%; left: 50%; font-family: var(--f-table); font-size: 5cqw; color: #fff; -webkit-text-stroke: .25cqw #8f2414; text-shadow: 0 .4cqw 0 rgba(0,0,0,.35); animation: dmg 3.2s ease-out infinite; opacity: 0; }
+.slash { position: absolute; inset: 20% 15% 45% 15%; background: linear-gradient(135deg, transparent 46%, #fff 49%, #ffe2a8 51%, transparent 54%); animation: slash 3.2s ease-out infinite; opacity: 0; pointer-events: none; }
+@keyframes shake { 0%, 8%, 100% { transform: translateX(0) rotate(1deg); } 2% { transform: translateX(-1.2cqw) rotate(-1deg); } 4% { transform: translateX(1cqw) rotate(2deg); } 6% { transform: translateX(-.5cqw) rotate(1deg); } }
+@keyframes dmg { 0% { opacity: 0; transform: translate(-50%, 0) scale(.6); } 4% { opacity: 1; transform: translate(-50%, -1cqw) scale(1.15); } 30% { opacity: 1; transform: translate(-50%, -6cqw) scale(1); } 40%, 100% { opacity: 0; transform: translate(-50%, -8cqw); } }
+@keyframes slash { 0% { opacity: 0; transform: scale(.4); } 2% { opacity: 1; transform: scale(1); } 12%, 100% { opacity: 0; transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .foe, .dmg, .slash { animation: none; } .dmg { opacity: 1; transform: translate(-50%, -4cqw); } }
+.battle .a-hand { grid-template-columns: repeat(4, 1fr) auto; }
+.beats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .beats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.beat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 6px; align-content: start; }
+.beat .ic { font-size: 28px; line-height: 1; }
+.beat b { font-size: 15px; }
+.beat span { font-size: 14px; color: var(--muted); }
+.beat .step { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3a35f"/><stop offset=".55" stop-color="#f7d29a"/><stop offset="1" stop-color="#b7c9d6"/>
+    </linearGradient>
+    <linearGradient id="chasm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4c5b74"/><stop offset="1" stop-color="#1c2232"/>
+    </linearGradient>
+    <symbol id="scene" viewBox="0 0 400 260">
+      <rect width="400" height="260" fill="url(#sky)"/>
+      <circle cx="300" cy="70" r="26" fill="#fff1c9" opacity=".9"/>
+      <polygon points="0,150 60,95 110,130 170,80 230,135 290,90 350,125 400,100 400,260 0,260" fill="#8a7f9c" opacity=".6"/>
+      <rect x="0" y="150" width="400" height="110" fill="url(#chasm)"/>
+      <polygon points="0,140 120,150 135,260 0,260" fill="#5e4a3a"/>
+      <polygon points="270,150 400,138 400,260 262,260" fill="#5e4a3a"/>
+      <polygon points="0,140 120,150 118,160 0,152" fill="#7c9a52"/>
+      <polygon points="270,150 400,138 400,150 272,160" fill="#7c9a52"/>
+      <path d="M120 152 Q195 200 272 152" stroke="#3a2a1d" stroke-width="5" fill="none"/>
+      <path d="M120 140 Q195 186 272 140" stroke="#3a2a1d" stroke-width="2" fill="none"/>
+      <g stroke="#6e5137" stroke-width="3">
+        <line x1="140" y1="163" x2="140" y2="151"/><line x1="160" y1="171" x2="160" y2="159"/><line x1="180" y1="175" x2="180" y2="163"/>
+        <line x1="200" y1="176" x2="200" y2="164"/><line x1="220" y1="174" x2="220" y2="162"/><line x1="240" y1="168" x2="240" y2="156"/><line x1="258" y1="160" x2="258" y2="148"/>
+      </g>
+      <g fill="#3b4a2a">
+        <ellipse cx="320" cy="122" rx="24" ry="28"/><circle cx="320" cy="86" r="14"/>
+        <rect x="341" y="70" width="10" height="52" rx="5" transform="rotate(18 346 96)"/>
+        <rect x="302" y="140" width="9" height="14"/><rect x="329" y="140" width="9" height="14"/>
+      </g>
+      <circle cx="315" cy="84" r="2.5" fill="#ffd34d"/><circle cx="325" cy="84" r="2.5" fill="#ffd34d"/>
+      <g fill="#2a2235">
+        <circle cx="40" cy="126" r="5"/><rect x="35" y="131" width="10" height="14" rx="3"/>
+        <circle cx="62" cy="122" r="6"/><rect x="56" y="128" width="12" height="17" rx="3"/>
+        <circle cx="84" cy="127" r="5"/><rect x="79" y="132" width="10" height="14" rx="3"/>
+      </g>
+    </symbol>
+    <symbol id="d20" viewBox="0 0 100 110">
+      <polygon points="50,2 96,28 96,82 50,108 4,82 4,28" fill="#e2ac43" stroke="#7a4e12" stroke-width="3"/>
+      <polygon points="50,24 80,74 20,74" fill="#f6cf74" stroke="#7a4e12" stroke-width="2.5"/>
+      <g stroke="#7a4e12" stroke-width="2" fill="none"><line x1="50" y1="2" x2="50" y2="24"/><line x1="4" y1="28" x2="50" y2="24"/><line x1="96" y1="28" x2="50" y2="24"/><line x1="4" y1="82" x2="20" y2="74"/><line x1="96" y1="82" x2="80" y2="74"/><line x1="50" y1="108" x2="20" y2="74"/><line x1="50" y1="108" x2="80" y2="74"/></g>
+      <text x="50" y="65" text-anchor="middle" font-family="Lilita One, Arial Black, sans-serif" font-size="26" fill="#3b2408">20</text>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header class="intro">
+    <span class="eyebrow">Family Quest · nyt look til spilskærmen</span>
+    <h1>Hvilket look skal Family Quest have?</h1>
+    <p>Tre retninger for den skærm I bruger mest: Aldor, Lucas og Mason står ved troldens bro, og det er Lucas' tur. Spillets trin og regler forbliver de samme. Scenebillederne her er tegnede pladsholdere; i spillet maler AI'en dem som i dag.</p>
+    <p><strong>Valgt: A, Spillebordet.</strong> Længere nede: <a href="#liv">sådan vises liv, når heltene vokser</a> og <a href="#kamp">kampskærmen</a>.</p>
+  </header>
+
+  <section class="same" aria-label="Det samme i alle tre retninger">
+    <h2>Det samme i alle tre, uanset hvad I vælger</h2>
+    <ul>
+      <li><strong>Læsevenlig skrift.</strong> Brødteksten bruger Andika, en skrift lavet til børn der lærer at læse.</li>
+      <li><strong>Hver helt har én farve og ét bogstav overalt.</strong> Aldor blå, Lucas rød, Mason grøn, så man altid kan se hvis valg det er.</li>
+      <li><strong>Store knapper.</strong> Mindst 60 punkter høje (i dag er de 40), og ingen tekst under 14 punkter.</li>
+      <li><strong>Alt for denne tur er synligt uden at scrolle.</strong> "Min egen idé" ligger altid ved siden af de tre valg.</li>
+      <li><strong>Animationer kan dæmpes</strong>, og iPad'ens egen indstilling for mindre bevægelse virker.</li>
+    </ul>
+  </section>
+
+  <!-- A -->
+  <section class="board" aria-labelledby="a-h">
+    <div class="ipad"><div class="screen a" role="img" aria-label="Spillebordet: helte-brikker øverst, scenebillede og tekst i midten, valgkort og terning nederst">
+      <div class="a-top">
+        <div class="tok"><div class="av" style="background:var(--h-aldor)">A</div><div><div class="nm">Aldor</div><div class="hearts">♥♥♥♥<span class="e">♥</span></div></div></div>
+        <div class="tok on"><div class="av" style="background:var(--h-lucas)">L</div><div><div class="nm">Lucas <span class="turn">Din tur</span></div><div class="hearts">♥♥♥♥♥</div></div></div>
+        <div class="tok"><div class="av" style="background:var(--h-mason)">M</div><div><div class="nm">Mason</div><div class="hearts">♥♥♥<span class="e">♥♥</span></div></div></div>
+        <div class="sp"></div>
+        <div class="chip">🪙 38</div>
+        <div class="chip">🗣️ Læs op</div>
+      </div>
+      <div class="a-mid">
+        <div class="a-art"><svg class="art"><use href="#scene"/></svg><div class="cap">Troldens bro</div></div>
+        <div class="a-text">
+          <p>Broen knager under jeres fødder. På den anden side står en stor trold med en kølle. "Ingen går over min bro uden at betale!" brøler den.</p>
+          <span class="say">🗣️ Fortælleren læser</span>
+        </div>
+      </div>
+      <div class="a-hand">
+        <div class="card"><div class="who"><span class="dot" style="background:var(--h-lucas)">L</span>Lucas</div><div class="txt">Skyd en pil mod troldens kølle</div><div class="chk">🎯 Smidighed</div></div>
+        <div class="card"><div class="who"><span class="dot" style="background:var(--h-mason)">M</span>Mason</div><div class="txt">Giv trolden en guldmønt</div><div class="chk">💬 Snak</div></div>
+        <div class="card"><div class="who"><span class="dot" style="background:var(--h-aldor)">A</span>Aldor</div><div class="txt">Snig jer forbi i tågen</div><div class="chk">🌫️ Snilde</div></div>
+        <div class="card own"><div class="big">✏️ Min egen idé</div><div class="txt">Sig hvad I vil gøre</div></div>
+        <div class="die"><svg><use href="#d20"/></svg><span>Slå!</span></div>
+      </div>
+    </div></div>
+    <div class="side">
+      <h2 id="a-h"><span class="letter">A</span> Spillebordet <span class="badge">Valgt</span></h2>
+      <p><span class="k">Idéen</span>Spillet bliver et brætspil på bordet. Hver helt er en brik med sin egen farve, og valgene er kort, man spiller. Terningen ligger klar til at blive slået.</p>
+      <p><span class="k">Bagsiden</span>Mindst "bog-stemning". Kortene fylder mere, og fortællingen lidt mindre.</p>
+      <p class="why-rec"><span class="k">Hvorfor anbefalet</span>Drengene lænede sig ind ved det de kunne røre: egne idéer, butikken og skattekisterne. Kort og brikker gør netop dem til fysiske ting, og store kort er nemme at ramme for små fingre.</p>
+      <span class="mini-label">Belønningsøjeblik</span>
+      <div class="reward rw-a"><div class="loot"><div class="ic">🏹</div><b>Elverbue</b><small>SJÆLDEN · +1 Smidighed</small></div><div class="msg"><b>Ny ting til Lucas!</b>Kortet vender sig og flyver ned i hans taske.</div></div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="board" aria-labelledby="b-h">
+    <div class="ipad"><div class="screen b" role="img" aria-label="Eventyrbogen: et opslag med billedet til venstre og teksten med stort begyndelsesbogstav til højre">
+      <div class="b-top">
+        <div class="b-hero"><span class="seal" style="background:var(--h-aldor)">A</span><div><b>Aldor</b>♥♥♥♥♡</div></div>
+        <div class="b-hero on"><span class="seal" style="background:var(--h-lucas)">L</span><div><b>Lucas</b>♥♥♥♥♥ · din tur</div></div>
+        <div class="b-hero"><span class="seal" style="background:var(--h-mason)">M</span><div><b>Mason</b>♥♥♥♡♡</div></div>
+        <div class="sp"></div>
+        <div class="chip">🪙 38</div><div class="chip">🗣️ Læs op</div>
+      </div>
+      <div class="book">
+        <div class="page l">
+          <div class="chap"><small>Kapitel fire</small>Troldens bro</div>
+          <div class="frame"><svg class="art"><use href="#scene"/></svg></div>
+          <p class="b-cap">Trolden venter på den anden side.</p>
+        </div>
+        <div class="page r">
+          <span class="ribbon"></span>
+          <p class="b-text"><span class="dc">B</span>roen knager under jeres fødder. På den anden side står en stor trold med en kølle. "Ingen går over min bro uden at betale!" brøler den.</p>
+          <p class="b-q">Hvad gør I?</p>
+          <ul class="b-opts">
+            <li><span class="seal" style="background:var(--h-lucas)">L</span>Lucas skyder en pil mod køllen</li>
+            <li><span class="seal" style="background:var(--h-mason)">M</span>Mason giver trolden en guldmønt</li>
+            <li><span class="seal" style="background:var(--h-aldor)">A</span>Aldor sniger jer forbi i tågen</li>
+            <li class="own"><span class="seal">✎</span>Min egen idé</li>
+          </ul>
+        </div>
+      </div>
+    </div></div>
+    <div class="side">
+      <h2 id="b-h"><span class="letter">B</span> Eventyrbogen</h2>
+      <p><span class="k">Idéen</span>Hver tur er en side i jeres egen eventyrbog: billedet til venstre, historien til højre med et stort, malet begyndelsesbogstav. Det er en finpudset udgave af det, spillet har i dag.</p>
+      <p><span class="k">Bagsiden</span>Lys skærm om aftenen, og kampe og terninger føles mindre som et spil. Mindst nyt for drengene.</p>
+      <p><span class="k">Passer godt til</span>Oplæsning og den kommende læsetilstand, fordi teksten står roligt og tydeligt på siden.</p>
+      <span class="mini-label">Belønningsøjeblik</span>
+      <div class="reward rw-b"><div class="wax">3</div><div><b>Mason når niveau 3</b>Et segl presses ned på siden, og en ny evne skrives ind i bogen.</div></div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="board" aria-labelledby="c-h">
+    <div class="ipad"><div class="screen c" role="img" aria-label="Lejrbålet: mørk nattehimmel, scenen som et syn i røgen, valg som glødende sten og heltene om bålet">
+      <div class="c-top">
+        <div class="vision"><svg class="art"><use href="#scene"/></svg></div>
+        <div class="c-text"><span class="t">Troldens bro</span><p>Broen knager under jeres fødder. På den anden side står en stor trold med en kølle. "Ingen går over min bro uden at betale!" brøler den.</p></div>
+      </div>
+      <div class="stones">
+        <div class="stone"><span class="who"><span class="dot" style="background:var(--h-lucas)"></span>Lucas</span>Skyd en pil mod køllen</div>
+        <div class="stone"><span class="who"><span class="dot" style="background:var(--h-mason)"></span>Mason</span>Giv trolden en guldmønt</div>
+        <div class="stone"><span class="who"><span class="dot" style="background:var(--h-aldor)"></span>Aldor</span>Snig jer forbi i tågen</div>
+        <div class="stone own">✏️ Min egen idé</div>
+      </div>
+      <div class="campfire">
+        <div class="c-hero"><div class="av" style="background:var(--h-aldor)">A</div><b>Aldor</b><span class="hearts">♥♥♥♥<span class="e">♥</span></span></div>
+        <div class="c-hero on"><div class="av" style="background:var(--h-lucas)">L</div><b>Lucas</b><span class="hearts">♥♥♥♥♥</span></div>
+        <svg class="fire" viewBox="0 0 90 80" aria-hidden="true"><path d="M45 4 C60 24 72 34 66 54 C62 68 52 74 45 74 C34 74 22 66 22 52 C22 40 32 34 34 22 C40 30 42 34 45 4Z" fill="#e2702a"/><path d="M46 28 C54 40 60 48 56 60 C53 68 49 70 45 70 C38 70 33 64 33 57 C33 49 40 46 41 38 C44 44 45 44 46 28Z" fill="#ffb347"/><path d="M45 48 C50 55 52 60 49 66 C47 69 43 69 41 66 C39 62 42 58 45 48Z" fill="#ffe8b0"/><g stroke="#5a3a22" stroke-width="7" stroke-linecap="round"><line x1="14" y1="76" x2="76" y2="70"/><line x1="16" y1="68" x2="74" y2="78"/></g></svg>
+        <div class="c-hero"><div class="av" style="background:var(--h-mason)">M</div><b>Mason</b><span class="hearts">♥♥♥<span class="e">♥♥</span></span></div>
+      </div>
+      <span class="ember"></span><span class="ember"></span><span class="ember"></span>
+    </div></div>
+    <div class="side">
+      <h2 id="c-h"><span class="letter">C</span> Lejrbålet</h2>
+      <p><span class="k">Idéen</span>I sidder om et bål i en mørk skov og fortæller. Scenen dukker op som et syn i røgen, valgene er glødende sten, og heltene sidder i bålets lys.</p>
+      <p><span class="k">Bagsiden</span>Mest stemning, men lys tekst på mørk baggrund er sværere for nye læsere, og gløder og flammer bruger mere batteri.</p>
+      <p><span class="k">Passer godt til</span>Spil om aftenen, og det ligger tættest på farverne i dag.</p>
+      <span class="mini-label">Belønningsøjeblik</span>
+      <div class="reward rw-c"><svg viewBox="0 0 90 70" aria-hidden="true"><g stroke="#ffb347" stroke-width="1.5" opacity=".7"><line x1="10" y1="50" x2="30" y2="20"/><line x1="30" y1="20" x2="55" y2="30"/><line x1="55" y1="30" x2="80" y2="12"/></g><g fill="#ffe2a8"><circle cx="10" cy="50" r="3"/><circle cx="30" cy="20" r="3.5"/><circle cx="55" cy="30" r="3"/><circle cx="80" cy="12" r="5" fill="#ffb347"/></g></svg><div><b>Lucas lærer Ildpil</b>En ny stjerne tændes i hans stjernebillede.</div></div>
+    </div>
+  </section>
+
+  <section class="part" id="liv" aria-labelledby="liv-h">
+    <h2 id="liv-h">Liv der kan vokse</h2>
+    <p>I dag starter en helt med <strong>6 liv</strong> og får 1 ekstra pr. niveau, op til <strong>10 liv på niveau 5</strong>. Monstre har 7 til 14 liv. Fem hjerter holder ikke, så her er tre måder, der virker for alle tal. Hver viser Lucas på niveau 1, Mason på niveau 5 og trolden.</p>
+    <div class="hp-opts">
+      <div class="hp-opt">
+        <h3>1. Tal og tern <span class="badge">Anbefalet</span></h3>
+        <div class="felt">
+          <div class="hrow"><div class="av" style="background:var(--h-lucas)">L</div><div><span class="lbl"><b>Lucas</b> · niveau 1</span><div class="hp1"><span class="n"><span class="h">♥</span> 5<small>/6</small></span><div class="seg" style="--max:6;--cur:5"></div></div></div></div>
+          <div class="hrow"><div class="av" style="background:var(--h-mason)">M</div><div><span class="lbl"><b>Mason</b> · niveau 5</span><div class="hp1"><span class="n"><span class="h">♥</span> 7<small>/10</small></span><div class="seg" style="--max:10;--cur:7"></div></div></div></div>
+          <div class="hrow"><div class="av mon">👹</div><div><span class="lbl"><b>Bro-trolden Grum</b></span><div class="hp1"><span class="n"><span class="h">♥</span> 11<small>/14</small></span><div class="seg" style="--max:14;--cur:11"></div></div></div></div>
+        </div>
+        <p>Tallet siger det præcist, og hver tern er ét liv, så man kan se et slag fjerne præcis to. Bjælken bliver bare længere med flere liv. Over cirka 20 liv glider ternene sammen til en jævn bjælke.</p>
+      </div>
+      <div class="hp-opt">
+        <h3>2. Halve hjerter</h3>
+        <div class="felt">
+          <div class="hrow"><div class="av" style="background:var(--h-lucas)">L</div><div><span class="lbl"><b>Lucas</b> · niveau 1</span><div class="hp2">♥♥<span class="half">♥</span></div></div></div>
+          <div class="hrow"><div class="av" style="background:var(--h-mason)">M</div><div><span class="lbl"><b>Mason</b> · niveau 5</span><div class="hp2">♥♥♥<span class="half">♥</span><span class="e">♥</span></div></div></div>
+          <div class="hrow"><div class="av mon">👹</div><div><span class="lbl"><b>Bro-trolden Grum</b></span><div class="hp2">♥♥♥♥♥<span class="half">♥</span><span class="e">♥</span></div></div></div>
+        </div>
+        <p>Hvert hjerte rummer 2 liv, som i Zelda. Det er hyggeligt og kendt, men halve hjerter er svære at tælle, og rækken bliver lang for monstre.</p>
+      </div>
+      <div class="hp-opt">
+        <h3>3. Ét hjerte der tømmes</h3>
+        <div class="felt">
+          <div class="hrow"><div class="av" style="background:var(--h-lucas)">L</div><div><span class="lbl"><b>Lucas</b> · niveau 1</span><div class="hp3"><div class="bigheart" style="--p:83%"><span>5</span></div><span class="of">af 6</span></div></div></div>
+          <div class="hrow"><div class="av" style="background:var(--h-mason)">M</div><div><span class="lbl"><b>Mason</b> · niveau 5</span><div class="hp3"><div class="bigheart" style="--p:70%"><span>7</span></div><span class="of">af 10</span></div></div></div>
+          <div class="hrow"><div class="av mon">👹</div><div><span class="lbl"><b>Bro-trolden Grum</b></span><div class="hp3"><div class="bigheart" style="--p:79%"><span>11</span></div><span class="of">af 14</span></div></div></div>
+        </div>
+        <p>Fylder mindst og passer på små brikker. Men det er svært at se, hvor meget ét slag tog, og to hjerter med samme fyld kan betyde meget forskellige tal.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="part" id="kamp" aria-labelledby="kamp-h">
+    <h2 id="kamp-h">Kampskærmen</h2>
+    <p>I dag er en kamp bare almindelige ture med en lille bjælke øverst. Her får kampen sin egen skærm: heltene til venstre, monsteret som et stort kort til højre. <strong>Monsteret får ét fast portræt og én fast beskrivelse, når kampen starter</strong>, og begge bruges i hvert billede indtil kampen er slut. Det løser, at det skifter udseende.</p>
+    <div class="board">
+      <div class="ipad"><div class="screen a battle" role="img" aria-label="Kampskærm: tre helte med livsbjælker til venstre, trolden som stort kort til højre med en skadetal der flyver op, valgkort og terning nederst">
+        <div class="b-head">
+          <span class="fight">⚔️ KAMP</span>
+          <span class="chip">Runde 3</span>
+          <div class="sp"></div>
+          <div class="chip">🪙 38</div>
+          <div class="chip">🗣️ Læs op</div>
+        </div>
+        <div class="arena">
+          <div class="party">
+            <div class="ptok"><div class="av" style="background:var(--h-aldor)">A</div><div><div class="nm">Aldor <small>niv. 4</small></div><div class="mbar"><span class="n"><span class="h">♥</span> 4/9</span><div class="seg" style="--max:9;--cur:4"></div></div></div></div>
+            <div class="ptok on"><div class="av" style="background:var(--h-lucas)">L</div><div><div class="nm">Lucas <small>din tur</small></div><div class="mbar"><span class="n"><span class="h">♥</span> 8/8</span><div class="seg" style="--max:8;--cur:8"></div></div></div></div>
+            <div class="ptok"><div class="av" style="background:var(--h-mason)">M</div><div><div class="nm">Mason <small>niv. 3</small></div><div class="mbar"><span class="n"><span class="h">♥</span> 3/8</span><div class="seg" style="--max:8;--cur:3"></div></div></div></div>
+          </div>
+          <div class="vs">VS</div>
+          <div class="foe">
+            <svg viewBox="0 0 200 150" aria-hidden="true">
+              <rect width="200" height="150" fill="#f0b46e"/>
+              <polygon points="0,110 40,80 90,100 140,70 200,95 200,150 0,150" fill="#8a7f9c" opacity=".55"/>
+              <rect y="118" width="200" height="32" fill="#5e4a3a"/>
+              <ellipse cx="100" cy="98" rx="46" ry="42" fill="#55683c"/>
+              <ellipse cx="100" cy="108" rx="28" ry="24" fill="#6d8250"/>
+              <circle cx="100" cy="46" r="26" fill="#55683c"/>
+              <ellipse cx="74" cy="44" rx="8" ry="5" fill="#55683c"/><ellipse cx="126" cy="44" rx="8" ry="5" fill="#55683c"/>
+              <circle cx="90" cy="42" r="4.5" fill="#ffd34d"/><circle cx="110" cy="42" r="4.5" fill="#ffd34d"/>
+              <circle cx="90" cy="42" r="1.8" fill="#2a1c10"/><circle cx="110" cy="42" r="1.8" fill="#2a1c10"/>
+              <path d="M88 58 Q100 64 112 58" stroke="#2a1c10" stroke-width="2.5" fill="none"/>
+              <polygon points="91,58 94,52 96,59" fill="#f6ecd2"/><polygon points="104,59 106,52 109,58" fill="#f6ecd2"/>
+              <rect x="146" y="40" width="14" height="70" rx="7" fill="#6e5137" transform="rotate(22 153 75)"/>
+              <circle cx="164" cy="44" r="13" fill="#6e5137"/>
+              <rect x="72" y="132" width="16" height="16" fill="#55683c"/><rect x="112" y="132" width="16" height="16" fill="#55683c"/>
+            </svg>
+            <div class="fn">Bro-trolden Grum <small>MONSTER</small></div>
+            <div class="mbar"><span class="n"><span class="h">♥</span> 9/14</span><div class="seg" style="--max:14;--cur:9"></div></div>
+            <div class="slash"></div>
+            <div class="dmg">−2</div>
+          </div>
+        </div>
+        <div class="a-hand">
+          <div class="card"><div class="who"><span class="dot" style="background:var(--h-lucas)">L</span>Lucas</div><div class="txt">Skyd en pil mod køllen</div><div class="chk">🎯 Smidighed</div></div>
+          <div class="card"><div class="who"><span class="dot" style="background:var(--h-lucas)">L</span>Lucas</div><div class="txt">Hop op på trolden og hold dens øjne</div><div class="chk">💪 Styrke</div></div>
+          <div class="card"><div class="who"><span class="dot" style="background:var(--h-lucas)">L</span>Lucas</div><div class="txt">Råb til Mason, så han kan nå at trække sig</div><div class="chk">💬 Snak</div></div>
+          <div class="card own"><div class="big">✏️ Min egen idé</div><div class="txt">Sig hvad du vil gøre</div></div>
+          <div class="die"><svg><use href="#d20"/></svg><span>Slå!</span></div>
+        </div>
+      </div></div>
+      <div class="side">
+        <h2><span class="letter">KAMP</span> Arenaen <span class="badge">Anbefalet</span></h2>
+        <p><span class="k">Idéen</span>Monsteret står over for heltene som et stort kort med sit faste billede og sine liv. Hvert slag kan ses: et hug, et ryst og et tal der flyver op.</p>
+        <p><span class="k">Bevægelse</span>Kort og tydelig, under ét sekund pr. slag, så historien ikke venter. iPad'ens indstilling for mindre bevægelse slår ryst og hug fra og viser kun tallet.</p>
+        <p><span class="k">Hvad der ændres bag kulissen</span>Monsteret får et fast navn, en fast beskrivelse og ét portræt, når kampen starter. Portrættet sendes med som forbillede til hvert scenebillede, ligesom heltenes portrætter gør i dag.</p>
+      </div>
+    </div>
+    <div class="beats" aria-label="De fem kampøjeblikke">
+      <div class="beat"><span class="step">Start</span><span class="ic">🃏</span><b>Monsteret dukker op</b><span>Kortet glider ind med navn og liv. Lyd: et brøl.</span></div>
+      <div class="beat"><span class="step">Træf</span><span class="ic">⚔️</span><b>I rammer</b><span>Et hug over kortet, det ryster, og "−2" flyver op. Ternene forsvinder én ad gangen.</span></div>
+      <div class="beat"><span class="step">Modangreb</span><span class="ic">💥</span><b>Monsteret slår igen</b><span>Heltens brik ryster rødt, og hans tern blinker væk.</span></div>
+      <div class="beat"><span class="step">Halvvejs</span><span class="ic">🔥</span><b>Bossen bliver rasende</b><span>Kortet gløder rødt, og et skilt viser svagt punkt: Snilde +1.</span></div>
+      <div class="beat"><span class="step">Sejr</span><span class="ic">🏆</span><b>Monsteret falder</b><span>Kortet vender til "Besejret", mønter flyver op til jeres pung, og skatten deles ud på samme skærm.</span></div>
+    </div>
+  </section>
+
+  <footer class="next">Næste skridt: en kort spec og en plan i spillets docs-mappe. Derefter bygges det i små bidder, der hver kan spilles alene: først spilskærmen, så kampen, så belønningerne, så helte og opsætning.</footer>
+</div>
